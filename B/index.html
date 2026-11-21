@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>しまWS大会アプリ — ダッシュボード新レイアウト案（B案）</title>
+<style>
+  /* 配色・書体・部品は styles.css / mock/ui-sample.html の主催者側 (Schwarz) にそろえる。外部フォントは読み込まない */
+  :root {
+    --font-body: "Zen Kaku Gothic New", "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+    --font-display: "Shippori Mincho", "Yu Mincho", "BIZ UDPMincho", "Hiragino Mincho ProN", serif;
+    --font-mono: "IBM Plex Mono", "Consolas", monospace;
+    --bg: #14161b;
+    --card: #1e2129;
+    --card-edge: #2e323d;
+    --ink: #e9e7df;
+    --ink-soft: #9aa0ac;
+    --accent: #8fb0ff;
+    --accent-ink: #10131b;
+    --accent-soft: #232c42;
+    --danger: #ff8d85;
+    --ok: #7fd39a;
+    --ok-soft: #1e3327;
+    --wait: #f0c264;
+    --wait-soft: #3a2f17;
+    --chip: #2a2e38;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* 16:9 を基準に全体を等倍で伸縮する。1920×1080 で 1rem = 16px、1280×720 で約 10.7px */
+  html { font-size: min(calc(100vw / 120), calc(100vh / 67.5)); -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-body); font-size: 1rem; line-height: 1.5;
+    background: var(--bg); color: var(--ink);
+    height: 100vh; overflow: hidden;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  button, input { font-family: inherit; }
+  .mono { font-family: var(--font-mono); }
+
+  /* ===== 上の帯: 大会名・設定・ラウンドの道のり ===== */
+  .top {
+    display: flex; align-items: center; gap: 1.1rem;
+    padding: .65rem 1.5rem .6rem; border-bottom: 1px solid var(--card-edge);
+  }
+  .app-title { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; letter-spacing: .04em; white-space: nowrap; }
+  .chip {
+    display: inline-block; font-size: .85rem; font-weight: 700; white-space: nowrap;
+    background: var(--chip); color: var(--ink); border-radius: 999px; padding: .15rem .75rem;
+  }
+  .chip.code { font-family: var(--font-mono); letter-spacing: .06em; }
+  .chip.role { background: var(--accent); color: var(--accent-ink); }
+  .steps { margin-left: auto; display: flex; align-items: center; gap: .45rem; font-size: .9rem; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+  .steps .st { display: flex; align-items: center; gap: .4rem; padding: .15rem .7rem; border-radius: 999px; border: 1px solid var(--card-edge); }
+  .steps .st i { width: .55rem; height: .55rem; border-radius: 50%; background: var(--chip); }
+  .steps .st.done { color: var(--ok); border-color: transparent; background: var(--ok-soft); }
+  .steps .st.done i { background: var(--ok); }
+  .steps .st.now { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .steps .st.now i { background: var(--accent); box-shadow: 0 0 0 .2rem rgba(143, 176, 255, .25); }
+  .steps .st.draft { color: var(--wait); border: 1px dashed var(--wait); }
+  .steps .st.draft i { background: var(--wait); }
+  .steps .ln { width: 1.2rem; height: 1px; background: var(--card-edge); }
+  .clock { font-family: var(--font-mono); font-size: 1.15rem; color: var(--ink-soft); letter-spacing: .04em; }
+  .backlink { font-size: .85rem; color: var(--ink-soft); text-underline-offset: .2em; white-space: nowrap; }
+
+  /* ===== 舞台 ===== */
+  #stage { display: grid; gap: 1rem; padding: 1rem 1.5rem; min-height: 0; }
+  body[data-state="1"] #stage, body[data-state="2"] #stage { grid-template-columns: minmax(0, 36fr) minmax(0, 64fr); }
+  body[data-state="3"] #stage { grid-template-columns: minmax(0, 40fr) minmax(0, 60fr); }
+  body[data-state="4"] #stage { grid-template-columns: minmax(0, 66fr) minmax(0, 34fr); }
+  .col { display: flex; flex-direction: column; gap: 1rem; min-height: 0; min-width: 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--card-edge); border-radius: .85rem;
+    padding: .9rem 1.25rem 1rem; display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  }
+  .card.grow { flex: 1; }
+  .card-h { display: flex; align-items: center; gap: .7rem; min-height: 2.5rem; margin-bottom: .5rem; }
+  .card-h h2 { font-size: 1.2rem; font-weight: 700; letter-spacing: .02em; display: flex; align-items: center; gap: .55rem; white-space: nowrap; }
+  .card-h h2::before { content: ""; width: .32rem; height: 1.25rem; border-radius: .2rem; background: var(--accent); flex: none; }
+  .muted { color: var(--ink-soft); font-size: .85rem; }
+  .badge { font-size: .85rem; font-weight: 700; border-radius: .35rem; padding: .1rem .6rem; letter-spacing: .04em; white-space: nowrap; }
+  .badge.open { background: var(--accent-soft); color: var(--accent); }
+  .badge.wait { background: var(--wait-soft); color: var(--wait); }
+  .badge.done { background: var(--ok-soft); color: var(--ok); }
+  .badge.none { background: var(--chip); color: var(--ink-soft); }
+  .notice { background: var(--accent-soft); border-radius: .5rem; padding: .5rem .8rem; font-size: .92rem; }
+  .notice.warn { background: var(--wait-soft); }
+
+  /* ===== 主催者だけの操作: パネル見出しの右に小さく置き、マウスを止めると消える ===== */
+  .ops { margin-left: auto; display: flex; gap: .5rem; align-items: center; }
+  .op { transition: opacity .6s ease; }
+  body.venue .op { opacity: 0; pointer-events: none; }
+  body.venue { cursor: none; }
+  .btn {
+    font-size: .92rem; font-weight: 700; white-space: nowrap;
+    padding: .42rem 1rem; border-radius: .55rem; border: 1px solid transparent; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: none; border-color: var(--card-edge); color: var(--ink); }
+  .btn.danger { background: none; border-color: var(--danger); color: var(--danger); }
+  .btn.danger.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  a.oplink { color: var(--accent); font-size: .88rem; font-weight: 700; text-underline-offset: .2em; white-space: nowrap; }
+  .card-f { display: flex; align-items: center; gap: 1rem; margin-top: .6rem; min-height: 1.4rem; }
+  .card-f .oplink { margin-left: auto; }
+
+  /* ===== タイマー ===== */
+  .timer { position: relative; overflow: hidden; }
+  input.timer-display {
+    width: 100%; background: none; border: 1px solid transparent; border-radius: .6rem; color: var(--ink);
+    font-family: var(--font-mono); font-weight: 700; text-align: center; letter-spacing: .02em;
+    font-size: 13rem; line-height: 1.02; padding: 0; font-variant-numeric: tabular-nums;
+  }
+  body[data-state="2"] input.timer-display { font-size: 8rem; }
+  input.timer-display:not([readonly]):hover, input.timer-display:not([readonly]):focus { border-color: var(--card-edge); }
+  input.timer-display.soon { color: var(--wait); }
+  input.timer-display.timeup { color: var(--danger); }
+  .tbar { height: .4rem; border-radius: 99px; background: var(--chip); overflow: hidden; margin: .5rem 0 .1rem; }
+  .tbar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s linear; }
+  .tbar.soon i { background: var(--wait); }
+  .tbar.timeup i { background: var(--danger); }
+  .timer .muted.op { margin-top: .35rem; }
+
+  /* ===== 進行状況・組み合わせ ===== */
+  .progline { display: flex; align-items: baseline; gap: .8rem; }
+  .progline p { font-size: 1.05rem; white-space: nowrap; }
+  .progline strong { font-size: 1.7rem; font-family: var(--font-mono); color: var(--ok); }
+  .seg { flex: 1; display: flex; gap: .3rem; align-self: center; }
+  .seg i { flex: 1; height: .5rem; border-radius: 99px; background: var(--chip); }
+  .seg i.c { background: var(--ok); }
+  .seg i.w { background: var(--wait); }
+  .matches { flex: 1; display: grid; grid-auto-rows: minmax(0, 1fr); gap: .55rem; margin-top: .7rem; min-height: 0; }
+  .match {
+    display: grid; grid-template-columns: 3.4rem minmax(0, 1fr) 2.2rem minmax(0, 1fr); column-gap: .5rem; align-items: center; align-content: center;
+    border: 1px solid var(--card-edge); border-radius: .65rem; padding: .2rem 1rem; min-height: 0; position: relative;
+  }
+  .match .tb { grid-row: 1 / span 2; font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--ink-soft); white-space: nowrap; }
+  .match .pl { font-weight: 700; font-size: 1.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .match .pl small { font-family: var(--font-mono); font-size: .95rem; font-weight: 500; color: var(--ink-soft); margin: 0 .6rem; }
+  .match .pl.a { text-align: right; }
+  .match .x { font-family: var(--font-display); color: var(--ink-soft); font-size: 1rem; text-align: center; }
+  .match .info { grid-column: 2 / -1; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: .9rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
+  .match.confirmed { border-color: #2f5540; background: linear-gradient(90deg, transparent, rgba(127, 211, 154, .05)); }
+  .match.confirmed .pl.lose { color: var(--ink-soft); }
+  .match.confirmed .pl.win { color: var(--ok); }
+  .match.pending { border-color: #5a4a22; }
+  .match.draft { border-style: dashed; border-color: #4a5068; }
+  .match.draft .info { display: none; }
+
+  /* ===== 勝敗ランキング ===== */
+  .legend { margin-left: auto; display: flex; gap: 1.1rem; align-items: center; font-size: .85rem; color: var(--ink-soft); white-space: nowrap; }
+  .legend span { display: flex; align-items: center; gap: .4rem; }
+  .legend .sw { width: 1.5rem; height: 1.1rem; border-radius: .25rem; border: 1px solid var(--card-edge); display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; }
+  .legend .sw.hid { background: repeating-linear-gradient(135deg, #1a1d24 0 .25rem, #252a35 .25rem .5rem); border-style: dashed; border-color: #444a59; font-family: var(--font-display); }
+  .legend .sw.open { background: var(--bg); border-color: #4a5a85; }
+  .legend .sw.used { text-decoration: line-through; }
+  .rk { flex: 1; display: grid; grid-template-rows: auto repeat(var(--rows, 8), minmax(0, 1fr)); min-height: 0; }
+  .rk-head, .rk-row { display: grid; grid-template-columns: 3.4rem 7.6rem 6.2rem 4.6rem 3.6rem minmax(0, 1fr); column-gap: .9rem; align-items: center; padding: 0 .4rem; }
+  .rk-head { font-size: .82rem; font-weight: 700; color: var(--ink-soft); letter-spacing: .06em; padding-bottom: .3rem; }
+  .rk-head .num, .rk-row .num { text-align: right; }
+  .rk-row { border-top: 1px solid var(--card-edge); min-height: 0; }
+  .rk-row .rank { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 1; display: flex; align-items: baseline; gap: .25rem; }
+  .rk-row.rank1 .rank { color: var(--accent); }
+  .rk-row .mv { font-family: var(--font-body); font-size: .72rem; font-weight: 700; }
+  .rk-row .mv.up { color: var(--ok); }
+  .rk-row .mv.down { color: var(--danger); }
+  .rk-row .name { font-weight: 700; font-size: 1.6rem; white-space: nowrap; }
+  .rk-row .name .badge { display: block; width: max-content; font-size: .72rem; margin-top: .1rem; }
+  .rk-row .wld { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; letter-spacing: .02em; }
+  .rk-row .cost { font-family: var(--font-mono); font-size: 1.15rem; color: var(--ink-soft); }
+  .pips { display: flex; align-items: center; gap: .22rem; justify-content: flex-end; }
+  .pips i { width: .55rem; height: 1.15rem; border-radius: .15rem; background: var(--accent); }
+  .pips i.off { background: none; border: 1px solid #444a59; }
+  .pips b { font-family: var(--font-mono); font-size: 1.15rem; margin-left: .3rem; }
+  .decks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; min-width: 0; }
+  .dk {
+    position: relative; height: 4.5rem; min-width: 0; border-radius: .5rem; padding: .35rem .7rem;
+    border: 1px solid #4a5a85; background: var(--bg);
+    display: flex; flex-direction: column; justify-content: center; gap: .1rem;
+  }
+  .dk .dt { font-weight: 700; font-size: .98rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dk .dm { display: flex; justify-content: space-between; align-items: baseline; gap: .4rem; font-size: .8rem; color: var(--ink-soft); white-space: nowrap; }
+  .dk .dtag { font-family: var(--font-mono); font-style: normal; font-size: .76rem; }
+  .dk.used { border-color: var(--card-edge); background: none; }
+  .dk.used .dt { text-decoration: line-through; text-decoration-thickness: .1em; color: var(--ink-soft); font-weight: 500; }
+  .dk.hid {
+    align-items: center; border: 1px dashed #444a59;
+    background: repeating-linear-gradient(135deg, #1a1d24 0 .55rem, #20242d .55rem 1.1rem);
+  }
+  .dk.hid b { font-family: var(--font-display); font-size: 1.9rem; font-weight: 800; color: #7a8192; line-height: 1; }
+  .dk.fresh { border-color: var(--accent); box-shadow: 0 0 0 .12rem rgba(143, 176, 255, .18); }
+  /* 幅の狭い列で使う 2 段組みのランキング (状態 3 の左列) */
+  .rk.compact .rk-head { display: none; }
+  .rk.compact { grid-template-rows: repeat(var(--rows, 8), minmax(0, 1fr)); }
+  .rk.compact .rk-row { grid-template-columns: 3rem minmax(0, 1fr) auto auto; row-gap: .3rem; align-content: center; }
+  .rk.compact .rk-row:first-of-type { border-top: 0; }
+  .rk.compact .rank { font-size: 1.7rem; }
+  .rk.compact .name { font-size: 1.35rem; display: flex; align-items: center; gap: .6rem; }
+  .rk.compact .name .badge { margin: 0; }
+  .rk.compact .wld { font-size: 1.35rem; }
+  .rk.compact .cost { display: none; }
+  .rk.compact .decks { grid-column: 2 / -1; }
+  .rk.compact .dk { height: 2.3rem; flex-direction: row; align-items: center; justify-content: space-between; gap: .5rem; padding: 0 .65rem; }
+  .rk.compact .dk .dt { font-size: .88rem; -webkit-line-clamp: 1; }
+  .rk.compact .dk .dm { font-size: .74rem; }
+  .rk.compact .dk .dtag { display: none; }
+  .rk.compact .dk.hid { justify-content: center; }
+  .rk.compact .dk.hid b { font-size: 1.3rem; }
+
+  /* ===== 事後コスト: 下書き (コスト行の増減) ===== */
+  .draw-meta { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .cgrid { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto repeat(var(--crows, 9), minmax(0, 1fr)); grid-auto-flow: column; column-gap: 2.2rem; margin-top: .5rem; min-height: 0; }
+  .crow, .chead { display: grid; grid-template-columns: minmax(0, 1fr) 2.6rem 6rem 3.4rem 3.4rem; column-gap: .6rem; align-items: center; padding: 0 .3rem; }
+  .chead { font-size: .8rem; font-weight: 700; color: var(--ink-soft); letter-spacing: .06em; padding-bottom: .3rem; }
+  .chead span:nth-child(n+2), .crow .n { text-align: right; }
+  .chead span:nth-child(3) { text-align: center; }
+  .crow { border-top: 1px solid var(--card-edge); min-height: 0; }
+  .crow .t { font-weight: 700; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crow .n { font-family: var(--font-mono); font-size: 1.15rem; }
+  .crow .n.base { color: var(--ink-soft); }
+  .crow .n.post { font-weight: 700; font-size: 1.35rem; }
+  .up { color: var(--wait); }
+  .down { color: var(--accent); }
+  .zero { color: var(--ink-soft); }
+  /* 増減の棒: 中央が 0、右が増、左が減 */
+  .dbar { position: relative; height: 1rem; }
+  .dbar::before { content: ""; position: absolute; left: 50%; top: -.15rem; bottom: -.15rem; width: 1px; background: #4a5068; }
+  .dbar i { position: absolute; top: .2rem; bottom: .2rem; border-radius: .15rem; }
+  .dbar i.up { left: 50%; background: var(--wait); }
+  .dbar i.down { right: 50%; background: var(--accent); }
+
+  /* ===== 事後コスト: 発表 (合計が高い順) ===== */
+  .an { flex: 1; display: grid; grid-template-rows: auto repeat(var(--rows, 8), minmax(0, 1fr)); min-height: 0; }
+  .an-head, .an-row { display: grid; grid-template-columns: 3.4rem 8rem minmax(0, 1fr) 13.5rem; column-gap: 1rem; align-items: center; padding: 0 .4rem; }
+  .an-head { font-size: .82rem; font-weight: 700; color: var(--ink-soft); letter-spacing: .06em; padding-bottom: .3rem; }
+  .an-head span:last-child { text-align: right; }
+  .an-row { border-top: 1px solid var(--card-edge); min-height: 0; }
+  .an-row .rank { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 1; }
+  .an-row.rank1 .rank, .an-row.rank1 .total b { color: var(--wait); }
+  .an-row .name { font-weight: 700; font-size: 1.6rem; white-space: nowrap; line-height: 1.2; }
+  .an-row .name small { display: block; font-size: .8rem; font-weight: 500; color: var(--ink-soft); }
+  .adecks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+  .adk { height: 4.5rem; min-width: 0; border: 1px solid var(--card-edge); border-radius: .5rem; background: var(--bg); padding: .3rem .7rem; display: flex; flex-direction: column; justify-content: center; }
+  .adk .dt { font-weight: 700; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .adk .dt small { font-weight: 500; font-size: .76rem; color: var(--ink-soft); margin-left: .35rem; }
+  .adk .dv { display: flex; align-items: baseline; gap: .4rem; font-family: var(--font-mono); font-size: .95rem; white-space: nowrap; }
+  .adk .dv .b { color: var(--ink-soft); }
+  .adk .dv .p { font-size: 1.35rem; font-weight: 700; }
+  .adk .dv .d { margin-left: auto; font-size: .9rem; font-weight: 700; }
+  .total { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .7rem; align-items: center; }
+  .total b { font-family: var(--font-mono); font-size: 2.7rem; font-weight: 700; line-height: 1; grid-row: 1 / 3; grid-column: 2; }
+  .total .sub { font-family: var(--font-mono); font-size: .85rem; color: var(--ink-soft); text-align: right; white-space: nowrap; }
+  .total .tb2 { height: .45rem; border-radius: 99px; background: var(--chip); overflow: hidden; }
+  .total .tb2 i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .an-row.rank1 .tb2 i { background: var(--wait); }
+  .enter .an-row { animation: rise .55s ease both; animation-delay: calc(var(--i) * .13s); }
+  @keyframes rise { from { opacity: 0; transform: translateY(.6rem); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .enter .an-row { animation: none; } .op, .tbar i { transition: none; } }
+  /* 右列: 勝敗の最終順位 (小) とコスト行 */
+  .mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: 1.6rem; }
+  .mini div { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) auto; column-gap: .5rem; align-items: baseline; border-top: 1px solid var(--card-edge); padding: .22rem .2rem; }
+  .mini div:nth-child(4n+1) { border-top: 0; }
+  .mini .r { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+  .mini .nm { font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+  .mini .nm small { font-size: .72rem; color: var(--ok); margin-left: .4rem; }
+  .mini .w { font-family: var(--font-mono); font-size: 1rem; }
+  .clist { flex: 1; display: grid; grid-template-rows: auto repeat(18, minmax(0, 1fr)); min-height: 0; }
+  .clist .crow, .clist .chead { grid-template-columns: minmax(0, 1fr) 2.6rem 3.4rem 3.2rem; }
+  .clist .chead span:nth-child(3) { text-align: right; }
+  .clist .crow .t { font-size: .98rem; }
+  .clist .crow .n { font-size: 1rem; }
+  .clist .crow .n.post { font-size: 1.12rem; }
+
+  /* ===== モック用の切り替え帯 (提案するデザインの外) ===== */
+  .mockbar {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    padding: .3rem 1.5rem; background: #0c0d10; border-top: 2px solid #d33a2f; color: #b9b6ac; font-size: .8rem;
+  }
+  .mockbar b { color: #d6d3c9; margin-right: .3rem; }
+  .mockbar button {
+    font-size: .8rem; font-weight: 700; padding: .2rem .8rem; border-radius: 999px;
+    border: 1px solid #3a3d46; background: #17181d; color: #b9b6ac; cursor: pointer;
+  }
+  .mockbar button[aria-pressed="true"] { background: #2b3040; color: #e9e7df; border-color: var(--accent); }
+  .mockbar .sp { margin-left: auto; }
+  #toast {
+    position: fixed; left: 50%; bottom: 3.4rem; transform: translateX(-50%) translateY(1rem);
+    background: #0c0d10; color: #e9e7df; font-size: .95rem; font-weight: 700;
+    padding: .6rem 1.2rem; border-radius: 99px; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s; border: 1px solid #3a3d46; z-index: 99; max-width: 90vw;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== スマホ幅: 縦に並べる (簡易) ===== */
+  @media (max-width: 900px) {
+    html { font-size: 14px; }
+    body { height: auto; min-height: 100vh; overflow: auto; display: block; cursor: auto !important; }
+    body.venue .op { opacity: 1; pointer-events: auto; }
+    .top { flex-wrap: wrap; gap: .5rem; padding: .7rem .8rem; }
+    .steps { margin-left: 0; flex-wrap: wrap; }
+    .steps .ln, .clock { display: none; }
+    #stage { display: flex !important; flex-direction: column; padding: .8rem; }
+    .card { padding: .8rem .9rem; }
+    .card-h { flex-wrap: wrap; }
+    .ops { flex-wrap: wrap; }
+    .legend { margin-left: 0; flex-wrap: wrap; gap: .4rem .9rem; white-space: normal; }
+    input.timer-display, body[data-state="2"] input.timer-display { font-size: 24vw; }
+    .match { padding: .6rem .7rem; }
+    .match .pl { font-size: 1.15rem; }
+    .match .info { flex-wrap: wrap; white-space: normal; }
+    .rk, .rk.compact, .an, .cgrid, .clist { display: block; }
+    .rk-head, .an-head, .cgrid .chead ~ .chead { display: none; }
+    .rk-row, .rk.compact .rk-row { grid-template-columns: 2.6rem minmax(0, 1fr) auto auto; row-gap: .4rem; padding: .6rem 0; }
+    .rk-row .rank { font-size: 1.5rem; }
+    .rk-row .name, .rk-row .wld { font-size: 1.2rem; }
+    .rk-row .cost { display: none; }
+    .rk-row .decks, .rk.compact .decks { grid-column: 1 / -1; }
+    .dk { height: 4.6rem; padding: .3rem .45rem; }
+    .dk .dt { font-size: .82rem; }
+    .dk .dm { flex-direction: column; gap: 0; font-size: .72rem; }
+    .crow, .chead, .clist .crow, .clist .chead { grid-template-columns: minmax(0, 1fr) 2.4rem 3rem 3rem; padding: .35rem 0; }
+    .dbar { display: none; }
+    .cgrid .chead span:nth-child(3) { display: none; }
+    .an-row { grid-template-columns: 2.6rem minmax(0, 1fr) auto; row-gap: .5rem; padding: .7rem 0; }
+    .an-row .adecks { grid-column: 1 / -1; grid-row: 2; grid-template-columns: 1fr; }
+    .an-row .total { grid-column: 3; grid-row: 1; }
+    .an-row .total .tb2, .an-row .total .sub { display: none; }
+    .an-row .total b { font-size: 1.9rem; grid-column: 1; }
+    .adk { height: auto; padding: .4rem .6rem; }
+    .mini { grid-template-columns: 1fr; grid-auto-flow: row; }
+    .mini div:nth-child(4n+1) { border-top: 1px solid var(--card-edge); }
+    .mockbar { padding: .5rem .8rem; }
+    .mockbar .sp { margin-left: 0; }
+  }
+  /* ===== 16 人版: 1 行を低くして全員を 1 画面に収める (PC 幅だけ) ===== */
+  .tabs2 { margin-left: auto; display: flex; border: 1px solid var(--card-edge); border-radius: 999px; overflow: hidden; }
+  .legend + .tabs2 { margin-left: 1rem; }
+  .tabs2 button { font-size: .9rem; font-weight: 700; padding: .3rem 1rem; border: 0; background: none; color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+  .tabs2 button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .tabs2 + .ops { margin-left: .6rem; }
+  .rk.nodecks .rk-head span:nth-child(n+5) { display: none; }
+  .rk.nodecks .rk-head, .rk.nodecks .rk-row { grid-template-columns: 3.2rem minmax(0, 1fr) 6.5rem 5rem; }
+  .rk.nodecks .name { display: flex; align-items: center; gap: .6rem; }
+  .rk.nodecks .name .badge { margin: 0; }
+  .rk.nodecks .cost { display: none; }
+  @media (min-width: 901px) {
+    body[data-n="16"][data-state="1"] #stage, body[data-n="16"][data-state="2"] #stage { grid-template-columns: minmax(0, 32fr) minmax(0, 68fr); }
+    body[data-n="16"][data-state="3"] #stage, body[data-n="16"][data-state="4"][data-page="2"] #stage { grid-template-columns: minmax(0, 30fr) minmax(0, 70fr); }
+    body[data-n="16"][data-state="4"][data-page="1"] #stage { grid-template-columns: minmax(0, 1fr); }
+    body[data-n="16"] input.timer-display { font-size: 11.5rem; }
+    body[data-n="16"][data-state="2"] input.timer-display { font-size: 6.5rem; }
+    body[data-n="16"] .card-h { margin-bottom: .3rem; }
+    .matches.dense { gap: .35rem; margin-top: .5rem; }
+    .matches.dense .match { grid-template-columns: 3rem minmax(0, 1fr) 1.8rem minmax(0, 1fr) 9.8rem; padding: 0 .8rem; column-gap: .4rem; }
+    .matches.dense .match.draft { grid-template-columns: 3rem minmax(0, 1fr) 1.8rem minmax(0, 1fr); }
+    .matches.dense .tb { grid-row: auto; font-size: 1.1rem; }
+    .matches.dense .pl { font-size: 1.5rem; }
+    .matches.dense .pl small { margin: 0 .45rem; font-size: .9rem; }
+    body[data-state="2"] .matches.dense .pl { font-size: 1.9rem; }
+    .matches.dense .info { grid-column: 5; justify-content: flex-end; }
+    .matches.dense .info span:not(.badge) { display: none; }
+    .rk.dense .rk-head, .rk.dense .rk-row { grid-template-columns: 3rem 6.6rem 5.6rem 4.4rem minmax(0, 1fr); column-gap: .8rem; }
+    .rk.dense .rk-head span:nth-child(5), .rk.dense .cost { display: none; }
+    .rk.dense .rank, .rk.nodecks .rank { font-size: 1.6rem; }
+    .rk.dense .name { font-size: 1.4rem; display: flex; align-items: center; gap: .35rem; }
+    .rk.dense .name .badge { margin: 0; font-size: .68rem; padding: .05rem .35rem; }
+    .rk.dense .wld { font-size: 1.4rem; }
+    .rk.dense .pips i { height: 1rem; }
+    .rk.dense .dk { height: 2.5rem; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0 .8rem; }
+    .rk.dense .dk .dt { display: block; white-space: nowrap; text-overflow: ellipsis; font-size: 1.125rem; }
+    .rk.dense .dk .dm { display: none; }
+    .rk.dense .dk.hid { justify-content: center; }
+    .rk.dense .dk.hid b { font-size: 1.4rem; }
+    .rk.nodecks .name, .rk.nodecks .wld { font-size: 1.45rem; }
+    .cgrid.dense .crow, .cgrid.dense .chead { grid-template-columns: minmax(0, 1fr) 3rem 8rem 3.8rem 3.8rem; }
+    .cgrid.dense .crow .t { font-size: 1.25rem; }
+    .cgrid.dense .crow .n { font-size: 1.25rem; }
+    .cgrid.dense .crow .n.post { font-size: 1.45rem; }
+    .an.dense .an-head, .an.dense .an-row { grid-template-columns: 3rem 10.5rem minmax(0, 1fr) 15rem; }
+    .an.dense .rank { font-size: 1.6rem; }
+    .an.dense .name { font-size: 1.45rem; display: flex; align-items: baseline; gap: .6rem; }
+    .an.dense .name small { display: inline; font-size: .85rem; }
+    .an.dense .adk { height: 2.6rem; flex-direction: row; align-items: center; gap: .8rem; padding: 0 .8rem; }
+    .an.dense .adk .dt { flex: 1; min-width: 0; font-size: 1.125rem; }
+    .an.dense .adk .dv { font-size: 1rem; gap: .35rem; }
+    .an.dense .adk .dv .p { font-size: 1.3rem; }
+    .an.dense .adk .dv .d { margin-left: .4rem; font-size: 1rem; min-width: 2.6rem; text-align: right; }
+    .an.dense .total { display: flex; align-items: center; gap: .7rem; }
+    .an.dense .total .tb2 { order: 1; flex: 1; }
+    .an.dense .total .sub { order: 2; font-size: .95rem; }
+    .an.dense .total b { order: 3; font-size: 2.1rem; }
+    .enter .an.dense .an-row { animation-delay: calc(var(--i) * .07s); }
+  }
+</style>
+</head>
+<body data-state="1">
+
+<header class="top">
+  <div class="app-title">しま杯 11月大会</div>
+  <span class="chip code">1121-A</span>
+  <span class="chip">しま2026版ピラミッド</span>
+  <span class="chip">スイス式</span>
+  <span class="chip">登録デッキ 3個</span>
+  <span class="chip">コスト上限 9</span>
+  <div class="steps" id="steps" aria-label="大会の進み具合"></div>
+  <span class="clock" id="clock" aria-label="現在時刻"></span>
+  <a href="#" class="backlink op" data-toast="主催者画面のタブ一覧へ戻ります (モックでは移動しません)">主催者画面へ戻る</a>
+</header>
+
+<main id="stage"></main>
+
+<footer class="mockbar" aria-label="モック用の切り替え">
+  <b>モック切替</b>
+  <button data-go="2">2 マッチング下書き</button>
+  <button data-go="1">1 ラウンド中</button>
+  <button data-go="3">3 事後コストの下書き</button>
+  <button data-go="4">4 事後コスト発表</button>
+  <span>（進行の順。キー 1〜4 でも切替）</span>
+  <span>｜ 人数</span><button data-n="8">8人</button><button data-n="16">16人</button>
+  <span class="sp">主催者のボタンはマウスを 4 秒止めると消え、動かすと戻ります</span>
+  <button id="pin" aria-pressed="false">ボタンを常に表示</button>
+</footer>
+
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const N = params.get("players") === "16" ? 16 : 8; // ?players=16 で 16 人・8 卓の見本
+  // ===== サンプルデータ (参加者 8 人・デッキ 3 個ずつ・スイス式・しま2026版ピラミッド) =====
+  // コスト行: [タイトル, 基本コスト, 事後の増減]。実際に持ち込まれた 18 タイトルだけ
+  let COSTS = [
+    ["ホロライブプロダクション", 4, 0.4], ["ブルーアーカイブ", 4, -0.3], ["学園アイドルマスター", 4, 0.5],
+    ["五等分の花嫁", 3, -0.2], ["ぼっち・ざ・ろっく！", 3, 0.1], ["【推しの子】", 3, -0.5],
+    ["葬送のフリーレン", 3, 0.3], ["勝利の女神：NIKKE", 3, 0], ["超かぐや姫！", 3, 0.2],
+    ["ダンダダン", 2, 0.5], ["リコリス・リコイル", 2, -0.4], ["チェンソーマン", 2, 0.1],
+    ["ウマ娘 プリティーダービー", 2, -0.1], ["転生したらスライムだった件", 2, 0.3], ["Re:ゼロから始める異世界生活", 2, -0.3],
+    ["SPY×FAMILY", 1, 0.2], ["東方Project", 1, -0.5], ["アズールレーン", 1, 0.4]
+  ];
+  const buildCost = () => Object.fromEntries(COSTS.map(([t, base, delta]) => [t, { base, delta, post: Math.round((base + delta) * 10) / 10 }]));
+  let COST = buildCost();
+  const P = {
+    A: { name: "茜",   decks: [["ホロライブプロダクション", "8宝"], ["ダンダダン", "8門"], ["SPY×FAMILY", "4扉4チョイス"]] },
+    B: { name: "蒼真", decks: [["ブルーアーカイブ", "8スタンバイ"], ["五等分の花嫁", "8扉"], ["東方Project", "8本"]] },
+    C: { name: "恵麻", decks: [["学園アイドルマスター", "4宝4チョイス"], ["リコリス・リコイル", "8門"], ["チェンソーマン", "8ショット"]] },
+    D: { name: "光希", decks: [["葬送のフリーレン", "8宝"], ["【推しの子】", "4門4扉"], ["ウマ娘 プリティーダービー", "8風"]] },
+    E: { name: "楓",   decks: [["ホロライブプロダクション", "4宝4門"], ["ぼっち・ざ・ろっく！", "8スタンバイ"], ["アズールレーン", "8ソウル"]] },
+    F: { name: "凛",   decks: [["勝利の女神：NIKKE", "8チョイス"], ["ダンダダン", "8宝"], ["転生したらスライムだった件", "8扉"]] },
+    G: { name: "湊",   decks: [["超かぐや姫！", "8宝"], ["五等分の花嫁", "8スタンバイ"], ["Re:ゼロから始める異世界生活", "4風4本"]] },
+    H: { name: "紬",   decks: [["ブルーアーカイブ", "4宝4扉"], ["葬送のフリーレン", "8門"], ["リコリス・リコイル", "8チョイス"]] }
+  };
+  const baseTotal = (id) => P[id].decks.reduce((s, [t]) => s + COST[t].base, 0);
+  const postTotal = (id) => Math.round(P[id].decks.reduce((s, [t]) => s + COST[t].post, 0) * 10) / 10;
+
+  // 順位表の場面。seen = 確定した対戦で使われた順の [デッキ番号, "used" (勝利して使用済み) | "open" (公開済み・使用可), 勝ったラウンド]
+  let AFTER_R2 = [
+    { id: "A", wld: "2-0-0", seen: [[1, "used", 1], [2, "used", 2]] },
+    { id: "G", wld: "2-0-0", seen: [[2, "used", 1], [1, "used", 2]] },
+    { id: "F", wld: "1-1-0", seen: [[0, "used", 1], [2, "open"]] },
+    { id: "E", wld: "1-1-0", seen: [[2, "used", 2]] },
+    { id: "C", wld: "1-1-0", seen: [[1, "used", 1], [2, "open"]] },
+    { id: "D", wld: "1-1-0", seen: [[1, "used", 2]] },
+    { id: "B", wld: "0-2-0", seen: [[2, "open"], [1, "open"]] },
+    { id: "H", wld: "0-2-0", seen: [[2, "open"], [1, "open"]] }
+  ];
+  let DURING_R3 = AFTER_R2.slice(0, 6).concat([
+    { id: "H", wld: "1-2-0", seen: [[2, "used", 3, "fresh"], [1, "open"]], mv: "up" },
+    { id: "B", wld: "0-3-0", seen: [[2, "open"], [1, "open"]], mv: "down" }
+  ]);
+  let FINAL = [
+    { id: "G", wld: "3-0-0", seen: [[2, "used", 1], [1, "used", 2], [0, "used", 3]], note: "勝ち抜け" },
+    { id: "A", wld: "2-1-0", seen: [[1, "used", 1], [2, "used", 2], [0, "open"]] },
+    { id: "C", wld: "2-1-0", seen: [[1, "used", 1], [2, "used", 3]] },
+    { id: "E", wld: "2-1-0", seen: [[2, "used", 2], [1, "used", 3]] },
+    { id: "F", wld: "1-2-0", seen: [[0, "used", 1], [2, "open"], [1, "open"]] },
+    { id: "D", wld: "1-2-0", seen: [[1, "used", 2], [2, "open"]] },
+    { id: "H", wld: "1-2-0", seen: [[2, "used", 3], [1, "open"]] },
+    { id: "B", wld: "0-3-0", seen: [[2, "open"], [1, "open"]] }
+  ];
+  let ROUND3 = [
+    { a: "A", b: "G", ra: "2-0", rb: "2-0", status: "none" },
+    { a: "C", b: "F", ra: "1-1", rb: "1-1", status: "none" },
+    { a: "D", b: "E", ra: "1-1", rb: "1-1", status: "pending", note: "楓さんが「楓の勝ち」と報告" },
+    { a: "B", b: "H", ra: "0-2", rb: "0-2", status: "confirmed", win: "H", note: "使用デッキ: 東方Project ／ リコリス・リコイル" }
+  ];
+
+  // ===== 16 人版: 参加者と持ち込みタイトルを足し、順位表は対戦結果から組み立てる =====
+  if (N === 16) {
+    Object.assign(P, {
+      I: { name: "陽向", decks: [["魔法少女まどか☆マギカ", "8扉"], ["ソードアート・オンライン", "8宝"], ["あおぎり高校", "8チョイス"]] },
+      J: { name: "澪",   decks: [["ラブライブ！スーパースター!!", "8スタンバイ"], ["学園アイドルマスター", "8宝"], ["アサルトリリィ", "8門"]] },
+      K: { name: "颯",   decks: [["Fate", "4宝4扉"], ["チェンソーマン", "8宝"], ["ブルーアーカイブ", "8チョイス"]] },
+      L: { name: "結衣", decks: [["この素晴らしい世界に祝福を！", "8本"], ["ぼっち・ざ・ろっく！", "8門"], ["艦隊これくしょん -艦これ-", "8風"]] },
+      M: { name: "樹",   decks: [["「青春ブタ野郎」シリーズ", "8扉"], ["葬送のフリーレン", "4宝4チョイス"], ["甘神さんちの縁結び", "8宝"]] },
+      N: { name: "詩",   decks: [["アクセル・ワールド", "8ショット"], ["ホロライブプロダクション", "8スタンバイ"], ["【推しの子】", "8宝"]] },
+      O: { name: "蓮",   decks: [["あやかしトライアングル", "8門"], ["勝利の女神：NIKKE", "8宝"], ["超かぐや姫！", "4門4扉"]] },
+      P: { name: "咲良", decks: [["魔法少女まどか☆マギカ", "8宝"], ["ウマ娘 プリティーダービー", "8スタンバイ"], ["SPY×FAMILY", "8宝"]] }
+    });
+    COSTS = COSTS.concat([
+      ["ラブライブ！スーパースター!!", 3, 0.3], ["魔法少女まどか☆マギカ", 3, 0.1], ["この素晴らしい世界に祝福を！", 2, -0.2],
+      ["ソードアート・オンライン", 2, -0.4], ["Fate", 2, 0.5], ["「青春ブタ野郎」シリーズ", 2, -0.1], ["あおぎり高校", 2, 0.4],
+      ["艦隊これくしょん -艦これ-", 1, 0.2], ["アサルトリリィ", 1, -0.3], ["甘神さんちの縁結び", 1, 0.1],
+      ["アクセル・ワールド", 1, -0.2], ["あやかしトライアングル", 1, 0.3]
+    ]).map((r, i) => [r, i]).sort((x, y) => y[0][1] - x[0][1] || x[1] - y[1]).map((x) => x[0]);
+    COST = buildCost();
+    // 対戦結果: [ラウンド, 勝者, 勝者のデッキ番号, 敗者, 敗者のデッキ番号]。Round 3 は卓の順
+    const R12 = [
+      [1, "A", 1, "B", 2], [1, "C", 1, "D", 1], [1, "F", 0, "E", 2], [1, "G", 2, "H", 2], [1, "I", 1, "J", 2], [1, "L", 2, "K", 0], [1, "M", 2, "N", 0], [1, "P", 2, "O", 0],
+      [2, "A", 2, "C", 2], [2, "G", 1, "F", 2], [2, "I", 2, "L", 1], [2, "P", 1, "M", 1], [2, "D", 1, "B", 1], [2, "E", 2, "H", 1], [2, "K", 0, "J", 2], [2, "N", 0, "O", 0]
+    ];
+    const R3 = [[3, "G", 0, "A", 0], [3, "I", 0, "P", 0], [3, "C", 2, "F", 1], [3, "M", 1, "L", 0], [3, "E", 1, "D", 2], [3, "K", 1, "N", 1], [3, "H", 2, "B", 2], [3, "O", 0, "J", 0]];
+    const CONFIRMED = [2, 4, 6]; // ラウンド中の見本で確定している卓 (0 始まり)
+    const snap = (results, freshRound) => {
+      const st = Object.fromEntries(Object.keys(P).map((id) => [id, { id, w: 0, l: 0, seen: [] }]));
+      const mark = (e, i, won, round) => {
+        let s = e.seen.find((x) => x[0] === i);
+        if (!s) e.seen.push((s = [i, "open"]));
+        if (won) { s[1] = "used"; s[2] = round; if (round === freshRound) s[3] = "fresh"; }
+      };
+      for (const [round, w, wd, l, ld] of results) { mark(st[w], wd, true, round); st[w].w++; mark(st[l], ld, false, round); st[l].l++; }
+      const used = (e) => e.seen.filter((x) => x[1] === "used");
+      const usable = (e) => baseTotal(e.id) - used(e).reduce((sum, x) => sum + COST[P[e.id].decks[x[0]][0]].base, 0);
+      return Object.values(st).map((e) => ({ ...e, wld: `${e.w}-${e.l}-0`, note: used(e).length === 3 ? "勝ち抜け" : "" }))
+        .sort((x, y) => (used(y).length === 3) - (used(x).length === 3) || y.w - x.w || baseTotal(x.id) - baseTotal(y.id) || usable(y) - usable(x) || (P[x.id].name < P[y.id].name ? -1 : 1));
+    };
+    AFTER_R2 = snap(R12);
+    DURING_R3 = snap(R12.concat(CONFIRMED.map((i) => R3[i])), 3);
+    DURING_R3.forEach((e, i) => { const was = AFTER_R2.findIndex((x) => x.id === e.id); e.mv = i < was ? "up" : i > was ? "down" : ""; });
+    FINAL = snap(R12.concat(R3));
+    const rec = Object.fromEntries(AFTER_R2.map((e) => [e.id, `${e.w}-${e.l}`]));
+    ROUND3 = R3.map(([, w, , l], i) => {
+      const [a, b] = i % 2 ? [l, w] : [w, l]; // 見本なので勝者が左右どちらにも出るようにする
+      return { a, b, ra: rec[a], rb: rec[b], status: CONFIRMED.includes(i) ? "confirmed" : i === 5 ? "pending" : "none", win: w };
+    });
+  }
+
+  // ===== 部品 =====
+  const num = (v) => v.toFixed(1);
+  const delta = (v) => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(1);
+  const dcls = (v) => (v > 0 ? "up" : v < 0 ? "down" : "zero");
+  const opsHtml = (inner) => `<div class="ops op">${inner}</div>`;
+
+  function deckCards(e) {
+    const decks = P[e.id].decks;
+    const shown = e.seen.map(([i, st, round, fresh]) => {
+      const [t, cx] = decks[i];
+      return `<div class="dk ${st} ${fresh || ""}"><span class="dt">${t}</span>
+        <span class="dm"><span>${cx}</span>${st === "used" ? `<i class="dtag">R${round} 勝ち</i>` : ""}</span></div>`;
+    });
+    while (shown.length < decks.length) shown.push(`<div class="dk hid" aria-label="まだ使われていないデッキ"><b>？</b></div>`);
+    return `<div class="decks">${shown.join("")}</div>`;
+  }
+
+  function rankCard(list, { title, badge, sub, compact, dense, nodecks }) {
+    const rows = list.map((e, i) => {
+      const used = e.seen.filter((s) => s[1] === "used").length;
+      const left = P[e.id].decks.length - used;
+      return `<div class="rk-row ${i === 0 ? "rank1" : ""}">
+        <div class="rank">${i + 1}${e.mv ? `<span class="mv ${e.mv}">${e.mv === "up" ? "▲" : "▼"}</span>` : ""}</div>
+        <div class="name">${P[e.id].name}${e.note ? `<span class="badge done">${e.note}</span>` : ""}</div>
+        <div class="wld num">${e.wld}</div>
+        <div class="pips" aria-label="残デッキ ${left}">${P[e.id].decks.map((_, k) => `<i class="${k < left ? "" : "off"}"></i>`).join("")}<b>${left}</b></div>
+        <div class="cost num">${baseTotal(e.id)}</div>
+        ${nodecks ? "" : deckCards(e)}
+      </div>`;
+    }).join("");
+    const cls = [compact && "compact", dense && "dense", nodecks && "nodecks"].filter(Boolean).join(" ");
+    return `<section class="card grow">
+      <div class="card-h"><h2>${title}</h2>${badge || ""}${sub ? `<span class="muted">${sub}</span>` : ""}
+        ${nodecks ? "" : `<div class="legend">
+          <span><i class="sw hid">？</i>まだ使われていない</span>
+          <span><i class="sw open"></i>対戦で公開・使用可</span>
+          <span><i class="sw used">済</i>勝利して使用済み</span>
+        </div>`}
+      </div>
+      <div class="rk ${cls}" style="--rows:${list.length}">
+        <div class="rk-head"><span>順位</span><span>参加者</span><span class="num">勝-負-分</span><span class="num">残デッキ</span><span class="num">コスト</span><span>登録デッキ (使われた順)</span></div>
+        ${rows}
+      </div>
+    </section>`;
+  }
+
+  function timerCard(running) {
+    return `<section class="card timer">
+      <div class="card-h"><h2>タイマー</h2><span class="badge ${running ? "open" : "none"}" id="timer-badge">${running ? "Round 3 対戦中" : "停止中"}</span>
+        ${opsHtml(`<button class="btn ${running ? "danger" : "primary"}" id="timer-toggle">${running ? "STOP" : "START"}</button>
+          <button class="btn ghost" id="timer-reset" ${running ? "disabled" : ""}>RESET</button>`)}
+      </div>
+      <input type="text" id="dash-timer" class="timer-display" value="35:00" inputmode="numeric" aria-label="タイマー (分:秒)" ${running ? "readonly" : ""} />
+      <div class="tbar" id="tbar"><i style="width:100%"></i></div>
+      <p class="muted op">表示を直接編集して START (35:00 の形式、分だけでも可)。</p>
+    </section>`;
+  }
+
+  function matchRows(draft) {
+    return ROUND3.map((m, i) => {
+      const st = draft ? "draft" : m.status;
+      const badge = st === "confirmed" ? `<span class="badge done">確定: ${P[m.win].name}の勝ち</span>`
+        : st === "pending" ? `<span class="badge wait">承諾待ち</span>` : `<span class="badge none">未報告</span>`;
+      const cls = (id) => (st === "confirmed" ? (m.win === id ? "win" : "lose") : "");
+      return `<div class="match ${st}">
+        <span class="tb">${i + 1}卓</span>
+        <span class="pl a ${cls(m.a)}"><small>${m.ra}</small>${P[m.a].name}</span>
+        <span class="x">vs</span>
+        <span class="pl ${cls(m.b)}">${P[m.b].name}<small>${m.rb}</small></span>
+        <span class="info">${badge}${m.note ? `<span>${m.note}</span>` : ""}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function progressCard() {
+    return `<section class="card grow">
+      <div class="card-h"><h2>進行状況</h2><span class="badge open">Round 3 公開中</span>
+        ${opsHtml(`<button class="btn primary" disabled title="全卓が確定すると押せます">ラウンドを完了する</button>`)}
+      </div>
+      <div class="progline"><p>${ROUND3.length}卓中 <strong>${ROUND3.filter((m) => m.status === "confirmed").length}卓</strong> が確定</p>
+        <div class="seg">${["confirmed", "pending", "none"].map((st) => ROUND3.filter((m) => m.status === st).map(() => `<i class="${st === "confirmed" ? "c" : st === "pending" ? "w" : ""}"></i>`).join("")).join("")}</div></div>
+      <div class="matches ${N === 16 ? "dense" : ""}">${matchRows(false)}</div>
+      <div class="card-f"><span class="muted">この画面は即時反映されます (保険として1分ごとに自動更新)。</span>
+        <a href="#" class="oplink op" data-toast="「大会進行修正」タブを開きます (モックでは移動しません)">承諾の代行・結果の修正は「大会進行修正」へ →</a></div>
+    </section>`;
+  }
+
+  function draftCard() {
+    return `<section class="card grow">
+      <div class="card-h"><h2>Round 3 の組み合わせ</h2><span class="badge wait">下書き</span>
+        ${opsHtml(`<button class="btn ghost" data-toast="抽選しました。内容を確認して公開してください">抽選し直す</button>
+          <button class="btn primary" id="publish">公開する</button>`)}
+      </div>
+      <div class="notice warn">「公開する」まで参加者には見えません。</div>
+      <div class="matches ${N === 16 ? "dense" : ""}">${matchRows(true)}</div>
+      <div class="card-f"><span class="muted">成績の近い参加者同士・再戦なしで組んでいます。</span>
+        <a href="#" class="oplink op" data-toast="「大会進行修正」タブを開きます (モックでは移動しません)">手動で入れ替えるときは「大会進行修正」へ →</a></div>
+    </section>`;
+  }
+
+  const costRow = ([t, base, d], bar) => `<div class="crow">
+    <span class="t">${t}</span><span class="n base">${num(base)}</span>
+    ${bar ? `<span class="dbar"><i class="${dcls(d)}" style="width:${Math.abs(d) * 100}%"></i></span>` : ""}
+    <span class="n ${dcls(d)}">${delta(d)}</span><span class="n post">${num(COST[t].post)}</span></div>`;
+
+  const CSV_BTN = `<button class="btn ghost" data-toast="全タイトルの増減・最終値を CSV に書き出します (モックでは保存しません)">全タイトルをCSVに書き出す</button>`;
+  // 16 人版の状態 4 は 2 ページ (合計コスト順 / コスト行) を自動で切り替える
+  const pageTabs = () => `<div class="tabs2" aria-label="表示の切替">
+      <button data-page="1" aria-pressed="${page === 1}">合計コスト順</button><button data-page="2" aria-pressed="${page === 2}">コスト行 (${COSTS.length})</button></div>
+    ${opsHtml(`<button class="btn ghost" id="auto">${auto ? "自動切替を止める" : "自動切替を再開"}</button>${CSV_BTN}`)}`;
+
+  function postDraftCard(confirmed) {
+    const head = `<div class="chead"><span>タイトル</span><span>基本</span><span>− 増減 ＋</span><span>増減</span><span>事後</span></div>`;
+    const half = Math.ceil(COSTS.length / 2);
+    return `<section class="card grow">
+      <div class="card-h"><h2>${confirmed ? "使用されたコスト行" : "事後コスト発表"}</h2><span class="badge ${confirmed ? "done" : "wait"}">${confirmed ? "確定" : "下書き"}</span>
+        ${confirmed ? pageTabs() : opsHtml(`<button class="btn ghost" id="redraw">再抽選</button>
+          <button class="btn danger" id="post-confirm">確定</button>
+          <button class="btn ghost" data-toast="全タイトルの増減・最終値を CSV に書き出します (モックでは保存しません)">CSVを書き出す</button>`)}
+      </div>
+      <div class="draw-meta">
+        <span class="chip">抽選回数: <span id="draw-count">2</span></span>
+        <span class="chip">事後変動の範囲 ±0.5</span>
+        <span class="chip">持ち込まれた ${COSTS.length} タイトル</span>
+        <span class="muted">${confirmed ? "確定時刻: 2026-11-21 16:42" : "確定するまで何度でも再抽選できます。確定後は再抽選できません。"}</span>
+      </div>
+      <div class="cgrid ${N === 16 ? "dense" : ""}" style="--crows:${half}">${head}${COSTS.slice(0, half).map((r) => costRow(r, true)).join("")}${head}${COSTS.slice(half).map((r) => costRow(r, true)).join("")}</div>
+    </section>`;
+  }
+
+  function announceCard() {
+    const winRank = Object.fromEntries(FINAL.map((e, i) => [e.id, i + 1]));
+    const list = Object.keys(P).map((id) => ({ id, total: postTotal(id), base: baseTotal(id) }))
+      .sort((x, y) => y.total - x.total || (P[x.id].name < P[y.id].name ? -1 : 1));
+    const max = 10;
+    const rows = list.map((e, i) => `<div class="an-row ${i === 0 ? "rank1" : ""}" style="--i:${list.length - 1 - i}">
+      <div class="rank">${i + 1}</div>
+      <div class="name">${P[e.id].name}<small>勝敗 ${winRank[e.id]}位</small></div>
+      <div class="adecks">${P[e.id].decks.map(([t, cx]) => `<div class="adk"><span class="dt">${t}<small>${cx}</small></span>
+        <span class="dv"><span class="b">${num(COST[t].base)} →</span><span class="p">${num(COST[t].post)}</span><span class="d ${dcls(COST[t].delta)}">${delta(COST[t].delta)}</span></span></div>`).join("")}</div>
+      <div class="total"><span class="sub">基本 ${num(e.base)} <span class="${dcls(e.total - e.base)}">${delta(Math.round((e.total - e.base) * 10) / 10)}</span></span>
+        <b>${num(e.total)}</b><div class="tb2"><i style="width:${(e.total / max) * 100}%"></i></div></div>
+    </div>`).join("");
+    return `<section class="card grow">
+      <div class="card-h"><h2>事後コスト発表</h2><span class="badge done">確定</span><span class="muted">事後の合計コストが高い順 (同点は名前順)</span>
+        <div class="legend"><span>抽選回数: 2</span><span>確定時刻: 2026-11-21 16:42</span></div>
+        ${N === 16 ? pageTabs() : ""}
+      </div>
+      <div class="an ${N === 16 ? "dense" : ""}" style="--rows:${list.length}">
+        <div class="an-head"><span>順位</span><span>参加者</span><span>登録デッキ (基本 → 事後・増減)</span><span>事後合計</span></div>
+        ${rows}
+      </div>
+    </section>`;
+  }
+
+  function sideCards() {
+    return `<section class="card">
+      <div class="card-h"><h2>勝敗ランキング</h2><span class="badge done">最終結果</span></div>
+      <div class="mini">${FINAL.map((e, i) => `<div><span class="r">${i + 1}</span><span class="nm">${P[e.id].name}${e.note ? `<small>${e.note}</small>` : ""}</span><span class="w">${e.wld}</span></div>`).join("")}</div>
+    </section>
+    <section class="card grow">
+      <div class="card-h"><h2>使用されたコスト行</h2><span class="muted">18 タイトル</span>
+        ${opsHtml(`<button class="btn ghost" data-toast="全タイトルの増減・最終値を CSV に書き出します (モックでは保存しません)">全タイトルをCSVに書き出す</button>`)}
+      </div>
+      <div class="clist"><div class="chead"><span>タイトル</span><span>基本</span><span>増減</span><span>事後</span></div>${COSTS.map((r) => costRow(r, false)).join("")}</div>
+    </section>`;
+  }
+
+  // ===== 画面の状態 =====
+  const STEPS = {
+    1: [["Round 1", "done"], ["Round 2", "done"], ["Round 3 公開中", "now"], ["事後コスト", ""]],
+    2: [["Round 1", "done"], ["Round 2", "done"], ["Round 3 下書き", "draft"], ["事後コスト", ""]],
+    3: [["Round 1", "done"], ["Round 2", "done"], ["Round 3", "done"], ["大会終了", "done"], ["事後コスト 下書き", "draft"]],
+    4: [["Round 1", "done"], ["Round 2", "done"], ["Round 3", "done"], ["大会終了", "done"], ["事後コスト 確定", "now"]]
+  };
+  const SCREENS = N === 16 ? {
+    1: () => `<div class="col">${timerCard(true)}${progressCard()}</div>
+      <div class="col">${rankCard(DURING_R3, { title: "勝敗ランキング", sub: "確定した結果のみ反映", dense: true })}</div>`,
+    2: () => `<div class="col">${timerCard(false)}${draftCard()}</div>
+      <div class="col">${rankCard(AFTER_R2, { title: "勝敗ランキング", sub: "Round 2 まで", dense: true })}</div>`,
+    3: () => `<div class="col">${rankCard(FINAL, { title: "勝敗ランキング", badge: `<span class="badge done">最終結果</span>`, nodecks: true })}</div>
+      <div class="col">${postDraftCard(false)}</div>`,
+    4: () => page === 1 ? `<div class="col">${announceCard()}</div>`
+      : `<div class="col">${rankCard(FINAL, { title: "勝敗ランキング", badge: `<span class="badge done">最終結果</span>`, nodecks: true })}</div>
+      <div class="col">${postDraftCard(true)}</div>`
+  } : {
+    1: () => `<div class="col">${timerCard(true)}${progressCard()}</div>
+      <div class="col">${rankCard(DURING_R3, { title: "勝敗ランキング", sub: "確定した結果のみ反映" })}</div>`,
+    2: () => `<div class="col">${timerCard(false)}${draftCard()}</div>
+      <div class="col">${rankCard(AFTER_R2, { title: "勝敗ランキング", sub: "Round 2 まで" })}</div>`,
+    3: () => `<div class="col">${rankCard(FINAL, { title: "勝敗ランキング", badge: `<span class="badge done">最終結果</span>`, compact: true })}</div>
+      <div class="col">${postDraftCard(false)}</div>`,
+    4: () => `<div class="col">${announceCard()}</div><div class="col">${sideCards()}</div>`
+  };
+  let page = params.get("page") === "2" ? 2 : 1;
+  let auto = params.get("auto") !== "0";
+  let pageTimer = null;
+
+  const stage = document.getElementById("stage");
+  let armed = false;
+
+  function show(n, animate) {
+    n = SCREENS[n] ? String(n) : "1";
+    document.body.dataset.state = n;
+    document.body.dataset.n = N;
+    document.body.dataset.page = page;
+    clearInterval(pageTimer);
+    if (N === 16 && n === "4" && auto) pageTimer = setInterval(() => { page = page === 1 ? 2 : 1; show(4, false); }, 15000);
+    stage.className = animate ? "enter" : "";
+    stage.innerHTML = SCREENS[n]();
+    document.getElementById("steps").innerHTML = STEPS[n]
+      .map(([label, cls]) => `<span class="st ${cls}"><i></i>${label}</span>`).join(`<span class="ln"></span>`);
+    document.querySelectorAll(".mockbar [data-go]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.go === n));
+    armed = false;
+    timerSetup(n);
+    history.replaceState(null, "", "?" + new URLSearchParams({ ...Object.fromEntries(params), state: n }));
+  }
+
+  // ===== タイマー (この端末の中だけで動く。アプリの実装と同じ振る舞い) =====
+  const timer = { startSec: 2100, remainSec: 2100, running: false, endAt: 0, interval: null };
+  const tParse = (text) => {
+    const m = /^\s*(\d{1,3})(?:\s*[:：]\s*(\d{1,2}))?\s*$/.exec(text || "");
+    return m ? Number(m[1]) * 60 + Number(m[2] || 0) : null;
+  };
+  const tFormat = (sec) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  const tRemain = () => (timer.running ? Math.max(0, Math.ceil((timer.endAt - Date.now()) / 1000)) : timer.remainSec);
+  function tPaint() {
+    const el = document.getElementById("dash-timer");
+    if (!el) return;
+    const remain = tRemain();
+    if (timer.running && remain <= 0) { timer.running = false; timer.remainSec = 0; clearInterval(timer.interval); timer.interval = null; }
+    if (document.activeElement !== el || el.readOnly) el.value = tFormat(remain);
+    el.readOnly = timer.running;
+    const mood = remain <= 0 ? "timeup" : remain <= 300 ? "soon" : "";
+    el.className = "timer-display " + mood;
+    const bar = document.getElementById("tbar");
+    bar.className = "tbar " + mood;
+    bar.firstElementChild.style.width = Math.min(100, (remain / Math.max(1, timer.startSec)) * 100) + "%";
+    const toggle = document.getElementById("timer-toggle");
+    toggle.textContent = timer.running ? "STOP" : "START";
+    toggle.className = "btn " + (timer.running ? "danger" : "primary");
+    document.getElementById("timer-reset").disabled = timer.running;
+    const badge = document.getElementById("timer-badge");
+    badge.textContent = timer.running ? "Round 3 対戦中" : remain <= 0 ? "時間切れ" : "停止中";
+    badge.className = "badge " + (timer.running ? "open" : "none");
+  }
+  function tStart(sec) {
+    timer.running = true;
+    timer.endAt = Date.now() + sec * 1000;
+    clearInterval(timer.interval);
+    timer.interval = setInterval(tPaint, 250);
+  }
+  function timerSetup(n) {
+    clearInterval(timer.interval);
+    Object.assign(timer, { startSec: 2100, remainSec: 2100, running: false, interval: null });
+    if (n === "1") tStart(27 * 60 + 43); // ラウンド中の見本: 35:00 から始めて 27:43 まで進んだところ
+    tPaint();
+  }
+
+  // ===== 操作 (画面の切り替えとトーストだけ) =====
+  let toastTimer = null;
+  function toast(text) {
+    const el = document.getElementById("toast");
+    el.textContent = text;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+  }
+  document.addEventListener("click", (ev) => {
+    const el = ev.target.closest("button, a");
+    if (!el) return;
+    if (el.tagName === "A") ev.preventDefault();
+    if (el.dataset.go) { page = 1; return show(el.dataset.go, true); }
+    if (el.dataset.n) { params.set("players", el.dataset.n); params.set("state", document.body.dataset.state); location.search = params.toString(); return; }
+    if (el.dataset.page) { page = Number(el.dataset.page); return show(4, false); }
+    if (el.id === "auto") { auto = !auto; return show(4, false); }
+    if (el.dataset.toast) return toast(el.dataset.toast);
+    if (el.id === "publish") { show(1, true); return toast("マッチングを公開しました"); }
+    if (el.id === "redraw") {
+      const c = document.getElementById("draw-count");
+      c.textContent = Number(c.textContent) + 1;
+      return toast("事後コストの下書きを抽選しました (モックでは値は変わりません)");
+    }
+    if (el.id === "post-confirm") {
+      if (!armed) { armed = true; el.classList.add("armed"); el.textContent = "もう一度押すと確定します"; return; }
+      page = 1;
+      show(4, true);
+      return toast("事後コストを確定しました");
+    }
+    if (el.id === "timer-toggle") {
+      if (timer.running) { timer.remainSec = tRemain(); timer.running = false; clearInterval(timer.interval); timer.interval = null; }
+      else {
+        const sec = tParse(document.getElementById("dash-timer").value);
+        if (sec === null || sec <= 0) return toast("時間は 35:00 の形式で入力してください");
+        timer.startSec = sec; // RESET の戻し先は「直前に START した時間」
+        timer.remainSec = sec;
+        tStart(sec);
+      }
+      return tPaint();
+    }
+    if (el.id === "timer-reset" && !timer.running) { timer.remainSec = timer.startSec; document.activeElement.blur(); return tPaint(); }
+    if (el.id === "pin") { pinned = !pinned; el.setAttribute("aria-pressed", pinned); wake(); }
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.target.tagName === "INPUT") { if (ev.key === "Enter") document.getElementById("timer-toggle").click(); return; }
+    if (SCREENS[ev.key]) { page = 1; show(ev.key, true); }
+  });
+
+  // ===== 主催者のボタンを会場から隠す: マウスを 4 秒止めるとボタンとカーソルが消え、動かすと戻る =====
+  // ?op=pin で常に表示、?op=hide で常に隠す (スクリーンショット用)
+  let pinned = params.get("op") === "pin";
+  const forceHide = params.get("op") === "hide";
+  let idleTimer = null;
+  function wake() {
+    clearTimeout(idleTimer);
+    if (forceHide) return document.body.classList.add("venue");
+    document.body.classList.remove("venue");
+    if (!pinned) idleTimer = setTimeout(() => document.body.classList.add("venue"), 4000);
+  }
+  ["mousemove", "mousedown", "keydown", "touchstart"].forEach((type) => document.addEventListener(type, wake, { passive: true }));
+  document.getElementById("pin").setAttribute("aria-pressed", pinned);
+  document.querySelectorAll(".mockbar [data-n]").forEach((b) => b.setAttribute("aria-pressed", Number(b.dataset.n) === N));
+
+  function clock() {
+    const d = new Date();
+    document.getElementById("clock").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+  clock();
+  setInterval(clock, 15000);
+
+  show(params.get("state") || "1", false);
+  wake();
+})();
+</script>
+</body>
+</html>

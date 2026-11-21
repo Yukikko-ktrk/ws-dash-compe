@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>しまWS大会ダッシュボード — 16:9 Arena Edition</title>
+<style>
+  :root {
+    --font-sans: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+    --font-serif: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+    --font-mono: "IBM Plex Mono", "Cascadia Code", "Consolas", monospace;
+
+    /* Schwarz テーマ (主催者用・劇場黒基調) */
+    --bg-base: #0e1014;
+    --bg-surface: #14171e;
+    --card: #1b1f28;
+    --card-hover: #222734;
+    --card-edge: #2c3342;
+    --card-edge-light: #3d4659;
+
+    --ink: #f0f2f5;
+    --ink-sub: #b2b8c4;
+    --ink-muted: #727a8a;
+
+    --accent: #7ca3ff;
+    --accent-glow: rgba(124, 163, 255, 0.28);
+    --accent-dark: #1e283d;
+
+    --ok: #5eead4;
+    --ok-glow: rgba(94, 234, 212, 0.25);
+    --ok-bg: #112d27;
+
+    --wait: #fbbf24;
+    --wait-glow: rgba(251, 191, 36, 0.25);
+    --wait-bg: #352a11;
+
+    --danger: #f87171;
+    --danger-glow: rgba(248, 113, 113, 0.25);
+    --danger-bg: #38181a;
+
+    --secret-bg: #161922;
+    --secret-edge: #3c4456;
+    --secret-ink: #8f98aa;
+
+    --gold: #f59e0b;
+    --silver: #94a3b8;
+    --bronze: #d97706;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-base);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+
+  /* 16:9 全画面レイアウト */
+  .arena-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px 14px 14px;
+    background: radial-gradient(circle at 50% 0%, #171c26 0%, var(--bg-base) 75%);
+    overflow: hidden;
+  }
+
+  /* ==========================================================================
+     Top Bar & Director's Header
+     ========================================================================== */
+  .arena-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--card-edge);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    flex: none;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .app-branding {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .app-name {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .app-name::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .tournament-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badges-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    color: var(--ink-sub);
+    white-space: nowrap;
+  }
+  .chip.code { font-family: var(--font-mono); color: var(--accent); letter-spacing: 0.05em; }
+  .chip.rule { background: var(--accent-dark); border-color: var(--accent); color: var(--accent); }
+  .chip.live { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .chip.live::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 8px var(--ok);
+    animation: pulse 1.8s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.8; }
+  }
+
+  /* 人数切り替えピル (8人 / 16人) */
+  .players-toggle {
+    display: flex;
+    background: #090b0e;
+    padding: 2px;
+    border-radius: 7px;
+    border: 1px solid var(--card-edge);
+  }
+  .players-btn {
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .players-btn.active {
+    background: #252d3d;
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+
+  /* 主催者コントロール (Director's Dock) */
+  .director-dock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex: none;
+  }
+
+  /* 審査員・デモ用ステートスイッチャー */
+  .state-switcher {
+    display: flex;
+    background: #0b0d11;
+    padding: 2px;
+    border-radius: 7px;
+    border: 1px solid var(--card-edge);
+  }
+  .state-btn {
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  .state-btn:hover { color: var(--ink); }
+  .state-btn.active {
+    background: var(--accent);
+    color: #0b0d11;
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+
+  .nav-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-sub);
+    text-decoration: none;
+    padding: 5px 10px;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .nav-link-btn:hover {
+    color: #fff;
+    border-color: var(--accent);
+    background: var(--card-hover);
+  }
+
+  /* ==========================================================================
+     Main Split Layout (16:9 Arena)
+     ========================================================================== */
+  .arena-grid {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* 16人時のグリッド最適化: 8卓を綺麗に見せるため左幅をやや確保 */
+  .arena-grid.mode-16 {
+    grid-template-columns: 490px 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 1600px) {
+    .arena-grid {
+      grid-template-columns: 480px 1fr;
+      gap: 16px;
+    }
+    .arena-grid.mode-16 {
+      grid-template-columns: 540px 1fr;
+      gap: 16px;
+    }
+  }
+
+  /* ==========================================================================
+     Left Column: Operations & Arena Timer
+     ========================================================================== */
+  .col-ops {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .card-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--card-edge);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    position: relative;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 6px;
+    flex: none;
+  }
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .panel-title svg {
+    color: var(--accent);
+    flex: none;
+  }
+
+  /* --- 特大カウントダウンタイマー --- */
+  .timer-card {
+    background: linear-gradient(180deg, #181d27 0%, #12141a 100%);
+    border: 1px solid var(--card-edge);
+    border-radius: 12px;
+    padding: 10px 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    flex: none;
+  }
+  .timer-card::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .timer-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+  .timer-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    letter-spacing: 0.1em;
+  }
+  .timer-status-pill {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: var(--ok-bg);
+    color: var(--ok);
+    border: 1px solid var(--ok);
+  }
+  .timer-status-pill.stopped {
+    background: var(--wait-bg);
+    color: var(--wait);
+    border-color: var(--wait);
+  }
+
+  .timer-display-box {
+    margin: 2px 0 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .timer-digits {
+    font-family: var(--font-mono);
+    font-size: clamp(48px, 4.2vw, 72px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    background: transparent;
+    border: 1px dashed transparent;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%;
+    max-width: 340px;
+    cursor: text;
+    transition: all 0.2s;
+    text-shadow: 0 0 20px rgba(124, 163, 255, 0.4);
+  }
+  .timer-digits:hover {
+    border-color: var(--card-edge-light);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .timer-digits:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #0c0e13;
+  }
+  .timer-digits.timeup {
+    color: var(--danger);
+    text-shadow: 0 0 25px rgba(248, 113, 113, 0.6);
+    animation: flash 1s infinite alternate;
+  }
+  @keyframes flash {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  .timer-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 15px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .btn.primary {
+    background: var(--accent);
+    color: #0d1118;
+    box-shadow: 0 2px 10px var(--accent-glow);
+  }
+  .btn.primary:hover { background: #96b6ff; }
+  .btn.danger {
+    background: var(--danger);
+    color: #120506;
+    box-shadow: 0 2px 10px var(--danger-glow);
+  }
+  .btn.danger:hover { background: #fca5a5; }
+  .btn.ghost {
+    background: var(--card);
+    border-color: var(--card-edge);
+    color: var(--ink);
+  }
+  .btn.ghost:hover {
+    background: var(--card-hover);
+    border-color: var(--card-edge-light);
+  }
+  .btn.success {
+    background: var(--ok);
+    color: #051a14;
+    box-shadow: 0 2px 10px var(--ok-glow);
+  }
+  .btn.success:hover { background: #99f6e4; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .timer-hint {
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-top: 5px;
+  }
+
+  /* --- 進行状況 & ラウンド情報 --- */
+  .progress-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    margin-bottom: 4px;
+    flex: none;
+  }
+  .prog-bar-bg {
+    height: 5px;
+    border-radius: 99px;
+    background: var(--card);
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 1px solid var(--card-edge);
+    flex: none;
+  }
+  .prog-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--ok));
+    box-shadow: 0 0 10px var(--ok-glow);
+    transition: width 0.4s ease;
+  }
+
+  /* 対戦カードリスト (8人時は縦1列、16人時は2列グリッド) */
+  .matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .matches-list.grid-16 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .matches-list::-webkit-scrollbar { width: 5px; }
+  .matches-list::-webkit-scrollbar-thumb { background: var(--card-edge); border-radius: 4px; }
+
+  .match-card {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 7px;
+    padding: 7px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: border-color 0.2s;
+  }
+  .match-card:hover { border-color: var(--card-edge-light); }
+  .match-card.confirmed { border-left: 3px solid var(--ok); }
+  .match-card.pending { border-left: 3px solid var(--wait); }
+  .match-card.playing { border-left: 3px solid var(--accent); }
+
+  .match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+  }
+  .table-num {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--ink-sub);
+    letter-spacing: 0.05em;
+  }
+
+  .match-fighters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .fighter {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fighter.right { text-align: right; }
+  .fighter.winner { color: var(--ok); }
+  .fighter.loser { color: var(--ink-muted); text-decoration: line-through; }
+  .vs-sign {
+    font-family: var(--font-serif);
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    font-style: italic;
+    flex: none;
+  }
+
+  .match-deck-preview {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+  }
+  .deck-name-trunc {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 下書き時ドロップダウン */
+  .match-edit-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 2px;
+  }
+  .select-player {
+    flex: 1;
+    background: var(--bg-surface);
+    color: var(--ink);
+    border: 1px solid var(--card-edge);
+    border-radius: 4px;
+    padding: 3px 5px;
+    font-size: 11px;
+    font-family: var(--font-sans);
+    min-width: 0;
+  }
+
+  /* 下書き操作ツールバー */
+  .draft-actions-bar {
+    display: flex;
+    gap: 6px;
+    padding: 7px;
+    background: #0f1218;
+    border: 1px solid var(--card-edge);
+    border-radius: 8px;
+    margin-top: 6px;
+    flex: none;
+  }
+
+  /* ==========================================================================
+     Right Column: Leaderboard & Reveal Showcases
+     ========================================================================== */
+  .col-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  /* ランキングテーブル */
+  .ranking-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--card-edge);
+    border-radius: 10px;
+    padding: 12px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  /* 16人時の左右2列スプリットコンテナ */
+  .standings-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .ranking-table-container {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 2px;
+  }
+  .ranking-table-container::-webkit-scrollbar { width: 5px; }
+  .ranking-table-container::-webkit-scrollbar-thumb { background: var(--card-edge); border-radius: 4px; }
+
+  table.standings-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 4px;
+    font-size: 13px;
+  }
+
+  /* 16人モード時の文字・余白最適化 (本文18〜20px見え、遠くから読める) */
+  @media (min-width: 1400px) {
+    .mode-16 table.standings-table {
+      font-size: 14px;
+    }
+    .mode-16 .player-cell-main {
+      font-size: 15.5px !important;
+    }
+  }
+
+  table.standings-table th {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    text-align: left;
+    padding: 2px 6px 4px;
+    border-bottom: 1px solid var(--card-edge);
+    white-space: nowrap;
+  }
+  table.standings-table th.num { text-align: right; }
+
+  table.standings-table tbody tr {
+    background: var(--card);
+    transition: all 0.2s ease;
+  }
+  table.standings-table tbody tr:hover {
+    background: var(--card-hover);
+    transform: translateX(2px);
+  }
+
+  table.standings-table td {
+    padding: 5px 6px;
+    vertical-align: middle;
+    border-top: 1px solid var(--card-edge);
+    border-bottom: 1px solid var(--card-edge);
+  }
+  table.standings-table td:first-child {
+    border-left: 1px solid var(--card-edge);
+    border-radius: 7px 0 0 7px;
+  }
+  table.standings-table td:last-child {
+    border-right: 1px solid var(--card-edge);
+    border-radius: 0 7px 7px 0;
+  }
+
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 800;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ink);
+  }
+  .rank-1 .rank-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #120a02;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  }
+  .rank-2 .rank-badge {
+    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+    color: #0f172a;
+    box-shadow: 0 0 8px rgba(203, 213, 225, 0.3);
+  }
+  .rank-3 .rank-badge {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(217, 119, 6, 0.3);
+  }
+
+  .player-cell-main {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  /* デッキカード群 (横並び) */
+  .player-decks-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* デッキピル / カード */
+  .deck-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    border: 1px solid var(--card-edge-light);
+    background: #131720;
+    color: var(--ink);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .deck-pill.used-win {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.07);
+    color: var(--ink-muted);
+    text-decoration: line-through;
+  }
+  .deck-pill.used-win .deck-cost-tag {
+    background: #252830;
+    color: var(--ink-muted);
+  }
+  .deck-pill.revealed {
+    border-color: var(--accent);
+    background: rgba(124, 163, 255, 0.08);
+  }
+
+  /* 伏せカード (SECRET DECK) */
+  .deck-pill.secret {
+    background: linear-gradient(135deg, #131720 0%, #1a1e2a 100%);
+    border: 1px dashed var(--secret-edge);
+    color: var(--secret-ink);
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+    user-select: none;
+  }
+  .deck-pill.secret .secret-q {
+    font-family: var(--font-serif);
+    font-weight: 800;
+    color: var(--accent);
+    background: rgba(124, 163, 255, 0.15);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+  }
+
+  .deck-cost-tag {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    background: var(--card-edge);
+    color: var(--accent);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  .score-cell {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .omw-cell {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-sub);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ==========================================================================
+     Post-Cost Showcases (しま2026版 事後コスト発表パネル)
+     ========================================================================== */
+  .postcost-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .postcost-hero {
+    background: linear-gradient(135deg, #1a2233 0%, #10141e 100%);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 10px 16px;
+    box-shadow: 0 0 20px rgba(124, 163, 255, 0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 12px;
+    flex: none;
+  }
+  .postcost-hero-title h2 {
+    font-size: 16.5px;
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .postcost-hero-desc {
+    font-size: 11.5px;
+    color: var(--ink-sub);
+    margin-top: 2px;
+  }
+
+  .postcost-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: none;
+  }
+
+  .postcost-tables-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .post-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--card-edge);
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .post-card h3 {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-sub);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex: none;
+  }
+
+  /* 事後コストソート表 */
+  .post-standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .post-standings-table th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    padding: 3px 5px;
+    border-bottom: 1px solid var(--card-edge);
+    white-space: nowrap;
+  }
+  .post-standings-table th.num, .post-standings-table td.num { text-align: right; }
+  .post-standings-table td {
+    padding: 4px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+  }
+
+  .cost-delta-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .cost-delta-badge.plus { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+  .cost-delta-badge.minus { background: rgba(94, 234, 212, 0.15); color: var(--ok); }
+  .cost-delta-badge.zero { background: var(--card-edge); color: var(--ink-muted); }
+
+  .total-cost-display {
+    font-family: var(--font-mono);
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  /* 持ち込みタイトル限定コスト一覧 */
+  .registered-titles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .registered-titles-list.grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .registered-titles-list::-webkit-scrollbar { width: 5px; }
+  .registered-titles-list::-webkit-scrollbar-thumb { background: var(--card-edge); border-radius: 4px; }
+
+  .title-cost-item {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 6px;
+    padding: 5px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .title-cost-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .title-cost-cx {
+    font-size: 10px;
+    color: var(--ink-muted);
+  }
+  .title-cost-values {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  /* 16人時事後コスト表の左右比率最適化 */
+  .postcost-tables-grid.mode-16 {
+    grid-template-columns: 1.3fr 0.9fr;
+    gap: 12px;
+  }
+
+  /* ==========================================================================
+     Responsive & Projection Adaptations (1080p Arena & 720p Projection)
+     ========================================================================== */
+  /* 1080p (1920x1080) 会場プロジェクター・大型モニター最適化: 本文20px基準 */
+  @media (min-width: 1600px) and (min-height: 850px) {
+    html, body {
+      font-size: 14.5px;
+    }
+    .player-cell-main {
+      font-size: 18.5px !important;
+    }
+    .match-fighters {
+      font-size: 15px;
+    }
+    .table-num {
+      font-size: 12px;
+    }
+    .deck-pill {
+      font-size: 11.5px;
+      padding: 2px 7px;
+    }
+    .deck-cost-tag {
+      font-size: 10.5px;
+    }
+    .score-cell {
+      font-size: 15px;
+    }
+    .timer-digits {
+      font-size: 68px;
+    }
+    .postcost-hero-title h2 {
+      font-size: 19px;
+    }
+    .postcost-hero-desc {
+      font-size: 12.5px;
+    }
+    .total-cost-display {
+      font-size: 16px;
+    }
+  }
+
+  /* 720p (1280x720) 会場プロジェクター対応: スクロールバーゼロ保証 */
+  @media (max-height: 800px) {
+    html, body {
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .arena-wrapper {
+      padding: 6px 10px 8px;
+    }
+    .arena-header {
+      padding: 4px 10px;
+      margin-bottom: 6px;
+    }
+    .app-name {
+      font-size: 15px;
+    }
+    .tournament-title {
+      font-size: 12.5px;
+    }
+    .card-panel {
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+    .panel-header {
+      margin-bottom: 4px;
+      padding-bottom: 3px;
+    }
+    .timer-card {
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .timer-digits {
+      font-size: 38px;
+    }
+    .timer-controls .btn {
+      padding: 3px 10px;
+      font-size: 11px;
+    }
+    .timer-hint {
+      display: none;
+    }
+    .progress-summary {
+      font-size: 10.5px;
+      margin-bottom: 2px;
+    }
+    .prog-bar-bg {
+      height: 4px;
+      margin-bottom: 4px;
+    }
+    .match-card {
+      padding: 4px 7px;
+      gap: 1px;
+    }
+    .match-fighters {
+      font-size: 11.5px;
+    }
+    .match-deck-preview {
+      font-size: 9.5px;
+    }
+    .table-num {
+      font-size: 9.5px;
+    }
+    .ranking-card {
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+    table.standings-table {
+      font-size: 11.5px;
+      border-spacing: 0 2px;
+    }
+    table.standings-table td {
+      padding: 3px 5px;
+    }
+    .player-cell-main {
+      font-size: 12.5px !important;
+    }
+    .rank-badge {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+    }
+    .deck-pill {
+      font-size: 9.5px;
+      padding: 1px 4px;
+      gap: 3px;
+    }
+    .deck-cost-tag {
+      font-size: 8.5px;
+    }
+    .score-cell {
+      font-size: 11.5px;
+    }
+    .omw-cell {
+      font-size: 10px;
+    }
+    .postcost-hero {
+      padding: 5px 12px;
+      gap: 8px;
+    }
+    .postcost-hero-title h2 {
+      font-size: 14px;
+    }
+    .postcost-hero-desc {
+      font-size: 10.5px;
+    }
+    .post-card {
+      padding: 6px 10px;
+    }
+    .post-card h3 {
+      font-size: 11px;
+      margin-bottom: 4px;
+      padding-bottom: 3px;
+    }
+    .post-standings-table td {
+      padding: 2px 4px;
+    }
+    .title-cost-item {
+      padding: 3px 6px;
+    }
+    .title-cost-name {
+      font-size: 11px;
+    }
+    .title-cost-values {
+      font-size: 10.5px;
+    }
+  }
+  @media (max-width: 900px) {
+    .arena-wrapper {
+      height: auto;
+      overflow-y: auto;
+    }
+    .arena-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .director-dock {
+      width: 100%;
+      justify-content: space-between;
+      overflow-x: auto;
+    }
+    .arena-grid, .arena-grid.mode-16 {
+      grid-template-columns: 1fr;
+    }
+    .standings-split-grid {
+      grid-template-columns: 1fr;
+    }
+    .postcost-tables-grid {
+      grid-template-columns: 1fr;
+    }
+    .postcost-hero {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .timer-digits {
+      font-size: 52px;
+    }
+  }
+
+  /* トースト通知 */
+  #arena-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #11141c;
+    border: 1px solid var(--accent);
+    color: var(--ink);
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 12.5px;
+    font-weight: 700;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 999;
+  }
+  #arena-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="arena-wrapper">
+
+  <!-- ========================================================================
+       TOP BAR: Header & Organizer Director's Dock
+       ======================================================================== -->
+  <header class="arena-header">
+    <div class="header-left">
+      <div class="app-branding">
+        <span class="app-name">しまWS</span>
+        <span class="tournament-title" id="tour-name">第3回 しま交流CS ピラミッド王決定戦</span>
+      </div>
+      <div class="badges-group">
+        <span class="chip code">ROOM: S2026</span>
+        <span class="chip rule">しま2026版ピラミッド (持ち込みOn)</span>
+        
+        <!-- 人数切り替えスイッチ (8人 / 16人) -->
+        <div class="players-toggle" role="group" aria-label="参加者数切り替え">
+          <button class="players-btn active" id="btn-p8" onclick="switchPlayersMode(8)">8人 (4卓)</button>
+          <button class="players-btn" id="btn-p16" onclick="switchPlayersMode(16)">16人 (8卓)</button>
+        </div>
+        <span class="chip" id="participant-count-chip">8名参加 (4卓)</span>
+
+        <span class="chip live" id="live-indicator">LIVE ONSITE</span>
+      </div>
+    </div>
+
+    <!-- 主催者コントロール兼ステートセレクター -->
+    <div class="director-dock">
+      <!-- 状態切替セレクター (検証用 / プレゼン用) -->
+      <div class="state-switcher" role="tablist" aria-label="状態切り替え">
+        <button class="state-btn active" id="btn-state-running" onclick="switchState('running')">1. ラウンド中</button>
+        <button class="state-btn" id="btn-state-draft" onclick="switchState('draft')">2. マッチング下書き</button>
+        <button class="state-btn" id="btn-state-post-draft" onclick="switchState('post_draft')">3. 事後コスト下書き</button>
+        <button class="state-btn" id="btn-state-post-result" onclick="switchState('post_result')">4. 事後コスト発表</button>
+      </div>
+
+      <!-- 例外対応・修正用リンク -->
+      <a href="../../organizer.html#o-result" class="nav-link-btn" title="戦績の手動確定や組み合わせの修正を行う別タブへ">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        大会進行修正 ↗
+      </a>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN 16:9 ARENA CONTENT (Dynamic per State & Mode)
+       ======================================================================== -->
+  <main class="arena-grid" id="main-arena">
+    <!-- JSでレンダリング -->
+  </main>
+
+</div>
+
+<div id="arena-toast"></div>
+
+<script>
+// ==========================================================================
+// 参加者データ (8人および16人拡張版、実在タイトル)
+// ==========================================================================
+const BASE_PLAYERS_8 = [
+  {
+    id: "p1", name: "アリス", wins: 2, losses: 0, draws: 0, omw: 0.667, rank: 1,
+    decks: [
+      { id: "d1_1", title: "アイドルマスター シャイニーカラーズ", cx: "8スタンバイ", baseCost: 3.5, usedWin: true },
+      { id: "d1_2", title: "葬送のフリーレン", cx: "4扉2ディスカバリー", baseCost: 2.0, usedWin: true },
+      { id: "d1_3", title: "ヘブンバーンズレッド", cx: "8チョイス", baseCost: 1.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p2", name: "ボブ", wins: 2, losses: 0, draws: 0, omw: 0.500, rank: 2,
+    decks: [
+      { id: "d2_1", title: "ホロライブプロダクション", cx: "8チョイス", baseCost: 4.0, usedWin: true },
+      { id: "d2_2", title: "ぼっち・ざ・ろっく！", cx: "4扉4本", baseCost: 2.5, usedWin: false },
+      { id: "d2_3", title: "ブルーアーカイブ", cx: "8門", baseCost: 1.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p3", name: "チャーリー", wins: 1, losses: 1, draws: 0, omw: 0.750, rank: 3,
+    decks: [
+      { id: "d3_1", title: "ウマ娘 プリティーダービー", cx: "8宝", baseCost: 3.0, usedWin: true },
+      { id: "d3_2", title: "勝利の女神：NIKKE", cx: "4ショット4門", baseCost: 2.0, usedWin: false },
+      { id: "d3_3", title: "電撃文庫", cx: "8扉", baseCost: 2.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p4", name: "ダイヤ", wins: 1, losses: 1, draws: 0, omw: 0.625, rank: 4,
+    decks: [
+      { id: "d4_1", title: "ラブライブ！蓮ノ空女学院スクールアイドルクラブ", cx: "8スタンバイ", baseCost: 3.5, usedWin: true },
+      { id: "d4_2", title: "五等分の花嫁", cx: "4チョイス4扉", baseCost: 2.0, usedWin: false },
+      { id: "d4_3", title: "ガールズバンドクライ", cx: "8本", baseCost: 1.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p5", name: "エレン", wins: 1, losses: 1, draws: 0, omw: 0.500, rank: 5,
+    decks: [
+      { id: "d5_1", title: "進撃の巨人", cx: "4扉4ショット", baseCost: 2.0, usedWin: true },
+      { id: "d5_2", title: "チェンソーマン", cx: "8チョイス", baseCost: 2.5, usedWin: false },
+      { id: "d5_3", title: "怪獣８号", cx: "8門", baseCost: 1.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p6", name: "フラン", wins: 1, losses: 1, draws: 0, omw: 0.375, rank: 6,
+    decks: [
+      { id: "d6_1", title: "東方Project", cx: "8宝", baseCost: 2.0, usedWin: true },
+      { id: "d6_2", title: "アズールレーン", cx: "4扉4スタンバイ", baseCost: 3.0, usedWin: false },
+      { id: "d6_3", title: "Disney100", cx: "8門", baseCost: 2.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p7", name: "ギン", wins: 0, losses: 2, draws: 0, omw: 0.625, rank: 7,
+    decks: [
+      { id: "d7_1", title: "ソードアート・オンライン", cx: "8門", baseCost: 3.0, usedWin: false },
+      { id: "d7_2", title: "オーバーロード", cx: "8本", baseCost: 2.5, usedWin: false },
+      { id: "d7_3", title: "ダンジョンに出会いを求めるのは間違っているだろうか", cx: "4扉4宝", baseCost: 1.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p8", name: "ハル", wins: 0, losses: 2, draws: 0, omw: 0.458, rank: 8,
+    decks: [
+      { id: "d8_1", title: "学園アイドルマスター", cx: "8チョイス", baseCost: 3.5, usedWin: false },
+      { id: "d8_2", title: "SPY×FAMILY", cx: "4扉4本", baseCost: 2.0, usedWin: false },
+      { id: "d8_3", title: "Summer Pockets", cx: "8門", baseCost: 1.5, usedWin: false }
+    ]
+  }
+];
+
+// 16人時の追加参加者 8名 (実在タイトル)
+const EXTRA_PLAYERS_8 = [
+  {
+    id: "p9", name: "イチカ", wins: 2, losses: 0, draws: 0, omw: 0.708, rank: 3,
+    decks: [
+      { id: "d9_1", title: "リコリス・リコイル", cx: "8門", baseCost: 3.5, usedWin: true },
+      { id: "d9_2", title: "痛いのは嫌なので防御力に極振りしたいと思います。", cx: "4扉4本", baseCost: 2.0, usedWin: true },
+      { id: "d9_3", title: "チェンソーマン", cx: "8チョイス", baseCost: 2.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p10", name: "ジロウ", wins: 2, losses: 0, draws: 0, omw: 0.583, rank: 4,
+    decks: [
+      { id: "d10_1", title: "デート・ア・ライブ", cx: "8スタンバイ", baseCost: 3.5, usedWin: true },
+      { id: "d10_2", title: "転生したらスライムだった件", cx: "8チョイス", baseCost: 2.5, usedWin: true },
+      { id: "d10_3", title: "アサルトリリィ", cx: "8門", baseCost: 1.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p11", name: "サブロウ", wins: 1, losses: 1, draws: 0, omw: 0.625, rank: 7,
+    decks: [
+      { id: "d11_1", title: "かぐや様は告らせたい～天才たちの恋愛頭脳戦～", cx: "4扉4本", baseCost: 2.5, usedWin: true },
+      { id: "d11_2", title: "ぼっち・ざ・ろっく！", cx: "8門", baseCost: 2.5, usedWin: false },
+      { id: "d11_3", title: "葬送のフリーレン", cx: "8チョイス", baseCost: 2.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p12", name: "シロウ", wins: 1, losses: 1, draws: 0, omw: 0.542, rank: 8,
+    decks: [
+      { id: "d12_1", title: "無職転生 ～異世界行ったら本気だす～", cx: "8スタンバイ", baseCost: 3.0, usedWin: true },
+      { id: "d12_2", title: "五等分の花嫁", cx: "8本", baseCost: 2.0, usedWin: false },
+      { id: "d12_3", title: "シャイニーカラーズ", cx: "8チョイス", baseCost: 2.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p13", name: "ゴロウ", wins: 1, losses: 1, draws: 0, omw: 0.500, rank: 11,
+    decks: [
+      { id: "d13_1", title: "BanG Dream!", cx: "8宝", baseCost: 2.5, usedWin: true },
+      { id: "d13_2", title: "ガールズバンドクライ", cx: "8門", baseCost: 1.5, usedWin: false },
+      { id: "d13_3", title: "ホロライブプロダクション", cx: "4扉4本", baseCost: 3.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p14", name: "ロクロウ", wins: 1, losses: 1, draws: 0, omw: 0.458, rank: 12,
+    decks: [
+      { id: "d14_1", title: "ウマ娘 プリティーダービー", cx: "8チョイス", baseCost: 3.0, usedWin: true },
+      { id: "d14_2", title: "ヘブンバーンズレッド", cx: "8本", baseCost: 1.5, usedWin: false },
+      { id: "d14_3", title: "蓮ノ空女学院スクールアイドルクラブ", cx: "8門", baseCost: 2.5, usedWin: false }
+    ]
+  },
+  {
+    id: "p15", name: "ナナ", wins: 0, losses: 2, draws: 0, omw: 0.583, rank: 15,
+    decks: [
+      { id: "d15_1", title: "ソードアート・オンライン", cx: "4扉4本", baseCost: 2.5, usedWin: false },
+      { id: "d15_2", title: "ブルーアーカイブ", cx: "8チョイス", baseCost: 1.5, usedWin: false },
+      { id: "d15_3", title: "東方Project", cx: "8門", baseCost: 2.0, usedWin: false }
+    ]
+  },
+  {
+    id: "p16", name: "ハチロウ", wins: 0, losses: 2, draws: 0, omw: 0.417, rank: 16,
+    decks: [
+      { id: "d16_1", title: "学園アイドルマスター", cx: "8スタンバイ", baseCost: 3.5, usedWin: false },
+      { id: "d16_2", title: "アズールレーン", cx: "8宝", baseCost: 2.5, usedWin: false },
+      { id: "d16_3", title: "電撃文庫", cx: "4扉4本", baseCost: 2.0, usedWin: false }
+    ]
+  }
+];
+
+// 16人全員を順位ソートした統合リスト
+function getPlayersData(count) {
+  if (count === 8) return BASE_PLAYERS_8;
+  const merged = [...BASE_PLAYERS_8, ...EXTRA_PLAYERS_8].sort((a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    if (b.omw !== a.omw) return b.omw - a.omw;
+    return a.losses - b.losses;
+  });
+  return merged.map((p, idx) => ({ ...p, rank: idx + 1 }));
+}
+
+// 持ち込みタイトルの基本リスト
+const BASE_TITLES = [
+  { title: "ホロライブプロダクション", cx: "8チョイス", base: 4.0, delta: +0.4, after: 4.4 },
+  { title: "アイドルマスター シャイニーカラーズ", cx: "8スタンバイ", base: 3.5, delta: -0.3, after: 3.2 },
+  { title: "ラブライブ！蓮ノ空女学院スクールアイドルクラブ", cx: "8スタンバイ", base: 3.5, delta: +0.5, after: 4.0 },
+  { title: "学園アイドルマスター", cx: "8チョイス", base: 3.5, delta: +0.1, after: 3.6 },
+  { title: "リコリス・リコイル", cx: "8門", base: 3.5, delta: -0.2, after: 3.3 },
+  { title: "デート・ア・ライブ", cx: "8スタンバイ", base: 3.5, delta: +0.4, after: 3.9 },
+  { title: "ウマ娘 プリティーダービー", cx: "8宝", base: 3.0, delta: -0.2, after: 2.8 },
+  { title: "ソードアート・オンライン", cx: "8門", base: 3.0, delta: +0.3, after: 3.3 },
+  { title: "アズールレーン", cx: "4扉4スタンバイ", base: 3.0, delta: -0.5, after: 2.5 },
+  { title: "無職転生 ～異世界行ったら本気だす～", cx: "8スタンバイ", base: 3.0, delta: +0.2, after: 3.2 },
+  { title: "ぼっち・ざ・ろっく！", cx: "4扉4本", base: 2.5, delta: +0.4, after: 2.9 },
+  { title: "チェンソーマン", cx: "8チョイス", base: 2.5, delta: +0.0, after: 2.5 },
+  { title: "オーバーロード", cx: "8本", base: 2.5, delta: -0.1, after: 2.4 },
+  { title: "Disney100", cx: "8門", base: 2.5, delta: +0.2, after: 2.7 },
+  { title: "かぐや様は告らせたい～天才たちの恋愛頭脳戦～", cx: "4扉4本", base: 2.5, delta: +0.1, after: 2.6 },
+  { title: "転生したらスライムだった件", cx: "8チョイス", base: 2.5, delta: -0.3, after: 2.2 },
+  { title: "BanG Dream!", cx: "8宝", base: 2.5, delta: +0.3, after: 2.8 },
+  { title: "葬送のフリーレン", cx: "4扉2ディスカバリー", base: 2.0, delta: +0.4, after: 2.4 },
+  { title: "勝利の女神：NIKKE", cx: "4ショット4門", base: 2.0, delta: -0.4, after: 1.6 },
+  { title: "電撃文庫", cx: "8扉", base: 2.0, delta: +0.3, after: 2.3 },
+  { title: "進撃の巨人", cx: "4扉4ショット", base: 2.0, delta: -0.2, after: 1.8 },
+  { title: "東方Project", cx: "8宝", base: 2.0, delta: +0.5, after: 2.5 },
+  { title: "五等分の花嫁", cx: "4チョイス4扉", base: 2.0, delta: -0.3, after: 1.7 },
+  { title: "SPY×FAMILY", cx: "4扉4本", base: 2.0, delta: +0.1, after: 2.1 },
+  { title: "痛いのは嫌なので防御力に極振りしたいと思います。", cx: "4扉4本", base: 2.0, delta: -0.1, after: 1.9 },
+  { title: "ヘブンバーンズレッド", cx: "8チョイス", base: 1.5, delta: +0.3, after: 1.8 },
+  { title: "ガールズバンドクライ", cx: "8本", base: 1.5, delta: -0.2, after: 1.3 },
+  { title: "ダンジョンに出会いを求めるのは間違っているだろうか", cx: "4扉4宝", base: 1.5, delta: +0.2, after: 1.7 },
+  { title: "Summer Pockets", cx: "8門", base: 1.5, delta: -0.4, after: 1.1 },
+  { title: "アサルトリリィ", cx: "8門", base: 1.5, delta: +0.1, after: 1.6 },
+  { title: "ブルーアーカイブ", cx: "8門", base: 1.0, delta: +0.5, after: 1.5 },
+  { title: "怪獣８号", cx: "8門", base: 1.0, delta: -0.1, after: 0.9 }
+];
+
+// ==========================================================================
+// カウントダウンタイマー (初期値 35:00)
+// ==========================================================================
+const timerState = {
+  running: false,
+  remainSec: 35 * 60,
+  startSec: 35 * 60,
+  intervalId: null
+};
+
+function formatTimer(sec) {
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${String(m).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+}
+
+function parseTimer(str) {
+  const parts = String(str || "").trim().split(":");
+  if (parts.length === 2) {
+    const m = parseInt(parts[0], 10);
+    const s = parseInt(parts[1], 10);
+    if (!isNaN(m) && !isNaN(s)) return m * 60 + s;
+  } else if (parts.length === 1) {
+    const m = parseInt(parts[0], 10);
+    if (!isNaN(m)) return m * 60;
+  }
+  return null;
+}
+
+function timerStart() {
+  if (timerState.running) return;
+  const inputEl = document.getElementById("timer-input");
+  if (inputEl) {
+    const parsed = parseTimer(inputEl.value);
+    if (parsed !== null && parsed > 0) {
+      timerState.remainSec = parsed;
+      timerState.startSec = parsed;
+    }
+  }
+  timerState.running = true;
+  clearInterval(timerState.intervalId);
+  timerState.intervalId = setInterval(() => {
+    if (timerState.remainSec > 0) {
+      timerState.remainSec--;
+      updateTimerDisplay();
+    } else {
+      timerState.running = false;
+      clearInterval(timerState.intervalId);
+      updateTimerDisplay();
+      showToast("⏰ 対戦時間終了 (00:00) です！");
+    }
+  }, 1000);
+  updateTimerDisplay();
+  showToast("タイマーをスタートしました");
+}
+
+function timerStop() {
+  if (!timerState.running) return;
+  timerState.running = false;
+  clearInterval(timerState.intervalId);
+  updateTimerDisplay();
+  showToast("タイマーを停止しました");
+}
+
+function timerReset() {
+  timerState.running = false;
+  clearInterval(timerState.intervalId);
+  timerState.remainSec = timerState.startSec || 35 * 60;
+  updateTimerDisplay();
+  showToast("タイマーを初期値にリセットしました");
+}
+
+function updateTimerDisplay() {
+  const inputEl = document.getElementById("timer-input");
+  const pillEl = document.getElementById("timer-status-pill");
+  const btnStart = document.getElementById("btn-timer-start");
+  const btnStop = document.getElementById("btn-timer-stop");
+  const btnReset = document.getElementById("btn-timer-reset");
+
+  if (!inputEl) return;
+  inputEl.value = formatTimer(timerState.remainSec);
+  inputEl.readOnly = timerState.running;
+
+  if (timerState.remainSec <= 0) {
+    inputEl.classList.add("timeup");
+  } else {
+    inputEl.classList.remove("timeup");
+  }
+
+  if (pillEl) {
+    if (timerState.running) {
+      pillEl.textContent = "COUNTING DOWN";
+      pillEl.className = "timer-status-pill";
+    } else {
+      pillEl.textContent = "PAUSED";
+      pillEl.className = "timer-status-pill stopped";
+    }
+  }
+
+  if (btnStart && btnStop && btnReset) {
+    btnStart.style.display = timerState.running ? "none" : "inline-flex";
+    btnStop.style.display = timerState.running ? "inline-flex" : "none";
+    btnReset.disabled = timerState.running;
+  }
+}
+
+function onTimerInput(e) {
+  if (timerState.running) return;
+  const val = parseTimer(e.target.value);
+  if (val !== null) {
+    timerState.remainSec = val;
+    timerState.startSec = val;
+  }
+}
+
+// ==========================================================================
+// 画面状態 & 人数モード管理
+// ==========================================================================
+let currentState = "running"; // "running" | "draft" | "post_draft" | "post_result"
+let currentPlayers = 8;       // 8 or 16
+let postCostConfirmArmed = false;
+
+function showToast(msg) {
+  const t = document.getElementById("arena-toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function switchState(stateName) {
+  currentState = stateName;
+  postCostConfirmArmed = false;
+  updateUrlParams();
+
+  document.querySelectorAll(".state-btn").forEach(btn => btn.classList.remove("active"));
+  const activeBtn = document.getElementById(`btn-state-${stateName.replace("_", "-")}`);
+  if (activeBtn) activeBtn.classList.add("active");
+
+  renderArena();
+}
+
+function switchPlayersMode(count) {
+  currentPlayers = count;
+  updateUrlParams();
+
+  document.getElementById("btn-p8").classList.toggle("active", count === 8);
+  document.getElementById("btn-p16").classList.toggle("active", count === 16);
+
+  const arena = document.getElementById("main-arena");
+  if (arena) {
+    arena.classList.toggle("mode-16", count === 16);
+  }
+
+  const chip = document.getElementById("participant-count-chip");
+  if (chip) chip.textContent = `${count}名参加 (${count / 2}卓)`;
+
+  showToast(`${count}人大会モードに切り替えました`);
+  renderArena();
+}
+
+function updateUrlParams() {
+  const url = new URL(window.location);
+  url.searchParams.set("state", currentState);
+  url.searchParams.set("players", currentPlayers);
+  window.history.replaceState({}, "", url);
+}
+
+// ==========================================================================
+// 状態別レンダラー
+// ==========================================================================
+function renderArena() {
+  const arena = document.getElementById("main-arena");
+  if (!arena) return;
+
+  arena.classList.toggle("mode-16", currentPlayers === 16);
+
+  if (currentState === "running") {
+    arena.innerHTML = `
+      ${renderOpsColumnRunning()}
+      ${renderStageColumnStandings(false)}
+    `;
+    updateTimerDisplay();
+  } else if (currentState === "draft") {
+    arena.innerHTML = `
+      ${renderOpsColumnDraft()}
+      ${renderStageColumnStandings(true)}
+    `;
+    updateTimerDisplay();
+  } else if (currentState === "post_draft") {
+    arena.innerHTML = renderPostCostDraftView();
+  } else if (currentState === "post_result") {
+    arena.innerHTML = renderPostCostResultView();
+  }
+}
+
+// --------------------------------------------------------------------------
+// 状態1: ラウンド中 (タイマー動作中・組み合わせと報告状況)
+// --------------------------------------------------------------------------
+function renderOpsColumnRunning() {
+  const is16 = currentPlayers === 16;
+  const confirmedCount = is16 ? 6 : 3;
+  const totalTables = is16 ? 8 : 4;
+  const pct = Math.round((confirmedCount / totalTables) * 100);
+
+  const matches8 = `
+    <!-- 卓1: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 1</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">アリス (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">チャーリー</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 葬送のフリーレン</span>
+        <span class="deck-name-trunc">使用: 勝利の女神：NIKKE</span>
+      </div>
+    </div>
+    <!-- 卓2: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 2</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">ボブ (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">ダイヤ</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: ホロライブ</span>
+        <span class="deck-name-trunc">使用: 蓮ノ空女学院</span>
+      </div>
+    </div>
+    <!-- 卓3: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 3</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">エレン (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">ギン</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 進撃の巨人</span>
+        <span class="deck-name-trunc">使用: ソードアート・オンライン</span>
+      </div>
+    </div>
+    <!-- 卓4: 対戦中・承諾待ち -->
+    <div class="match-card pending">
+      <div class="match-header">
+        <span class="table-num">TABLE 4</span>
+        <span class="chip" style="background:var(--wait-bg); color:var(--wait); border-color:var(--wait);">フラン報告・承諾待ち</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">フラン</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ハル</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 東方Project</span>
+        <span class="deck-name-trunc">使用: 学園アイドルマスター</span>
+      </div>
+    </div>
+  `;
+
+  const extraMatches16 = `
+    <!-- 卓5: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 5</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">イチカ (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">サブロウ</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 痛いのは嫌なので…</span>
+        <span class="deck-name-trunc">使用: かぐや様は告らせたい</span>
+      </div>
+    </div>
+    <!-- 卓6: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 6</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">ジロウ (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">シロウ</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 転スラ</span>
+        <span class="deck-name-trunc">使用: 五等分の花嫁</span>
+      </div>
+    </div>
+    <!-- 卓7: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 7</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">ゴロウ (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">ナナ</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: BanG Dream!</span>
+        <span class="deck-name-trunc">使用: ブルーアーカイブ</span>
+      </div>
+    </div>
+    <!-- 卓8: 対戦中 -->
+    <div class="match-card playing">
+      <div class="match-header">
+        <span class="table-num">TABLE 8</span>
+        <span class="chip" style="background:rgba(124,163,255,0.15); color:var(--accent); border-color:var(--accent);">対戦中</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">ロクロウ</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ハチロウ</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: ウマ娘</span>
+        <span class="deck-name-trunc">使用: 電撃文庫</span>
+      </div>
+    </div>
+  `;
+
+  return `
+    <div class="col-ops">
+      <!-- カウントダウンタイマー -->
+      <div class="timer-card">
+        <div class="timer-badge-row">
+          <span class="timer-label">ROUND 2 TIMER</span>
+          <span class="timer-status-pill" id="timer-status-pill">PAUSED</span>
+        </div>
+        <div class="timer-display-box">
+          <input type="text" id="timer-input" class="timer-digits" value="${formatTimer(timerState.remainSec)}"
+                 onchange="onTimerInput(event)" aria-label="対戦タイマー" />
+        </div>
+        <div class="timer-controls">
+          <button class="btn primary" id="btn-timer-start" onclick="timerStart()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            START
+          </button>
+          <button class="btn danger" id="btn-timer-stop" style="display:none;" onclick="timerStop()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            STOP
+          </button>
+          <button class="btn ghost" id="btn-timer-reset" onclick="timerReset()">
+            RESET
+          </button>
+        </div>
+        <div class="timer-hint">※ 数字を直接クリックして時間を編集できます（初期値 35:00）</div>
+      </div>
+
+      <!-- ラウンド進行＆卓状況 -->
+      <div class="card-panel" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+            Round 2 進行状況 (${totalTables}卓)
+          </span>
+          <span class="chip live">進行中</span>
+        </div>
+
+        <div class="progress-summary">
+          <span>報告状況: <strong>${confirmedCount} / ${totalTables} 卓確定</strong></span>
+          <span style="color:var(--ok); font-weight:700;">${pct}% 完了</span>
+        </div>
+        <div class="prog-bar-bg">
+          <div class="prog-bar-fill" style="width: ${pct}%;"></div>
+        </div>
+
+        <!-- 8人時は縦1列、16人時は2列グリッドでスクロールなし！ -->
+        <div class="matches-list ${is16 ? "grid-16" : ""}">
+          ${matches8}
+          ${is16 ? extraMatches16 : ""}
+        </div>
+
+        <!-- 主催者オペレーションバー -->
+        <div style="margin-top:6px; padding-top:6px; border-top:1px solid var(--card-edge); display:flex; justify-content:space-between; align-items:center; flex:none;">
+          <span style="font-size:11px; color:var(--ink-muted);">※全卓確定すると次ラウンドへ進めます</span>
+          <button class="btn ghost" style="padding:4px 9px; font-size:11px;" onclick="simulateRoundClose()">
+            全卓確定を代行 ❯
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// --------------------------------------------------------------------------
+// 状態2: マッチング下書き (抽選後・公開前)
+// --------------------------------------------------------------------------
+function renderOpsColumnDraft() {
+  const is16 = currentPlayers === 16;
+  const totalTables = is16 ? 8 : 4;
+
+  const matches8Draft = `
+    <!-- 下書き卓1 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 1</span>
+        <span class="chip">2勝0敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player" aria-label="プレイヤー1">
+          <option selected>アリス (2-0)</option>
+          <option>ボブ (2-0)</option>
+        </select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player" aria-label="プレイヤー2">
+          <option selected>ボブ (2-0)</option>
+          <option>アリス (2-0)</option>
+        </select>
+      </div>
+    </div>
+    <!-- 下書き卓2 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 2</span>
+        <span class="chip">1勝1敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player" aria-label="プレイヤー1">
+          <option selected>チャーリー (1-1)</option>
+          <option>ダイヤ (1-1)</option>
+        </select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player" aria-label="プレイヤー2">
+          <option selected>ダイヤ (1-1)</option>
+          <option>エレン (1-1)</option>
+        </select>
+      </div>
+    </div>
+    <!-- 下書き卓3 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 3</span>
+        <span class="chip">1勝1敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player" aria-label="プレイヤー1">
+          <option selected>エレン (1-1)</option>
+          <option>フラン (1-1)</option>
+        </select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player" aria-label="プレイヤー2">
+          <option selected>フラン (1-1)</option>
+          <option>チャーリー (1-1)</option>
+        </select>
+      </div>
+    </div>
+    <!-- 下書き卓4 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 4</span>
+        <span class="chip">0勝2敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player" aria-label="プレイヤー1">
+          <option selected>ギン (0-2)</option>
+          <option>ハル (0-2)</option>
+        </select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player" aria-label="プレイヤー2">
+          <option selected>ハル (0-2)</option>
+          <option>ギン (0-2)</option>
+        </select>
+      </div>
+    </div>
+  `;
+
+  const extraMatches16Draft = `
+    <!-- 下書き卓5 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 5</span>
+        <span class="chip">2勝0敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player"><option selected>イチカ (2-0)</option></select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player"><option selected>ジロウ (2-0)</option></select>
+      </div>
+    </div>
+    <!-- 下書き卓6 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 6</span>
+        <span class="chip">1勝1敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player"><option selected>サブロウ (1-1)</option></select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player"><option selected>シロウ (1-1)</option></select>
+      </div>
+    </div>
+    <!-- 下書き卓7 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 7</span>
+        <span class="chip">1勝1敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player"><option selected>ゴロウ (1-1)</option></select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player"><option selected>ロクロウ (1-1)</option></select>
+      </div>
+    </div>
+    <!-- 下書き卓8 -->
+    <div class="match-card">
+      <div class="match-header">
+        <span class="table-num">TABLE 8</span>
+        <span class="chip">0勝2敗同士</span>
+      </div>
+      <div class="match-edit-row">
+        <select class="select-player"><option selected>ナナ (0-2)</option></select>
+        <span class="vs-sign">VS</span>
+        <select class="select-player"><option selected>ハチロウ (0-2)</option></select>
+      </div>
+    </div>
+  `;
+
+  return `
+    <div class="col-ops">
+      <!-- カウントダウンタイマー (待機中) -->
+      <div class="timer-card">
+        <div class="timer-badge-row">
+          <span class="timer-label">NEXT: ROUND 3</span>
+          <span class="timer-status-pill stopped">READY (35:00)</span>
+        </div>
+        <div class="timer-display-box">
+          <input type="text" id="timer-input" class="timer-digits" value="35:00" onchange="onTimerInput(event)" aria-label="対戦タイマー" />
+        </div>
+        <div class="timer-controls">
+          <button class="btn primary" id="btn-timer-start" onclick="timerStart()">START</button>
+          <button class="btn danger" id="btn-timer-stop" style="display:none;" onclick="timerStop()">STOP</button>
+          <button class="btn ghost" id="btn-timer-reset" onclick="timerReset()">RESET</button>
+        </div>
+        <div class="timer-hint">※ ラウンド開始時に START を押します</div>
+      </div>
+
+      <!-- マッチング抽選・下書き調整 -->
+      <div class="card-panel" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <div class="panel-header">
+          <span class="panel-title" style="color:var(--wait);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+            Round 3 マッチング (下書き ${totalTables}卓)
+          </span>
+          <span class="chip" style="background:var(--wait-bg); color:var(--wait); border-color:var(--wait);">非公開下書き</span>
+        </div>
+
+        <p style="font-size:11px; color:var(--ink-sub); margin-bottom:5px;">
+          スイス式に基づき自動抽選されました。主催者は手動で卓を入れ替えできます。「決定して公開」を押すまで参加者画面には反映されません。
+        </p>
+
+        <!-- 8人時は縦1列、16人時は2列グリッド -->
+        <div class="matches-list ${is16 ? "grid-16" : ""}">
+          ${matches8Draft}
+          ${is16 ? extraMatches16Draft : ""}
+        </div>
+
+        <!-- 抽選・再抽選・決定公開ボタン群 -->
+        <div class="draft-actions-bar">
+          <button class="btn ghost" style="flex:1;" onclick="showToast('組み合わせを再抽選しました')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            再抽選
+          </button>
+          <button class="btn success" style="flex:1.4;" onclick="publishDraftMatches()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            決定して公開する
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// --------------------------------------------------------------------------
+// 右側メイン: ランキング表＆登録デッキ表示 (8人時は1表、16人時は左右2列スプリット)
+// --------------------------------------------------------------------------
+function renderStageColumnStandings(isDraftState) {
+  const is16 = currentPlayers === 16;
+  const players = getPlayersData(currentPlayers);
+
+  let contentHtml = "";
+
+  if (!is16) {
+    // 8人版: 1つのテーブル
+    contentHtml = `
+      <div class="ranking-table-container">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th style="width: 44px;">順位</th>
+              <th style="width: 120px;">参加者</th>
+              <th>登録デッキ (ピラミッド消費状況)</th>
+              <th class="num" style="width: 85px;">勝 - 負 - 分</th>
+              <th class="num" style="width: 75px;">OMW%</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${players.map(p => renderPlayerStandingRow(p)).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    // 16人版: 左右2列のスプリットテーブル (左: 1〜8位, 右: 9〜16位)
+    // これにより文字を小さく縮めず、1080pで本文18〜20px見え、720pでもスクロールなしで完璧に収まる！
+    const left8 = players.slice(0, 8);
+    const right8 = players.slice(8, 16);
+
+    contentHtml = `
+      <div class="standings-split-grid">
+        <!-- 左列: 1〜8位 (上位グループ) -->
+        <div class="ranking-table-container">
+          <div style="font-size:11px; font-weight:800; color:var(--accent); margin-bottom:4px; letter-spacing:0.05em;">
+            ◀ TOP 1〜8位 (上位決勝ライン)
+          </div>
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th style="width: 36px;">順位</th>
+                <th style="width: 105px;">参加者</th>
+                <th>登録デッキ</th>
+                <th class="num" style="width: 75px;">勝-負-分</th>
+                <th class="num" style="width: 65px;">OMW%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${left8.map(p => renderPlayerStandingRow(p)).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 右列: 9〜16位 -->
+        <div class="ranking-table-container">
+          <div style="font-size:11px; font-weight:800; color:var(--ink-sub); margin-bottom:4px; letter-spacing:0.05em;">
+            9〜16位
+          </div>
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th style="width: 36px;">順位</th>
+                <th style="width: 105px;">参加者</th>
+                <th>登録デッキ</th>
+                <th class="num" style="width: 75px;">勝-負-分</th>
+                <th class="num" style="width: 65px;">OMW%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${right8.map(p => renderPlayerStandingRow(p)).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="col-stage">
+      <div class="ranking-card">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"></path><path d="M14 14.66V17c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+            勝敗ランキング & ピラミッドデッキ (${currentPlayers}名)
+          </span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--ink-muted);">勝利済みは取消線 / 未使用は非公開（？）</span>
+            <span class="chip">${isDraftState ? "R2終了時点" : "リアルタイム反映"}</span>
+          </div>
+        </div>
+
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderPlayerStandingRow(player) {
+  const rankClass = `rank-${player.rank}`;
+
+  const decksHtml = player.decks.map((d, idx) => {
+    if (d.usedWin) {
+      return `
+        <span class="deck-pill used-win" title="${d.title} (${d.cx}) - 勝利により使用済み">
+          <span class="deck-cost-tag">${d.baseCost.toFixed(1)}</span>
+          <s>${d.title}</s>
+        </span>
+      `;
+    } else if (idx === 1 && player.losses > 0) {
+      return `
+        <span class="deck-pill revealed" title="${d.title} (${d.cx}) - 公開済み (使用可能)">
+          <span class="deck-cost-tag">${d.baseCost.toFixed(1)}</span>
+          <span>${d.title}</span>
+        </span>
+      `;
+    } else {
+      return `
+        <span class="deck-pill secret" title="未対戦・非公開デッキ">
+          <span class="secret-q">?</span>
+          <span>SECRET</span>
+        </span>
+      `;
+    }
+  }).join("");
+
+  return `
+    <tr class="${rankClass}">
+      <td>
+        <span class="rank-badge">${player.rank}</span>
+      </td>
+      <td>
+        <div class="player-cell-main">
+          <span>${player.name}</span>
+        </div>
+      </td>
+      <td>
+        <div class="player-decks-row">
+          ${decksHtml}
+        </div>
+      </td>
+      <td class="score-cell">
+        <span style="color:${player.wins > 0 ? "var(--ok)" : "inherit"}">${player.wins}</span> -
+        <span style="color:${player.losses > 0 ? "var(--danger)" : "inherit"}">${player.losses}</span> -
+        <span>${player.draws}</span>
+      </td>
+      <td class="omw-cell">${(player.omw * 100).toFixed(1)}%</td>
+    </tr>
+  `;
+}
+
+// --------------------------------------------------------------------------
+// 状態3: 大会終了後・事後コストの下書き (抽選/再抽選/確定)
+// --------------------------------------------------------------------------
+function renderPostCostDraftView() {
+  const is16 = currentPlayers === 16;
+  const players = getPlayersData(currentPlayers);
+
+  return `
+    <div style="grid-column: 1 / -1; height: 100%; display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+      <!-- 事後コストヒーローヘッダー -->
+      <div class="postcost-hero">
+        <div class="postcost-hero-title">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            しま2026版 事後コスト抽選 (下書き中・${currentPlayers}名大会)
+          </h2>
+          <div class="postcost-hero-desc">
+            全3ラウンド終了。主催者専用に抽選下書き結果が表示されています。「再抽選」で再計算し、「確定」すると参加者画面に正式発表されます。
+          </div>
+        </div>
+
+        <div class="postcost-actions">
+          <span class="chip">変動範囲: ±0.5</span>
+          <span class="chip" style="background:var(--wait-bg); color:var(--wait); border-color:var(--wait);">抽選回数: 1回目</span>
+          <button class="btn ghost" onclick="reDrawPostCostDraft()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            再抽選する
+          </button>
+          <button class="btn ${postCostConfirmArmed ? "danger" : "primary"}" id="btn-post-confirm" onclick="confirmPostCostDraft()">
+            ${postCostConfirmArmed ? "本当に確定して発表する (2度押し)" : "確定して発表する"}
+          </button>
+        </div>
+      </div>
+
+      <!-- 2カラム比較グリッド -->
+      <div class="postcost-tables-grid">
+        
+        <!-- 左: 参加者ごとの事後コスト下書き順位プレビュー -->
+        <div class="post-card">
+          <h3>
+            <span>参加者ごとの事後合計コスト (下書きプレビュー・${currentPlayers}名)</span>
+            <span class="chip" style="font-size:10.5px;">事後合計の高い順にソート</span>
+          </h3>
+          <div style="flex:1; overflow-y:auto;">
+            <table class="post-standings-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">暫定</th>
+                  <th style="width:95px;">参加者</th>
+                  <th>各デッキの事後コスト (基本 ＋ 増減 ＝ 事後)</th>
+                  <th class="num" style="width:80px;">事後合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderPostDraftPlayerRows(players)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右: 実際に持ち込まれたタイトルだけのコスト変動一覧 -->
+        <div class="post-card">
+          <h3>
+            <span>持ち込まれたタイトルの変動下書き (${BASE_TITLES.length}種)</span>
+            <button class="btn ghost" style="padding:3px 7px; font-size:10.5px;" onclick="exportMockCsv()">
+              CSV書き出し
+            </button>
+          </h3>
+          <div class="registered-titles-list ${is16 ? "grid-2col" : ""}">
+            ${BASE_TITLES.map(t => `
+              <div class="title-cost-item">
+                <div>
+                  <div class="title-cost-name">${t.title}</div>
+                  <div class="title-cost-cx">CX構成: ${t.cx}</div>
+                </div>
+                <div class="title-cost-values">
+                  <span style="color:var(--ink-muted);">${t.base.toFixed(1)}</span>
+                  <span>→</span>
+                  <span class="cost-delta-badge ${t.delta > 0 ? "plus" : t.delta < 0 ? "minus" : "zero"}">
+                    ${t.delta > 0 ? "+" + t.delta.toFixed(1) : t.delta.toFixed(1)}
+                  </span>
+                  <span>＝</span>
+                  <span style="font-weight:800; color:var(--accent);">${t.after.toFixed(1)}</span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderPostDraftPlayerRows(players) {
+  const sorted = [...players].map(p => {
+    let totalAfter = 0;
+    const deckBreakdown = p.decks.map(d => {
+      const match = BASE_TITLES.find(rt => rt.title === d.title) || { base: d.baseCost, delta: 0, after: d.baseCost };
+      totalAfter += match.after;
+      return {
+        title: d.title,
+        base: match.base,
+        delta: match.delta,
+        after: match.after
+      };
+    });
+    return {
+      ...p,
+      totalAfter,
+      deckBreakdown
+    };
+  }).sort((a, b) => b.totalAfter - a.totalAfter);
+
+  return sorted.map((p, idx) => `
+    <tr>
+      <td><span class="rank-badge" style="width:22px; height:22px; font-size:11px;">${idx + 1}</span></td>
+      <td style="font-weight:700;">${p.name}</td>
+      <td>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          ${p.deckBreakdown.map(d => `
+            <div style="font-size:11px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:4px;">
+              <span style="max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
+              <span>
+                ${d.base.toFixed(1)} 
+                <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 3px; font-size:9.5px;">
+                  ${d.delta > 0 ? "+" + d.delta.toFixed(1) : d.delta.toFixed(1)}
+                </span>
+                ＝ <strong>${d.after.toFixed(1)}</strong>
+              </span>
+            </div>
+          `).join("")}
+        </div>
+      </td>
+      <td class="num">
+        <span class="total-cost-display">${p.totalAfter.toFixed(1)}</span>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// --------------------------------------------------------------------------
+// 状態4: 事後コスト発表 (確定後のソート表・演出画面)
+// --------------------------------------------------------------------------
+function renderPostCostResultView() {
+  const is16 = currentPlayers === 16;
+  const players = getPlayersData(currentPlayers);
+
+  return `
+    <div style="grid-column: 1 / -1; height: 100%; display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+      <!-- 確定発表ヒーローバナー -->
+      <div class="postcost-hero" style="background:linear-gradient(135deg, #1b263b 0%, #0d121c 100%); border-color:var(--ok);">
+        <div class="postcost-hero-title">
+          <h2 style="color:var(--ok);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            🏆 しま2026版 事後コスト結果発表 (${currentPlayers}名大会)
+          </h2>
+          <div class="postcost-hero-desc">
+            事後コストが確定しました！参加者全員の持ち込みデッキの事後コストを再計算し、「事後合計コストが高い順」で発表しています。
+          </div>
+        </div>
+
+        <div class="postcost-actions">
+          <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定完了 (2026-11-21 20:30)</span>
+          <span class="chip">抽選回数: 1回</span>
+          <button class="btn ghost" onclick="exportMockCsv()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            全タイトルの最終コストをCSV書き出し
+          </button>
+        </div>
+      </div>
+
+      <!-- 2カラム結果発表グリッド -->
+      <div class="postcost-tables-grid">
+        
+        <!-- 左: 事後合計コストが高い順のソート発表表 (ハイローラーボード) -->
+        <div class="post-card">
+          <h3>
+            <span style="color:#ffffff;">事後合計コスト順 ランキング発表</span>
+            <span class="chip" style="background:var(--accent-dark); color:var(--accent); border-color:var(--accent);">高コスト順ソート</span>
+          </h3>
+          <div style="flex:1; overflow-y:auto;">
+            <table class="post-standings-table">
+              <thead>
+                <tr>
+                  <th style="width:36px;">順</th>
+                  <th style="width:100px;">参加者</th>
+                  <th>登録3デッキの事後内訳 (基本 → 事後)</th>
+                  <th class="num" style="width:90px;">事後合計コスト</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderPostResultPlayerRows(players)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右: 実際に持ち込まれたタイトル限定の確定コスト一覧 -->
+        <div class="post-card">
+          <h3>
+            <span>持ち込まれたタイトルの確定コスト (${BASE_TITLES.length}種)</span>
+            <span class="chip">変動範囲 ±0.5</span>
+          </h3>
+          <p style="font-size:11px; color:var(--ink-muted); margin-bottom:5px;">
+            全168タイトルのうち、今回の大会で実際に参加者が使用したタイトルのみを抽出しています。
+          </p>
+          <div class="registered-titles-list ${is16 ? "grid-2col" : ""}">
+            ${BASE_TITLES.map(t => `
+              <div class="title-cost-item">
+                <div>
+                  <div class="title-cost-name">${t.title}</div>
+                  <div class="title-cost-cx">CX構成: ${t.cx}</div>
+                </div>
+                <div class="title-cost-values">
+                  <span style="color:var(--ink-muted);">${t.base.toFixed(1)}</span>
+                  <span>→</span>
+                  <span class="cost-delta-badge ${t.delta > 0 ? "plus" : t.delta < 0 ? "minus" : "zero"}">
+                    ${t.delta > 0 ? "+" + t.delta.toFixed(1) : t.delta.toFixed(1)}
+                  </span>
+                  <span>＝</span>
+                  <span style="font-weight:800; color:var(--ok); font-size:13px;">${t.after.toFixed(1)}</span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderPostResultPlayerRows(players) {
+  const sorted = [...players].map(p => {
+    let totalAfter = 0;
+    const deckBreakdown = p.decks.map(d => {
+      const match = BASE_TITLES.find(rt => rt.title === d.title) || { base: d.baseCost, delta: 0, after: d.baseCost };
+      totalAfter += match.after;
+      return {
+        title: d.title,
+        base: match.base,
+        delta: match.delta,
+        after: match.after
+      };
+    });
+    return {
+      ...p,
+      totalAfter,
+      deckBreakdown
+    };
+  }).sort((a, b) => b.totalAfter - a.totalAfter);
+
+  return sorted.map((p, idx) => {
+    const isTop = idx === 0;
+    return `
+      <tr style="${isTop ? "background:rgba(94, 234, 212, 0.06);" : ""}">
+        <td>
+          <span class="rank-badge ${idx < 3 ? "rank-" + (idx + 1) : ""}" style="width:22px; height:22px; font-size:11px;">
+            ${idx + 1}
+          </span>
+        </td>
+        <td>
+          <div style="font-weight:700; color:#fff; font-size:13px;">
+            ${p.name}
+            ${isTop ? `<span class="chip" style="margin-left:3px; background:var(--gold); color:#120a02; font-size:9px; padding:1px 4px;">MAX</span>` : ""}
+          </div>
+        </td>
+        <td>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            ${p.deckBreakdown.map(d => `
+              <div style="font-size:10.5px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:4px;">
+                <span style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
+                <span>
+                  ${d.base.toFixed(1)}
+                  <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 3px; font-size:9px;">
+                    ${d.delta > 0 ? "+" + d.delta.toFixed(1) : d.delta.toFixed(1)}
+                  </span>
+                  → <strong style="color:var(--ink);">${d.after.toFixed(1)}</strong>
+                </span>
+              </div>
+            `).join("")}
+          </div>
+        </td>
+        <td class="num">
+          <span class="total-cost-display" style="${isTop ? "font-size:16px; color:var(--ok);" : ""}">${p.totalAfter.toFixed(1)}</span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// ==========================================================================
+// 主催者操作シミュレーション
+// ==========================================================================
+function publishDraftMatches() {
+  showToast("マッチングを決定・公開しました！対戦を開始できます");
+  switchState("running");
+}
+
+function simulateRoundClose() {
+  showToast("全卓が確定しました。ラウンドを完了して次へ進みます");
+  switchState("draft");
+}
+
+function reDrawPostCostDraft() {
+  BASE_TITLES.forEach(t => {
+    const d = Math.round((Math.random() * 1.0 - 0.5) * 10) / 10;
+    t.delta = d;
+    t.after = Math.max(0, Math.round((t.base + d) * 10) / 10);
+  });
+  showToast("事後コストを再抽選しました (抽選回数を更新)");
+  renderArena();
+}
+
+function confirmPostCostDraft() {
+  if (!postCostConfirmArmed) {
+    postCostConfirmArmed = true;
+    showToast("もう一度クリックすると確定・正式発表されます");
+    const btn = document.getElementById("btn-post-confirm");
+    if (btn) {
+      btn.textContent = "本当に確定して発表する (2度押し)";
+      btn.className = "btn danger";
+    }
+    return;
+  }
+  postCostConfirmArmed = false;
+  showToast("事後コストを確定しました！正式発表します");
+  switchState("post_result");
+}
+
+function exportMockCsv() {
+  let csv = "\uFEFFタイトル,CX構成,基本コスト,事後変動,最終確定コスト\r\n";
+  BASE_TITLES.forEach(t => {
+    csv += `"${t.title}","${t.cx}",${t.base.toFixed(1)},${t.delta > 0 ? "+" + t.delta.toFixed(1) : t.delta.toFixed(1)},${t.after.toFixed(1)}\r\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `post_cost_S2026_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("CSVファイルをダウンロードしました");
+}
+
+// ==========================================================================
+// 初期化
+// ==========================================================================
+window.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const stateParam = urlParams.get("state");
+  const playersParam = urlParams.get("players");
+
+  if (playersParam === "16") {
+    currentPlayers = 16;
+    const btn8 = document.getElementById("btn-p8");
+    const btn16 = document.getElementById("btn-p16");
+    if (btn8) btn8.classList.remove("active");
+    if (btn16) btn16.classList.add("active");
+    const pChip = document.getElementById("participant-count-chip");
+    if (pChip) pChip.textContent = "16名参加 (8卓)";
+  }
+
+  if (stateParam && ["running", "draft", "post_draft", "post_result"].includes(stateParam)) {
+    currentState = stateParam;
+  }
+
+  switchState(currentState);
+});
+</script>
+
+</body>
+</html>

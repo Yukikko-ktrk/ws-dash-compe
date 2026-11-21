@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>しまWS大会｜ダッシュボード</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #14161b;
+    --panel: #1e2129;
+    --edge: #343946;
+    --ink: #e9e7df;
+    --muted: #aeb4c2;
+    --blue: #8fb0ff;
+    --blue-bg: #232c42;
+    --green: #7fd39a;
+    --green-bg: #1e3327;
+    --amber: #f0c264;
+    --amber-bg: #3a2f17;
+    --danger: #ff8d85;
+    --body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+    --display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --mono: "IBM Plex Mono", Consolas, monospace;
+    font-size: clamp(10px, min(.833333vw, 1.48148vh), 20px);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 1.125rem/1.45 var(--body); }
+  h1, h2, p { margin: 0; }
+  input, button { font: inherit; }
+  a { color: inherit; }
+  :focus-visible { outline: .16rem solid var(--blue); outline-offset: .23rem; }
+  .shell {
+    min-height: 100svh;
+    padding: 1.25rem 2rem .6rem;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: .85rem;
+  }
+  .masthead { display: flex; justify-content: space-between; align-items: center; gap: 1.4rem; }
+  .identity { display: flex; align-items: baseline; gap: 1.1rem; flex-wrap: wrap; }
+  h1 { font: 700 2.5rem/1.2 var(--display); letter-spacing: .04em; }
+  .meta { color: var(--muted); font-size: 1.05rem; font-weight: 700; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .5em; width: max-content; max-width: 100%;
+    padding: .25em .7em; border-radius: 99px; background: #2a2e38; color: var(--muted);
+    font-size: .91rem; font-weight: 700; white-space: nowrap;
+  }
+  .badge.blue { color: var(--blue); background: var(--blue-bg); }
+  .badge.ok { color: var(--green); background: var(--green-bg); }
+  .badge.wait { color: var(--amber); background: var(--amber-bg); }
+  .board {
+    display: grid; grid-template-columns: minmax(0, .84fr) minmax(0, 1.16fr);
+    gap: 1rem; min-width: 0;
+  }
+  .stack { min-width: 0; display: grid; grid-template-rows: auto 1fr; gap: 1rem; }
+  .panel {
+    min-width: 0; padding: 1.15rem 1.4rem;
+    background: var(--panel); border: 1px solid var(--edge); border-radius: .9rem;
+    display: flex; flex-direction: column;
+  }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: .6rem 1rem; }
+  h2 { font-size: 1.73rem; line-height: 1.3; letter-spacing: .025em; }
+  h2::before {
+    content: ""; display: inline-block; width: .27em; height: .72em;
+    margin-right: .45em; border-radius: .12em; background: var(--blue);
+  }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .subtle { color: var(--muted); font-size: .91rem; }
+  .timer { background: #1a202e; border-color: #3b4a6b; }
+  .timer-state::before {
+    content: ""; inline-size: .57em; block-size: .57em;
+    border-radius: 50%; background: currentColor;
+  }
+  .clock {
+    width: 100%; padding: .08em 0 .02em; margin: .15rem 0 .2rem;
+    color: var(--ink); background: transparent; border: 0; border-radius: .35rem;
+    text-align: center; font: 700 10rem/.97 var(--mono); letter-spacing: .025em;
+  }
+  .clock[readonly] { color: #f3f5fb; }
+  .clock.timeup { color: var(--danger); }
+  .time-track {
+    display: block; width: 100%; height: .4rem; border-radius: 99px; overflow: hidden;
+    background: #303a51; appearance: none; border: 0;
+  }
+  .time-track::-webkit-progress-bar { background: #303a51; }
+  .time-track::-webkit-progress-value { background: var(--blue); border-radius: 99px; }
+  .time-track::-moz-progress-bar { background: var(--blue); }
+  .timer-foot, .controls {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+  }
+  .timer-foot { margin-top: .85rem; }
+  .timer-foot .subtle { margin-right: auto; }
+  button, .control-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 2.25rem; padding: .28rem .75rem; border: 1px solid #4a5264; border-radius: .42rem;
+    background: transparent; color: var(--ink); font-size: .92rem; font-weight: 700;
+    text-decoration: none; cursor: pointer;
+  }
+  button:not(:disabled):hover, .control-link:hover { background: #30384b; }
+  button.primary { color: #10131b; border-color: var(--blue); background: var(--blue); }
+  button.primary:not(:disabled):hover { background: #c4d4ff; }
+  button:disabled { opacity: .52; cursor: default; }
+  .timer-foot button { font-family: var(--mono); }
+  .summary {
+    display: flex; justify-content: space-between; gap: .4rem 1rem; flex-wrap: wrap;
+    align-items: center; margin: .88rem 0 .6rem; color: var(--muted);
+  }
+  .completion { white-space: nowrap; }
+  .completion strong { color: var(--ink); font: 700 1.7rem/1 var(--mono); }
+  .segs { display: flex; gap: .24rem; margin-right: auto; }
+  .seg { width: 1.35rem; height: .42rem; border-radius: 99px; background: #4a5060; }
+  .seg[data-result="確定"] { background: var(--green); }
+  .seg[data-result="承諾待ち"] { background: var(--amber); }
+  table { width: 100%; border-collapse: collapse; }
+  .fill-table { flex: 1; height: 100%; }
+  th {
+    font-size: .89rem; font-weight: 700; color: var(--muted);
+    text-align: left; white-space: nowrap;
+  }
+  td, th { border-bottom: 1px solid var(--edge); padding: .42rem .6rem; }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+  .num { text-align: right; white-space: nowrap; }
+  td.num { font-family: var(--mono); }
+  .match-table { table-layout: fixed; }
+  .match-table col:first-child { width: 4.45rem; }
+  .match-table col:last-child { width: 7.1rem; }
+  .match-table tbody th { font: 700 1.06rem/1.3 var(--mono); color: var(--muted); }
+  .match-table thead th:last-child, .match-table td:last-child { text-align: right; padding-right: 0; }
+  .match-table .badge { font-size: .99rem; }
+  .pair {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .3rem;
+    text-align: center; font-size: 1.55rem; font-weight: 700;
+  }
+  .pair span { min-width: 0; overflow-wrap: anywhere; }
+  .pair strong { color: var(--green); }
+  .versus { color: var(--muted); font: 400 1.05rem var(--mono); }
+  .controls { border-top: 1px solid var(--edge); padding-top: .85rem; margin-top: .55rem; }
+  .control-label { color: var(--muted); font-size: .86rem; font-weight: 700; margin-right: auto; }
+  .control-link { border-color: transparent; color: var(--muted); padding-inline: .35rem; text-decoration: underline; text-underline-offset: .21em; }
+  .ranking .head { margin-bottom: .65rem; }
+  .rank-table col:first-child { width: 4rem; }
+  .rank-table col.score { width: 7rem; }
+  .rank-table col.omw { width: 5.8rem; }
+  .rank-table col.total { width: 8.1rem; }
+  .rank-table th:first-child, .rank-table td:first-child { text-align: center; }
+  .rank-table tbody th { white-space: normal; }
+  .rank-table tbody th, .rank-table td { padding-top: .48rem; padding-bottom: .48rem; }
+  .rank-table .position { font: 700 1.8rem/1 var(--mono); color: var(--muted); }
+  .rank-table .leader { background: var(--blue-bg); }
+  .rank-table .leader .position { color: var(--blue); border-left: .23rem solid var(--blue); }
+  .person { font-size: 1.6rem; color: var(--ink); line-height: 1.18; }
+  .deck-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .36rem; margin-top: .36rem; }
+  .deck {
+    min-width: 0; display: flex; min-height: 1.9rem; align-items: center; gap: .36rem;
+    padding: .22rem .35rem; border: 1px solid #475471; border-radius: .34rem;
+    background: #262f43; color: var(--ink); line-height: 1.15; font-size: 1.08rem;
+  }
+  .round-index { flex: none; color: var(--blue); font: 700 .78rem var(--mono); }
+  .deck-label { overflow-wrap: anywhere; }
+  .deck.used { background: #24262f; border-color: #454957; color: #bdc0c9; }
+  .deck.used .round-index { color: var(--muted); }
+  .deck.back {
+    justify-content: center; border: 1px dashed #545c70; color: #b6bfd1;
+    background: repeating-linear-gradient(-45deg, #262a35 0 2px, #22252e 2px 6px);
+    font: 700 1.03rem var(--mono);
+  }
+  .rank-table .score-value { color: var(--ink); font-size: 1.55rem; }
+  .rank-table .aux-value { color: var(--muted); font-size: 1.1rem; }
+  .rank-table .post-total { color: var(--blue); font-size: 1.9rem; font-weight: 700; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: .32rem 1.25rem;
+    margin-top: .55rem; color: var(--muted); font-size: .9rem;
+  }
+  .legend s, .legend b { color: var(--ink); }
+  .cost.draft { border-color: #695b3c; }
+  .cost-caption {
+    margin: 1.05rem 0 .8rem; padding: .9rem .95rem;
+    background: #26262a; border: 1px solid var(--edge); border-radius: .45rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .6rem 1rem;
+    flex-wrap: wrap;
+  }
+  .cost-caption p { color: var(--muted); font-size: .98rem; }
+  .cost-caption strong { font-size: 1.24rem; }
+  .cost-table td:first-child { color: var(--ink); font-size: 1.19rem; font-weight: 700; }
+  .cost-table td.num { font-size: 1.36rem; }
+  .cost-table td:last-child { color: var(--ink); font-weight: 700; }
+  .cost-table td.positive { color: var(--green); }
+  .cost-table td.negative { color: var(--danger); }
+  .cost-table td.neutral { color: var(--muted); }
+  .post-notice { min-height: 1.42em; margin-top: .45rem; color: var(--amber); font-size: .9rem; }
+  .preview {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .35rem 1rem; flex-wrap: wrap; color: var(--muted); font-size: .85rem;
+  }
+  .preview nav { display: flex; gap: .22rem; flex-wrap: wrap; align-items: center; }
+  .preview nav span { margin-right: .4rem; }
+  .preview a { text-decoration: none; padding: .22rem .65rem; border-radius: .35rem; }
+  .preview a:hover { text-decoration: underline; }
+  .preview a[aria-current="true"] { color: var(--blue); background: var(--blue-bg); }
+  .preview button { min-height: 1.65rem; font-size: inherit; padding: .12rem .5rem; }
+  .repair { max-width: 58rem; width: 100%; margin: 0 auto; }
+  .repair .head { margin-bottom: .75rem; }
+  .repair a { align-self: flex-start; margin-top: .8rem; color: var(--blue); }
+  .rank-tables { display: contents; }
+  .preview .player-count { gap: .15rem; order: 1; margin-inline-start: auto; }
+  .player-count a { border: 1px solid var(--edge); }
+
+  .players-16 .board { grid-template-columns: minmax(0, .58fr) minmax(0, 1.42fr); }
+  .players-16 .stack, .players-16 .board { gap: .8rem; }
+  .players-16 .panel { padding-inline: 1rem; }
+  .players-16 .timer { padding-block: .85rem; }
+  .players-16 .clock { font-size: 7rem; }
+  .players-16 .match-table col:first-child { width: 3rem; }
+  .players-16 .match-table col:last-child { width: 7.1rem; }
+  .players-16 .match-table tbody th, .players-16 .match-table .badge { font-size: 1.25rem; }
+  .players-16 .match-table td, .players-16 .match-table th { padding-block: .28rem; }
+  .players-16 .match-table thead th:first-child { padding-inline: .08rem; }
+  .players-16 .match-table .badge { padding: .16em .4em; }
+  .players-16 .pair { font-size: 1.55rem; }
+  .players-16 .summary { margin-block: .55rem .35rem; }
+  .players-16 .summary .subtle { font-size: 1.03rem; }
+  .players-16 .seg { width: .76rem; }
+  .players-16 .controls { padding-top: .5rem; }
+  .players-16 .controls .control-label { flex-basis: 100%; margin: 0; }
+  .players-16 .controls button:first-of-type { margin-inline-start: auto; }
+  .players-16 .rank-tables {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; flex: 1;
+  }
+  .players-16 .rank-table { table-layout: fixed; }
+  .players-16 .rank-table:nth-child(2) { border-left: 1px solid var(--edge); }
+  .players-16 .rank-table col:first-child { width: 2.6rem; }
+  .players-16 .rank-table col.score { width: 4.65rem; }
+  .players-16 .rank-table col.omw { width: 4rem; }
+  .players-16 .rank-table col.total { width: 5.8rem; }
+  .players-16 .rank-table th, .players-16 .rank-table td { padding: .32rem .35rem; }
+  .players-16 .rank-table .person { font-size: 1.55rem; }
+  .players-16 .rank-table .score-value { font-size: 1.38rem; }
+  .players-16 .rank-table .aux-value { font-size: 1.25rem; }
+  .players-16 .deck { min-height: 3.05rem; font-size: 1.25rem; line-height: 1.05; }
+  .players-16 .deck.back { font-size: 1.25rem; }
+  .players-16 .deck-strip { margin-top: .25rem; gap: .22rem; }
+  .players-16 .deck-strip:has(> .deck.back:last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 3rem;
+  }
+  .players-16 .cost-table td:first-child { font-size: 1.32rem; }
+  .players-16 .cost-table td.num { font-size: 1.48rem; }
+
+  @media (max-width: 800px) {
+    :root { font-size: 14px; }
+    .shell { padding: .8rem; }
+    .masthead { align-items: flex-start; flex-direction: column; gap: .55rem; }
+    .identity { gap: .35rem; }
+    h1 { font-size: 2rem; }
+    .board { grid-template-columns: 1fr; }
+    .panel { padding: .85rem; }
+    .clock { font-size: clamp(4.4rem, 19vw, 8rem); }
+    .stack { gap: .8rem; }
+    h2 { font-size: 1.35rem; }
+    .head { flex-wrap: wrap; }
+    .pair { font-size: 1.15rem; }
+    .match-table col:first-child { width: 3rem; }
+    .match-table col:last-child { width: 5.6rem; }
+    .match-table tbody th { font-size: .85rem; }
+    .match-table td, .match-table th { padding-inline: .2rem; }
+    .match-table .badge { font-size: .82rem; }
+    .ranking .fill-table { height: auto; }
+    .rank-table col:first-child { width: 2.25rem; }
+    .rank-table col.score { width: 4rem; }
+    .rank-table col.omw { width: 3.1rem; }
+    .rank-table col.total { width: 4.9rem; }
+    .rank-table td, .rank-table th { padding-inline: .26rem; }
+    .rank-table .position, .person { font-size: 1.18rem; }
+    .rank-table .score-value, .rank-table .aux-value { font-size: .97rem; }
+    .rank-table .post-total { font-size: 1.3rem; }
+    .deck { font-size: .76rem; display: block; text-align: center; }
+    .deck.back { display: grid; place-items: center; }
+    .round-index { display: block; }
+    .controls .control-label { flex-basis: 100%; }
+    .cost-table td:first-child { font-size: 1rem; }
+    .players-16 .board, .players-16 .rank-tables { grid-template-columns: minmax(0, 1fr); }
+    .players-16 .rank-table:nth-child(2) { border-left: 0; }
+    .players-16 .clock { font-size: clamp(4.4rem, 19vw, 8rem); }
+    .players-16 .match-table .badge { font-size: .85rem; }
+    .players-16 .match-table tbody th, .players-16 .pair { font-size: 1rem; }
+    .players-16 .match-table col:last-child { width: 5.6rem; }
+    .players-16 .rank-table col:first-child { width: 2.25rem; }
+    .players-16 .rank-table col.score { width: 4rem; }
+    .players-16 .rank-table col.omw { width: 3.6rem; }
+    .players-16 .rank-table col.total { width: 4.9rem; }
+    .players-16 .rank-table td, .players-16 .rank-table th { padding-inline: .22rem; }
+    .players-16 .rank-table .score-value, .players-16 .rank-table .aux-value { font-size: .92rem; }
+    .players-16 .rank-table .person { font-size: 1.18rem; }
+    .players-16 .deck { font-size: .76rem; }
+    .players-16 .deck-strip:has(> .deck.back:last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .players-16 .cost-table td:first-child { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="masthead">
+    <div class="identity">
+      <h1>しまWS大会</h1>
+      <p class="meta">しま2026版ピラミッド　／　スイス式・全2ラウンド　／　<span id="player-count">8人</span></p>
+    </div>
+    <span id="tournament-status" class="badge blue"></span>
+  </header>
+
+  <main id="board" class="board">
+    <div id="round-stack" class="stack">
+      <section class="panel timer" aria-labelledby="timer-title">
+        <div class="head">
+          <h2 id="timer-title">タイマー</h2>
+          <span id="timer-state" class="badge timer-state"></span>
+        </div>
+        <input type="text" id="clock" class="clock" value="35:00" maxlength="6" inputmode="numeric" aria-label="タイマー (分:秒)" aria-describedby="timer-help">
+        <progress class="time-track" id="time-track" aria-label="残り時間の割合" max="2100" value="2100"></progress>
+        <div class="timer-foot">
+          <p class="subtle" id="timer-help">表示を直接編集して START</p>
+          <button type="button" id="timer-toggle">START</button>
+          <button type="button" id="timer-reset">RESET</button>
+        </div>
+      </section>
+
+      <section class="panel progress" aria-labelledby="progress-title">
+        <div class="head">
+          <h2 id="progress-title">進行状況</h2>
+          <span id="round-badge" class="badge"></span>
+        </div>
+        <div class="summary" id="round-summary"></div>
+        <table class="match-table fill-table" aria-label="卓別の組み合わせと報告状況">
+          <colgroup><col><col><col></colgroup>
+          <thead><tr><th scope="col">対戦卓</th><th scope="col" style="text-align:center">組み合わせ</th><th scope="col">報告状況</th></tr></thead>
+          <tbody id="match-rows"></tbody>
+        </table>
+        <div class="controls" id="round-controls"></div>
+      </section>
+    </div>
+
+    <section id="cost-panel" class="panel cost" aria-labelledby="cost-title" hidden>
+      <div class="head">
+        <h2 id="cost-title">事後コスト発表</h2>
+        <span id="cost-badge" class="badge"></span>
+      </div>
+      <div class="cost-caption">
+        <div>
+          <strong id="cost-caption-title">持ち込まれたタイトル</strong>
+          <p id="cost-caption-note"></p>
+        </div>
+        <span id="draw-count" class="badge mono"></span>
+      </div>
+      <table class="cost-table fill-table" aria-label="持ち込まれたタイトルのコスト">
+        <thead><tr><th scope="col">タイトル</th><th scope="col" class="num">基本</th><th scope="col" class="num">増減</th><th scope="col" class="num">事後</th></tr></thead>
+        <tbody id="cost-rows"></tbody>
+      </table>
+      <p class="post-notice" id="post-notice" role="status" hidden></p>
+      <div class="controls" id="cost-controls"></div>
+    </section>
+
+    <section class="panel ranking" aria-labelledby="rank-title">
+      <div class="head">
+        <h2 id="rank-title">勝敗ランキング</h2>
+        <div id="rank-context"></div>
+      </div>
+      <div class="rank-tables">
+        <table class="rank-table fill-table" id="rank-first" aria-labelledby="rank-title">
+          <colgroup id="rank-cols"></colgroup>
+          <thead id="rank-head"></thead>
+          <tbody id="rank-rows"></tbody>
+        </table>
+        <table class="rank-table fill-table" id="rank-second" aria-label="9位から16位" hidden>
+          <colgroup id="rank-cols-second"></colgroup>
+          <thead id="rank-head-second"></thead>
+          <tbody id="rank-rows-second"></tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><b>R1・R2</b> 確定した対戦で使った順</span>
+        <span><s>取り消し線</s> 勝利して使用済み</span>
+        <span><b>？</b> 未公開</span>
+      </div>
+    </section>
+  </main>
+
+  <main id="repair" class="panel repair" hidden>
+    <div class="head">
+      <h2>大会進行修正</h2>
+      <span class="badge wait">主催者用</span>
+    </div>
+    <p>対戦結果の承諾代行・修正を行う別タブの入口です。</p>
+    <a id="repair-back" href="?state=1">ダッシュボードに戻る</a>
+  </main>
+
+  <footer class="preview" id="preview">
+    <nav aria-label="モックの表示切り替え">
+      <span>モック切り替え</span>
+      <a data-view="1" href="?state=1">ラウンド中</a>
+      <a data-view="2" href="?state=2">マッチング下書き</a>
+      <a data-view="3" href="?state=3">事後コスト下書き</a>
+      <a data-view="4" href="?state=4">事後コスト発表</a>
+    </nav>
+    <nav class="player-count" aria-label="サンプルの参加人数">
+      <a data-players="8" href="?state=1">8人版</a>
+      <a data-players="16" href="?state=1&amp;players=16">16人版</a>
+    </nav>
+    <button type="button" id="before-draw-demo" hidden>抽選前を表示（デモ）</button>
+    <button type="button" id="finish-demo" hidden>残りの対戦を確定（デモ）</button>
+  </footer>
+</div>
+
+<script>
+  const byId = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const expanded = params.get("players") === "16";
+  const route = (view, large = expanded) => "?state=" + view + (large ? "&players=16" : "");
+  const titles = [
+    { name: "葬送のフリーレン", base: 2.3 },
+    { name: "ブルーアーカイブ", base: 2.0 },
+    { name: "リコリス・リコイル", base: 1.7 },
+    { name: "あおぎり高校", base: 2.2 },
+    { name: "五等分の花嫁", base: 2.1 },
+    { name: "BanG Dream!", base: 1.6 },
+    { name: "電撃文庫", base: 1.8 },
+    { name: "ゆるキャン△", base: 1.9 }
+  ];
+  const players = [
+    { name: "しおん", decks: [0, 5, 4] },
+    { name: "あおい", decks: [1, 6, 3] },
+    { name: "こはく", decks: [2, 4, 0] },
+    { name: "みなと", decks: [3, 7, 2] },
+    { name: "はる", decks: [4, 0, 6] },
+    { name: "すず", decks: [5, 1, 7] },
+    { name: "なぎ", decks: [6, 2, 5] },
+    { name: "つむぎ", decks: [7, 3, 1] }
+  ];
+  const firstRound = [[0, 4], [1, 5], [2, 6], [3, 7]];
+  const secondRounds = [
+    [[0, 1], [2, 3], [4, 5], [6, 7]],
+    [[0, 2], [1, 3], [4, 6], [5, 7]]
+  ];
+  if (expanded) {
+    players.push(
+      { name: "りん", decks: [3, 6, 4] },
+      { name: "ひなた", decks: [0, 2, 7] },
+      { name: "ゆう", decks: [5, 7, 1] },
+      { name: "あさひ", decks: [1, 3, 6] },
+      { name: "かえで", decks: [7, 5, 3] },
+      { name: "れん", decks: [6, 0, 5] },
+      { name: "しずく", decks: [4, 1, 2] },
+      { name: "りく", decks: [2, 4, 0] }
+    );
+    firstRound.push([8, 12], [9, 13], [10, 14], [11, 15]);
+    secondRounds[0].splice(2, 0, [8, 9], [10, 11]);
+    secondRounds[0].push([12, 13], [14, 15]);
+    secondRounds[1].splice(2, 0, [8, 10], [9, 11]);
+    secondRounds[1].push([12, 14], [13, 15]);
+  }
+  const tableCount = players.length / 2;
+  const sampleConfirmed = tableCount / 2;
+  const sampleDeltas = [
+    [4, -3, 2, -5, 3, 0, -2, 5],
+    [0, 5, -3, 2, -2, 4, 1, -4]
+  ];
+  const requested = params.get("state");
+  let scene = ["1", "2", "3", "4", "repair"].includes(requested) ? requested : "1";
+  let pairingDraw = 1;
+  let costDraw = 1;
+  let allConfirmed = false;
+  let confirmArmed = false;
+  let costStandings = true;
+
+  const button = (id, label, style = "", disabled = false) =>
+    `<button type="button" id="${id}" class="${style}" ${disabled ? "disabled" : ""}>${label}</button>`;
+  const badge = (label, style = "") => `<span class="badge ${style}">${label}</span>`;
+  const repairLink = `<a class="control-link" href="${route("repair")}" target="_blank" rel="noopener">大会進行修正 ↗</a>`;
+  const organizer = '<span class="control-label">主催者操作</span>';
+  const numeric = value => value.toFixed(1);
+  const deltaLabel = delta => (delta > 0 ? "+" : delta < 0 ? "−" : "") + numeric(Math.abs(delta) / 10);
+  const takeCost = deck => Math.max(0, Math.round(titles[deck].base * 10) + sampleDeltas[(costDraw - 1) % 2][deck]);
+
+  function setBadge(id, label, style) {
+    const element = byId(id);
+    element.textContent = label;
+    element.className = "badge " + style;
+  }
+
+  function show(next) {
+    scene = next;
+    confirmArmed = false;
+    const query = next === "closed" ? "1" : next === "cost-ready" ? "3" : next === "pair-ready" ? "2" : next;
+    history.replaceState(null, "", route(query));
+    render();
+  }
+
+  function renderRound() {
+    const draft = scene === "2";
+    const ready = scene === "pair-ready";
+    const closed = scene === "closed";
+    const confirmed = allConfirmed || closed ? tableCount : sampleConfirmed;
+    const pairs = secondRounds[(pairingDraw - 1) % 2];
+    setBadge("round-badge", "Round 2", draft || ready ? "wait" : "blue");
+    const statuses = pairs.map((_, i) => draft ? "未公開" : i < confirmed ? "確定" : i % 2 === 0 ? "承諾待ち" : "未報告");
+    const pending = (tableCount - confirmed) / 2;
+    byId("round-summary").innerHTML = ready
+      ? `${badge("抽選待ち", "wait")}<span class="subtle">全${tableCount}卓</span>`
+      : draft
+      ? `${badge("下書き・未公開", "wait")}<span class="subtle">抽選 ${pairingDraw}回目　／　全${tableCount}卓</span>`
+      : `<span class="completion"><strong>${confirmed}</strong> / ${tableCount} 卓が確定</span>
+        <span class="segs" aria-hidden="true">${statuses.map(status => `<i class="seg" data-result="${status}"></i>`).join("")}</span>
+        <span class="subtle">${closed ? "規定ラウンド完了" : pending === 0 ? "全卓の結果が確定" : `承諾待ち ${pending}卓　／　未報告 ${pending}卓`}</span>`;
+    byId("match-rows").innerHTML = ready
+      ? '<tr><td colspan="3" class="subtle">抽選すると卓ごとの組み合わせを確認できます。</td></tr>'
+      : pairs.map(([a, b], i) => {
+      const status = statuses[i];
+      const winner = status === "確定" ? (i < sampleConfirmed ? a : b) : -1;
+      const name = player => winner === player
+        ? `<strong aria-label="${players[player].name}（勝利）">${players[player].name}</strong>`
+        : `<span>${players[player].name}</span>`;
+      return `<tr><th scope="row">${i + 1}卓</th><td><div class="pair">${name(a)}<span class="versus">×</span>${name(b)}</div></td>
+        <td>${badge(status, { "確定": "ok", "承諾待ち": "wait" }[status])}</td></tr>`;
+    }).join("");
+    const actions = ready
+      ? button("pair-draw", "組み合わせを作成する", "primary")
+      : draft
+      ? button("pair-draw", "抽選", "", true) + button("pair-redraw", "抽選し直す") + button("pair-publish", "公開する", "primary")
+      : closed ? button("tournament-finish", "大会を終了する", "primary")
+        : button("round-close", "ラウンドを完了する", "primary", confirmed < tableCount);
+    byId("round-controls").innerHTML = organizer + repairLink + actions;
+    byId("finish-demo").hidden = draft || ready || closed || allConfirmed;
+    byId("before-draw-demo").hidden = !draft;
+  }
+
+  function collectStandings() {
+    const standings = players.map(player => ({ ...player, wins: 0, losses: 0, opponents: [], used: [] }));
+    function record(pairs, round) {
+      pairs.forEach(([a, b], index) => {
+        const aWins = round === 1 || index < sampleConfirmed;
+        standings[a].opponents.push(b);
+        standings[b].opponents.push(a);
+        standings[a].used.push({ round, deck: players[a].decks[round - 1], won: aWins });
+        standings[b].used.push({ round, deck: players[b].decks[round - 1], won: !aWins });
+        standings[aWins ? a : b].wins++;
+        standings[aWins ? b : a].losses++;
+      });
+    }
+    record(firstRound, 1);
+    const requiresFinal = ["closed", "cost-ready", "3", "4"].includes(scene);
+    const second = secondRounds[(pairingDraw - 1) % 2];
+    if (requiresFinal || allConfirmed) record(second, 2);
+    else if (scene === "1") record(second.slice(0, sampleConfirmed), 2);
+    return standings.map(player => {
+      const omw = player.opponents.reduce((sum, id) => {
+        const opponent = standings[id];
+        return sum + opponent.wins / (opponent.wins + opponent.losses);
+      }, 0) / player.opponents.length;
+      const sumBase = decks => decks.reduce((sum, deck) => sum + Math.round(titles[deck].base * 10), 0);
+      const usedToWin = new Set(player.used.filter(entry => entry.won).map(entry => entry.deck));
+      return {
+        ...player, omw, base: sumBase(player.decks),
+        available: sumBase(player.decks.filter(deck => !usedToWin.has(deck))),
+        total: player.decks.reduce((sum, deck) => sum + takeCost(deck), 0)
+      };
+    });
+  }
+
+  function renderRank(post, costView) {
+    const order = collectStandings().sort(costView
+      ? (a, b) => b.total - a.total || a.name.localeCompare(b.name, "ja")
+      : (a, b) => b.wins - a.wins || a.base - b.base || b.available - a.available ||
+        Math.round(b.omw * 1000) - Math.round(a.omw * 1000) || a.name.localeCompare(b.name, "ja"));
+    byId("rank-title").textContent = costView ? "事後合計ランキング" : "勝敗ランキング";
+    byId("rank-context").innerHTML = scene === "4"
+      ? button("switch-rank", costView ? "勝敗ランキングを表示" : "事後合計ランキングを表示")
+      : badge(post ? "最終結果" : ["2", "pair-ready"].includes(scene) ? "Round 1 終了時点" : "確定した対戦を反映", post ? "ok" : "blue");
+    const columns = costView ? '<col><col><col class="total">' : '<col><col><col class="score"><col class="omw">';
+    const headings = `<tr><th scope="col">順位</th><th scope="col">参加者・デッキ</th>${costView
+      ? '<th scope="col" class="num" aria-sort="descending">事後合計 ↓</th>'
+      : '<th scope="col" class="num">勝-負-分</th><th scope="col" class="num">OMW%</th>'}</tr>`;
+    const rows = order.map((player, index) => {
+      const decks = player.used.map(({ round, deck, won }) => {
+        const label = titles[deck].name;
+        return `<span class="deck ${won ? "used" : ""}">
+          <span class="round-index">R${round}</span>${won
+            ? `<s class="deck-label" aria-label="${label}（勝利して使用済み）">${label}</s>`
+            : `<span class="deck-label">${label}</span>`}</span>`;
+      }).join("") + '<span class="deck back" role="img" aria-label="未公開のデッキ">？</span>'.repeat(player.decks.length - player.used.length);
+      return `<tr class="${index === 0 ? "leader" : ""}">
+        <td class="position">${index + 1}</td>
+        <th scope="row"><div class="person">${player.name}</div><div class="deck-strip">${decks}</div></th>
+        ${costView ? `<td class="num post-total">${numeric(player.total / 10)}</td>`
+          : `<td class="num score-value">${player.wins}-${player.losses}-0</td><td class="num aux-value">${numeric(player.omw * 100)}</td>`}
+      </tr>`;
+    });
+    const renderTable = (suffix, visibleRows) => {
+      byId("rank-cols" + suffix).innerHTML = columns;
+      byId("rank-head" + suffix).innerHTML = headings;
+      byId("rank-rows" + suffix).innerHTML = visibleRows.join("");
+    };
+    renderTable("", rows.slice(0, 8));
+    if (expanded) renderTable("-second", rows.slice(8));
+  }
+
+  function renderCost() {
+    const final = scene === "4";
+    const ready = scene === "cost-ready";
+    byId("cost-panel").classList.toggle("draft", !final);
+    setBadge("cost-badge", final ? "確定" : ready ? "抽選待ち" : "下書き・未確定", final ? "ok" : "wait");
+    byId("cost-caption-note").textContent = final ? "8タイトルの最終値　／　変動範囲 ±0.5"
+      : ready ? "変動範囲 ±0.5 で事後コストを抽選します"
+        : "変動範囲 ±0.5　／　確定すると事後合計順を発表";
+    byId("draw-count").textContent = ready ? "抽選前" : "抽選 " + costDraw + "回目";
+    const deltas = sampleDeltas[(costDraw - 1) % 2];
+    byId("cost-rows").innerHTML = titles.map((title, id) => {
+      const color = deltas[id] > 0 ? "positive" : deltas[id] < 0 ? "negative" : "neutral";
+      return `<tr><td>${title.name}</td><td class="num">${numeric(title.base)}</td>
+        <td class="num ${color}">${ready ? "—" : deltaLabel(deltas[id])}</td>
+        <td class="num">${ready ? "—" : numeric(takeCost(id) / 10)}</td></tr>`;
+    }).join("");
+    byId("post-notice").hidden = !confirmArmed;
+    byId("post-notice").textContent = confirmArmed ? "もう一度押すと確定します。確定後は再抽選できません。" : "";
+    byId("cost-controls").innerHTML = organizer + (final
+      ? button("csv", "全タイトルのCSVを書き出す")
+      : button("cost-draw", "事後コストを抽選", ready ? "primary" : "", !ready)
+        + button("cost-redraw", "再抽選", "", ready)
+        + button("cost-confirm", confirmArmed ? "確定する（もう一度押す）" : "確定", "primary", ready)
+        + (confirmArmed ? button("cancel-confirm", "戻る") : ""));
+  }
+
+  function render() {
+    const isRepair = scene === "repair";
+    const post = ["3", "4", "cost-ready"].includes(scene);
+    byId("board").hidden = isRepair;
+    byId("repair").hidden = !isRepair;
+    byId("preview").hidden = isRepair;
+    setBadge("tournament-status", isRepair ? "大会進行修正" : post ? "大会終了" : "大会進行中", post ? "ok" : "blue");
+    if (isRepair) return;
+    byId("round-stack").hidden = post;
+    byId("cost-panel").hidden = !post;
+    byId("finish-demo").hidden = post;
+    byId("before-draw-demo").hidden = post;
+    const current = scene === "closed" ? "1" : scene === "cost-ready" ? "3" : scene === "pair-ready" ? "2" : scene;
+    document.querySelectorAll("[data-view]").forEach(link => {
+      link.href = route(link.dataset.view);
+      if (link.dataset.view === current) link.setAttribute("aria-current", "true");
+      else link.removeAttribute("aria-current");
+    });
+    document.querySelectorAll("[data-players]").forEach(link => {
+      const large = link.dataset.players === "16";
+      link.href = route(current, large);
+      if (large === expanded) link.setAttribute("aria-current", "true");
+    });
+    if (post) renderCost();
+    else renderRound();
+    renderRank(post, scene === "4" && costStandings);
+  }
+
+  const initial = 35 * 60;
+  const clock = byId("clock");
+  let lastStart = initial;
+  let deadline = 0;
+  let tickId = 0;
+  function setTime(seconds) {
+    clock.value = String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
+    clock.classList.toggle("timeup", seconds === 0);
+    byId("time-track").value = seconds;
+  }
+  function updateTimer(running) {
+    clock.readOnly = running;
+    byId("timer-toggle").textContent = running ? "STOP" : "START";
+    byId("timer-toggle").classList.toggle("primary", !running);
+    byId("timer-reset").disabled = running;
+    byId("timer-help").textContent = running ? "試合時間の残り" : "表示を直接編集して START";
+    const expired = !running && clock.value === "00:00";
+    setBadge("timer-state", running ? "計測中" : expired ? "時間終了" : "停止中", "timer-state " + (running ? "ok" : expired ? "wait" : ""));
+  }
+  function tick() {
+    const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    setTime(remaining);
+    if (!remaining) stopTimer();
+  }
+  function startTimer(seconds, preset = seconds) {
+    lastStart = preset;
+    clock.removeAttribute("aria-invalid");
+    byId("time-track").max = preset;
+    deadline = Date.now() + seconds * 1000;
+    tickId = window.setInterval(tick, 200);
+    updateTimer(true);
+    tick();
+  }
+  function stopTimer() {
+    window.clearInterval(tickId);
+    tickId = 0;
+    updateTimer(false);
+  }
+  function toggleTimer() {
+    if (tickId) {
+      stopTimer();
+      return;
+    }
+    const entry = clock.value.trim();
+    const time = entry.match(/^(\d{1,3})(?::([0-5]?\d))?$/);
+    const seconds = time ? Number(time[1]) * 60 + Number(time[2] || 0) : 0;
+    if (seconds) startTimer(seconds);
+    else {
+      clock.setAttribute("aria-invalid", "true");
+      byId("timer-help").textContent = "35:00 のように残り時間を入力";
+      clock.focus();
+    }
+  }
+
+  clock.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !clock.readOnly) toggleTimer();
+  });
+  document.addEventListener("click", event => {
+    const target = event.target.closest("button");
+    if (!target) return;
+    switch (target.id) {
+      case "timer-toggle": toggleTimer(); break;
+      case "timer-reset":
+        clock.removeAttribute("aria-invalid");
+        setTime(lastStart);
+        updateTimer(false);
+        break;
+      case "before-draw-demo": show("pair-ready"); byId("pair-draw").focus(); break;
+      case "pair-draw": pairingDraw = 1; show("2"); byId("pair-publish").focus(); break;
+      case "pair-redraw": pairingDraw++; render(); byId("pair-redraw").focus(); break;
+      case "pair-publish": show("1"); break;
+      case "finish-demo": allConfirmed = true; render(); byId("round-close").focus(); break;
+      case "round-close": stopTimer(); show("closed"); break;
+      case "tournament-finish": show("cost-ready"); break;
+      case "cost-draw": costDraw = 1; show("3"); break;
+      case "cost-redraw": costDraw++; confirmArmed = false; renderCost(); byId("cost-redraw").focus(); break;
+      case "cost-confirm":
+        if (confirmArmed) {
+          costStandings = true;
+          show("4");
+        } else {
+          confirmArmed = true;
+          renderCost();
+          byId("cost-confirm").focus();
+        }
+        break;
+      case "cancel-confirm": confirmArmed = false; renderCost(); byId("cost-confirm").focus(); break;
+      case "switch-rank": costStandings = !costStandings; renderRank(true, costStandings); byId("switch-rank").focus(); break;
+      case "csv":
+        byId("post-notice").hidden = false;
+        byId("post-notice").textContent = "全タイトルの基本・増減・事後コストをCSVに出力する操作です（モック）。";
+        break;
+    }
+  });
+
+  document.body.classList.toggle("players-16", expanded);
+  byId("player-count").textContent = players.length + "人";
+  byId("repair-back").href = route("1");
+  byId("rank-second").hidden = !expanded;
+  render();
+  updateTimer(false);
+  if (scene === "1") startTimer(24 * 60 + 38, initial);
+</script>
+</body>
+</html>

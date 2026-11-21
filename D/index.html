@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ダッシュボード 16:9 モック（D案）— しまWS大会アプリ</title>
+<style>
+/* =========================================================
+   しまWS大会アプリ ダッシュボード 16:9 モック（D案）
+   配色・書体・部品は styles.css / mock/ui-sample.html にそろえる。
+   外部フォントは読まない（端末にある書体へフォールバック）。
+   全寸法は rem。html の font-size を画面の幅・高さの小さい方から決めるので、
+   1920×1080 でも 1280×720 でも同じ構図のまま拡大縮小する。
+   ========================================================= */
+:root {
+  --font-body: "Zen Kaku Gothic New", "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Meiryo", "Noto Sans JP", sans-serif;
+  --font-display: "Shippori Mincho", "BIZ UDPMincho", "Yu Mincho", "Hiragino Mincho ProN", serif;
+  --font-mono: "IBM Plex Mono", "Consolas", "Menlo", monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; font-size: clamp(9px, min(0.8333vw, 1.4815vh), 24px); }
+/* Schwarz（主催者側の黒基調）。値はアプリと同じ */
+body[data-theme="schwarz"] {
+  --bg: #14161b; --card: #1e2129; --card-edge: #2e323d; --ink: #e9e7df; --ink-soft: #9aa0ac;
+  --accent: #8fb0ff; --accent-ink: #10131b; --accent-soft: #232c42; --danger: #ff8d85;
+  --ok: #7fd39a; --ok-soft: #1e3327; --wait: #f0c264; --wait-soft: #3a2f17; --chip: #2a2e38;
+  --hatch: rgba(255,255,255,.045);
+}
+/* Weiß（明るい会場・映りの淡いプロジェクター向け）。値はアプリの参加者側と同じ */
+body[data-theme="weiss"] {
+  --bg: #f4f2ec; --card: #ffffff; --card-edge: #e3dfd4; --ink: #22262e; --ink-soft: #6b7280;
+  --accent: #2456c9; --accent-ink: #ffffff; --accent-soft: #e8eefc; --danger: #b3261e;
+  --ok: #1a7a3d; --ok-soft: #e3f2e8; --wait: #8a5a00; --wait-soft: #fdf1d8; --chip: #edeae1;
+  --hatch: rgba(0,0,0,.04);
+}
+body {
+  font-family: var(--font-body); font-size: 1rem; line-height: 1.5;
+  background: var(--bg); color: var(--ink);
+  height: 100vh; overflow: hidden;
+  transition: background .35s, color .35s;
+}
+button { font-family: inherit; }
+.mono { font-family: var(--font-mono); }
+
+/* ===== ステージ（画面全体） ===== */
+.stage {
+  height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem; padding: 1.1rem 1.6rem 1.3rem;
+}
+
+/* ===== ヘッダー ===== */
+header.top { display: flex; align-items: center; gap: 1.4rem; min-width: 0; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand small { font-size: .85rem; font-weight: 700; color: var(--ink-soft); letter-spacing: .16em; }
+.brand h1 {
+  font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 1.15;
+  letter-spacing: .05em; white-space: nowrap;
+}
+.meta { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; min-width: 0; flex: 1; }
+.chip {
+  display: inline-block; font-size: .85rem; font-weight: 700; background: var(--chip); color: var(--ink);
+  border-radius: 999px; padding: .2rem .75rem; white-space: nowrap;
+}
+.chip.code { font-family: var(--font-mono); letter-spacing: .06em; }
+.chip.soft { background: none; border: 1px solid var(--card-edge); color: var(--ink-soft); }
+.now { display: flex; align-items: center; gap: .9rem; flex: none; }
+.round-mark { text-align: right; line-height: 1.05; }
+.round-mark .lbl { font-size: .8rem; font-weight: 700; letter-spacing: .2em; color: var(--ink-soft); }
+.round-mark .val { font-family: var(--font-display); font-weight: 800; font-size: 2.3rem; letter-spacing: .04em; }
+.round-mark .val small { font-size: 1.1rem; color: var(--ink-soft); margin-left: .2rem; }
+.clock { font-family: var(--font-mono); font-size: .9rem; color: var(--ink-soft); text-align: right; line-height: 1.3; }
+
+/* ===== 部品（アプリと同じ見た目） ===== */
+.badge { font-size: .85rem; font-weight: 700; border-radius: .35rem; padding: .12rem .55rem; letter-spacing: .04em; white-space: nowrap; }
+.badge.open { background: var(--accent-soft); color: var(--accent); }
+.badge.wait { background: var(--wait-soft); color: var(--wait); }
+.badge.done { background: var(--ok-soft); color: var(--ok); }
+.badge.none { background: var(--chip); color: var(--ink-soft); }
+.badge.alert { background: var(--danger); color: #fff; }
+.btn {
+  font-family: var(--font-body); font-size: 1.05rem; font-weight: 700; padding: .6rem 1.2rem;
+  border-radius: .6rem; border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+  text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: none; border-color: var(--card-edge); color: var(--ink); }
+.btn.danger { background: none; border-color: var(--danger); color: var(--danger); }
+.btn.danger.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.small { font-size: .85rem; padding: .35rem .8rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a.link { color: var(--accent); font-weight: 700; font-size: .95rem; text-underline-offset: 3px; white-space: nowrap; }
+
+/* ===== パネル（= アプリの .card） ===== */
+.panel {
+  background: var(--card); border: 1px solid var(--card-edge); border-radius: .9rem;
+  padding: 1.1rem 1.4rem 1.1rem; display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  position: relative; overflow: hidden;
+}
+.ph { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.ph h2 {
+  font-size: 1.35rem; font-weight: 700; letter-spacing: .03em; display: flex; align-items: center; gap: .55rem;
+}
+.ph h2::before { content: ""; width: .35rem; height: 1.4rem; border-radius: 3px; background: var(--accent); flex: none; }
+.ph .right { margin-left: auto; font-size: .95rem; color: var(--ink-soft); display: flex; gap: .9rem; align-items: center; }
+.ph .right b { color: var(--ink); font-size: 1.25rem; }
+.muted { color: var(--ink-soft); font-size: .9rem; }
+
+/* ===== 主催者だけの操作（会場では目立たせない） =====
+   ・既定: 薄く表示し、パネルにマウスを乗せる / フォーカスすると濃くなる
+   ・投影モード（H キー / ヘッダーの「操作を隠す」）: 場所を残したまま完全に隠す */
+.org { transition: opacity .2s; opacity: .42; }
+.panel:hover .org, .org:hover, .org:focus-within, header.top:hover .org { opacity: 1; }
+body.projecting .org { visibility: hidden; }
+.ops {
+  margin-top: auto; padding-top: .85rem; border-top: 1px dashed var(--card-edge);
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+}
+.ops-tag {
+  font-size: .75rem; font-weight: 700; letter-spacing: .12em; color: var(--ink-soft);
+  border: 1px solid var(--card-edge); border-radius: .3rem; padding: .05rem .45rem;
+}
+.ops .sp { flex: 1; }
+.ops .hint { font-size: .85rem; color: var(--ink-soft); }
+.proj-hint {
+  position: fixed; right: 1rem; bottom: .5rem; font-size: .75rem; color: var(--ink-soft); opacity: .0;
+  pointer-events: none; transition: opacity .3s;
+}
+body.projecting .proj-hint { opacity: .5; }
+
+/* ===== 本体レイアウト ===== */
+main { min-height: 0; display: grid; gap: 1.2rem; }
+main.round { grid-template-columns: 37fr 63fr; }
+main.round .left { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 1.2rem; min-height: 0; }
+main.after { grid-template-columns: 34fr 66fr; }
+main.announce { grid-template-columns: 61fr 39fr; }
+main.single { grid-template-columns: 1fr; }
+
+/* ===== タイマー ===== */
+.timer .ph { margin-bottom: .4rem; }
+input.timer-display {
+  width: 100%; font-family: var(--font-mono); font-weight: 700; font-size: 12.2rem; line-height: 1.04;
+  text-align: center; letter-spacing: .04em; color: var(--ink);
+  background: var(--bg); border: 2px solid var(--card-edge); border-radius: .8rem; padding: .1rem 0 .15rem;
+  font-variant-numeric: tabular-nums;
+}
+input.timer-display[readonly] { border-color: var(--accent); cursor: default; }
+input.timer-display.soon { color: var(--wait); border-color: var(--wait); }
+input.timer-display.timeup { color: var(--danger); border-color: var(--danger); }
+.tbar { height: .5rem; border-radius: 99px; background: var(--chip); overflow: hidden; margin: .7rem 0 0; }
+.tbar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .25s linear; }
+.tbar.soon i { background: var(--wait); }
+.tbar.timeup i { background: var(--danger); }
+.timer .ops { margin-top: .75rem; padding-top: .7rem; }
+.timer .ops .btn { min-width: 7.5rem; justify-content: center; font-family: var(--font-mono); letter-spacing: .08em; }
+.timer-mini { display: flex; align-items: center; gap: .5rem; }
+.timer-mini .t { font-family: var(--font-mono); font-weight: 700; font-size: 1.6rem; }
+
+/* ===== 進行状況（卓の一覧） ===== */
+.seg { display: grid; gap: .35rem; margin-bottom: .9rem; }
+.seg i { height: .55rem; border-radius: 99px; background: var(--chip); }
+.seg i.confirmed { background: var(--ok); }
+.seg i.pending { background: var(--wait); }
+.seg i.draft { background: repeating-linear-gradient(135deg, var(--card-edge) 0 .35rem, transparent .35rem .7rem); }
+.tables { display: grid; gap: .55rem; flex: 1; min-height: 0; grid-auto-rows: minmax(4.4rem, 6.2rem); align-content: start; margin-bottom: .8rem; }
+.tb {
+  display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) auto; align-items: center; gap: .9rem;
+  border: 1px solid var(--card-edge); border-radius: .7rem; padding: .55rem 1rem; min-height: 4.6rem;
+}
+.tb-no { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink-soft); text-align: center; line-height: 1.1; }
+.tb-no b { display: block; font-family: var(--font-mono); font-size: 1.7rem; color: var(--ink); }
+.vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: .7rem; min-width: 0; }
+.pl { min-width: 0; }
+.pl .n { font-size: 1.45rem; font-weight: 700; line-height: 1.25; display: flex; align-items: center; gap: .4rem; }
+.pl .n .w { font-size: .8rem; font-weight: 700; color: var(--accent-ink); background: var(--ok); border-radius: .3rem; padding: 0 .35rem; }
+.pl .d { font-size: .85rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.pl.b { text-align: right; }
+.pl.b .n { justify-content: flex-end; }
+.pl.lose .n { color: var(--ink-soft); }
+.vs .x { font-family: var(--font-display); color: var(--ink-soft); font-size: 1.05rem; }
+.tb.draft { border-style: dashed; background: repeating-linear-gradient(135deg, var(--hatch) 0 .5rem, transparent .5rem 1rem); }
+.tb.draft .pl .n { font-size: 1.7rem; }
+.notice { background: var(--accent-soft); border-radius: .5rem; padding: .55rem .85rem; font-size: .95rem; margin-bottom: .8rem; }
+.notice.warn { background: var(--wait-soft); }
+.notice.ok { background: var(--ok-soft); }
+
+/* ===== 勝敗ランキング ===== */
+.legend { display: flex; gap: 1.1rem; font-size: .85rem; color: var(--ink-soft); align-items: center; }
+.legend .s { text-decoration: line-through; }
+.legend .q { display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border: 1px dashed var(--ink-soft); border-radius: .25rem; font-weight: 700; }
+.rk-head, .rk-row { display: grid; grid-template-columns: 3.8rem minmax(0, 1fr) 6.6rem 5.4rem; align-items: center; column-gap: 1rem; }
+.rk-head { font-size: .8rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); padding: 0 .8rem .35rem; border-bottom: 1px solid var(--card-edge); }
+.rk-head .num, .rk-row .num { text-align: right; }
+.rk-body { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); }
+.rk-row { padding: .4rem .8rem; border-bottom: 1px solid var(--card-edge); animation: rise .4s ease both; }
+.rk-row:last-child { border-bottom: 0; }
+.rk-row.top { background: linear-gradient(90deg, var(--accent-soft), transparent 70%); border-radius: .5rem; }
+.rk-no { font-family: var(--font-display); font-weight: 800; font-size: 2.5rem; line-height: 1; text-align: center; color: var(--ink-soft); }
+.rk-row.top .rk-no { color: var(--accent); }
+.rk-row:nth-child(-n+3) .rk-no { color: var(--ink); }
+.rk-row.top .rk-no { color: var(--accent); }
+.rk-main { min-width: 0; }
+.rk-name { font-size: 1.55rem; font-weight: 700; line-height: 1.25; display: flex; align-items: center; gap: .55rem; }
+.rk-rec { font-family: var(--font-mono); font-weight: 700; font-size: 1.9rem; text-align: right; letter-spacing: .02em; white-space: nowrap; }
+.rk-rec small { display: block; font-size: .8rem; font-weight: 500; color: var(--ink-soft); letter-spacing: 0; line-height: 1.2; }
+.pips { display: flex; gap: .3rem; justify-content: flex-end; }
+.pips i { width: 1.05rem; height: 1.05rem; border-radius: .25rem; border: 2px solid var(--accent); }
+.pips i.on { background: var(--accent); }
+.pips i.off { border-color: var(--card-edge); background: none; }
+.decks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; margin-top: .3rem; }
+.dk {
+  display: flex; align-items: center; gap: .45rem; min-width: 0; height: 2.6rem;
+  border: 1px solid var(--card-edge); border-radius: .45rem; padding: 0 .6rem; background: var(--bg);
+}
+.dk-t { font-size: 1.25rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+/* CX 構成は会場から読む情報ではないので、投影では出さずツールチップ（title）に回す */
+.dk-cx { display: none; }
+.dk-tags { margin-left: auto; display: flex; gap: .2rem; flex: none; }
+.dk-tags i { font-style: normal; font-family: var(--font-mono); font-size: .72rem; font-weight: 700; border-radius: .25rem; padding: 0 .3rem; background: var(--chip); color: var(--ink-soft); }
+.dk-tags i.w { background: var(--ok-soft); color: var(--ok); }
+.dk-tags i.d { background: var(--wait-soft); color: var(--wait); }
+.dk.used { background: none; }
+.dk.used .dk-t { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-soft); }
+.dk.hid {
+  justify-content: center; border-style: dashed; color: var(--ink-soft);
+  background: repeating-linear-gradient(135deg, var(--hatch) 0 .45rem, transparent .45rem .9rem);
+}
+.dk.hid span { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+.dk.hid small { font-size: .75rem; margin-left: .4rem; }
+/* 詰めた表示（大会終了後の左列） */
+.compact .rk-head, .compact .rk-row { grid-template-columns: 3rem minmax(0, 1fr) 5.6rem; column-gap: .7rem; }
+.compact .rk-no { font-size: 1.9rem; }
+.compact .rk-name { font-size: 1.3rem; }
+.compact .rk-rec { font-size: 1.45rem; }
+.compact .dk { height: 2.1rem; padding: 0 .45rem; }
+.compact .dk-t { font-size: 1rem; }
+.compact .dk-cx, .compact .dk-tags { display: none; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(.4rem); } to { opacity: 1; transform: none; } }
+
+/* ===== 事後コスト ===== */
+.watermark {
+  position: absolute; right: 2rem; top: 46%; transform: translateY(-50%) rotate(-12deg);
+  font-family: var(--font-display); font-weight: 800; font-size: 13rem; letter-spacing: .2em;
+  color: var(--ink); opacity: .035; pointer-events: none; white-space: nowrap;
+}
+.cost-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.8rem; flex: 1; min-height: 0; margin-bottom: .8rem; }
+.cg-col { display: grid; grid-template-rows: auto; grid-auto-rows: minmax(2.6rem, 1fr); min-height: 0; }
+.cg-head, .cg-row { display: grid; grid-template-columns: minmax(0, 1fr) 3.4rem 11rem 4.4rem; align-items: center; column-gap: .7rem; }
+.cg-head { font-size: .8rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); border-bottom: 1px solid var(--card-edge); padding-bottom: .3rem; height: auto !important; }
+.cg-row { border-bottom: 1px solid var(--card-edge); }
+.cg-t { font-size: 1.25rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cg-n { font-family: var(--font-mono); font-size: 1.2rem; text-align: right; color: var(--ink-soft); }
+.cg-v { font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; text-align: right; }
+.delta { display: grid; grid-template-columns: 1fr 3.4rem; align-items: center; gap: .4rem; }
+.dbar { position: relative; height: .7rem; background: var(--chip); border-radius: 99px; }
+.dbar::after { content: ""; position: absolute; left: 50%; top: -.2rem; bottom: -.2rem; width: 2px; background: var(--ink-soft); opacity: .6; }
+.dbar i { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
+.dbar i.up { left: 50%; background: var(--wait); }
+.dbar i.down { right: 50%; background: var(--accent); }
+.dnum { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; text-align: right; }
+.dnum.up { color: var(--wait); }
+.dnum.down { color: var(--accent); }
+.dnum.zero { color: var(--ink-soft); }
+.empty-state { flex: 1; display: grid; place-content: center; text-align: center; gap: 1rem; }
+.empty-state .big { font-family: var(--font-display); font-weight: 800; font-size: 3.2rem; letter-spacing: .08em; }
+.empty-state p { color: var(--ink-soft); font-size: 1.15rem; }
+
+/* 発表（確定後のソート表） */
+.an-head, .an-row { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 9.5rem; column-gap: 1rem; align-items: center; }
+.an-head { font-size: .8rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-soft); padding: 0 .8rem .35rem; border-bottom: 1px solid var(--card-edge); }
+.an-head .num { text-align: right; }
+.an-body { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); }
+.an-row { padding: .35rem .8rem; border-bottom: 1px solid var(--card-edge); animation: rise .5s ease both; }
+.an-row:last-child { border-bottom: 0; }
+.an-row.top { background: linear-gradient(90deg, var(--wait-soft), transparent 75%); border-radius: .5rem; }
+.an-row.top .rk-no { color: var(--wait); }
+.an-total { text-align: right; line-height: 1.05; }
+.an-total b { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; }
+.an-total small { display: block; font-size: .85rem; color: var(--ink-soft); font-family: var(--font-mono); }
+.an-total small .up { color: var(--wait); } .an-total small .down { color: var(--accent); }
+.an-row .dk-tags i { font-size: .78rem; }
+.an-row .dk-tags i.up { background: var(--wait-soft); color: var(--wait); }
+.an-row .dk-tags i.down { background: var(--accent-soft); color: var(--accent); }
+.an-row .dk-tags i.zero { background: var(--chip); color: var(--ink-soft); }
+.an-row .dk-v { font-family: var(--font-mono); font-size: .95rem; font-weight: 700; flex: none; }
+.rows-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.rows-table th, .rows-table td { padding: .28rem .4rem; border-bottom: 1px solid var(--card-edge); text-align: left; white-space: nowrap; }
+.rows-table th { font-size: .78rem; letter-spacing: .08em; color: var(--ink-soft); font-weight: 700; }
+.rows-table td.t { max-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.rows-table .num { text-align: right; font-family: var(--font-mono); }
+.rows-table td.v { font-weight: 700; font-size: 1.1rem; }
+.rows-table td.up { color: var(--wait); } .rows-table td.down { color: var(--accent); } .rows-table td.zero { color: var(--ink-soft); }
+.rows-wrap { flex: 1; min-height: 0; overflow: hidden; }
+
+/* 表示切り替え（事後コスト発表 / 勝敗ランキング） */
+.seg-switch { display: inline-flex; border: 1px solid var(--card-edge); border-radius: 999px; padding: .15rem; gap: .15rem; }
+.seg-switch button { border: 0; background: none; color: var(--ink-soft); font-weight: 700; font-size: .85rem; padding: .25rem .8rem; border-radius: 999px; cursor: pointer; }
+.seg-switch button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+
+/* ===== トースト（アプリと同じ） ===== */
+#toast {
+  position: fixed; left: 50%; bottom: 1.6rem; transform: translateX(-50%) translateY(1.2rem);
+  background: #0c0d10; color: #e9e7df; font-size: .95rem; font-weight: 700; padding: .6rem 1.2rem;
+  border-radius: 99px; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+  border: 1px solid #3a3d46; z-index: 99;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== モック専用: 状態の切り替え（?clean=1 で消える） ===== */
+.mockbar {
+  position: fixed; left: 50%; bottom: .45rem; transform: translateX(-50%); z-index: 80;
+  display: flex; gap: .25rem; align-items: center; background: #0c0d10; border: 1px solid #3a3d46;
+  border-bottom: 2px solid #d33a2f; border-radius: 999px; padding: .2rem .35rem .2rem .8rem;
+  font-size: .72rem; color: #b9b6ac; opacity: .25; transition: opacity .2s;
+}
+.mockbar:hover, .mockbar:focus-within { opacity: 1; }
+.mockbar button { font-size: .72rem; font-weight: 700; border: 1px solid #3a3d46; background: #17181d; color: #b9b6ac; border-radius: 999px; padding: .15rem .6rem; cursor: pointer; }
+.mockbar button[aria-pressed="true"] { background: #2b3040; color: #e9e7df; border-color: #8fb0ff; }
+body.clean .mockbar { display: none; }
+
+/* ===== 16 人版（body.n16）: 2 段組みの行を 1 行に畳み、16 行・8 卓を 1 画面に収める =====
+   目安: 1080p（1rem=16px）で参加者名 24px・デッキ名 20px・卓の名前 22px 以上 */
+.n16 input.timer-display { font-size: 8.6rem; }
+.n16 .timer .ph { margin-bottom: .3rem; }
+.n16 .tables { grid-auto-rows: minmax(0, 1fr); gap: .4rem; margin-bottom: .6rem; }
+.n16 .tb { min-height: 0; padding: 0 .9rem; grid-template-columns: 3.4rem minmax(0, 1fr) auto; }
+.n16 .tb-no { font-size: 1rem; white-space: nowrap; }
+.n16 .tb-no b { display: inline; font-size: 1.4rem; margin-left: .15rem; }
+.n16 .pl .d { display: none; }
+.n16 .pl .n, .n16 .tb.draft .pl .n { font-size: 1.4rem; }
+.n16 .badge { font-size: 1rem; }
+.n16 .notice { padding: .4rem .8rem; margin-bottom: .55rem; }
+.n16 .rk-head, .n16 .rk-row { grid-template-columns: 2.8rem minmax(0, 1fr) 5.6rem 4.4rem; column-gap: .8rem; }
+.n16 .rk-row { padding: .12rem .6rem; }
+.n16 .rk-no { font-size: 1.75rem; }
+.n16 .rk-main { display: grid; grid-template-columns: 6.6rem minmax(0, 1fr); align-items: center; column-gap: .6rem; }
+.n16 .rk-name { font-size: 1.5rem; white-space: nowrap; }
+.n16 .decks { margin-top: 0; gap: .35rem; }
+.n16 .dk { height: 2.3rem; padding: 0 .5rem; }
+.n16 .dk-t { font-size: 1.25rem; }
+.n16 .dk-cx { display: none; }
+.n16 .dk.hid span { font-size: 1.2rem; }
+.n16 .rk-rec { font-size: 1.6rem; }
+.n16 .pips i { width: .95rem; height: .95rem; }
+.n16 main.after { grid-template-columns: 26fr 74fr; }
+.n16 .compact .rk-main { grid-template-columns: 1fr; }
+.n16 .compact .decks { display: none; }
+.n16 .compact .rk-head, .n16 .compact .rk-row { grid-template-columns: 2.6rem minmax(0, 1fr) 5.4rem; }
+.n16 .compact .legend { display: none; }
+.n16 .cg-col { grid-auto-rows: minmax(0, 1fr); }
+.n16 .cg-v { font-size: 1.55rem; }
+.n16 .an-head, .n16 .an-row { grid-template-columns: 2.8rem minmax(0, 1fr) 13rem; column-gap: .8rem; }
+.n16 .an-row { padding: .12rem .6rem; }
+.n16 .an-row .dk-v { font-size: 1.15rem; }
+.n16 .an-row .dk-tags i { font-size: .9rem; }
+.n16 .an-total { display: flex; align-items: baseline; justify-content: flex-end; gap: .7rem; }
+.n16 .an-total b { font-size: 1.85rem; order: 2; }
+.n16 .an-total small { display: inline; font-size: .95rem; }
+
+/* ===== 狭い画面（スマホ）: 縦に積む ===== */
+@media (max-width: 820px) {
+  html { font-size: 13px; }
+  body { height: auto; overflow: auto; }
+  .stage { height: auto; padding: .9rem .8rem 4rem; }
+  header.top { flex-wrap: wrap; gap: .6rem; }
+  .brand h1 { font-size: 1.7rem; white-space: normal; }
+  .meta { order: 3; flex-basis: 100%; }
+  .now { margin-left: auto; }
+  main.round, main.after, main.announce { grid-template-columns: 1fr; }
+  main.round .left { grid-template-rows: auto auto; }
+  input.timer-display { font-size: 6.5rem; }
+  .rk-body, .an-body { display: block; }
+  .rk-head, .rk-row { grid-template-columns: 2.6rem minmax(0, 1fr) 5rem; }
+  .rk-head > :nth-child(4), .rk-row > :nth-child(4) { display: none; }
+  .decks { grid-template-columns: 1fr; }
+  .cost-grid { grid-template-columns: 1fr; }
+  .cg-col + .cg-col .cg-head { display: none; }
+  .an-head, .an-row { grid-template-columns: 2.6rem minmax(0, 1fr) 6rem; }
+  .watermark { font-size: 6rem; }
+  .org { opacity: 1; }
+  body { overflow-x: hidden; }
+  .now { flex-wrap: wrap; justify-content: flex-end; }
+  .ph .right { margin-left: 0; flex-wrap: wrap; }
+  .tb { grid-template-columns: 2.6rem minmax(0, 1fr); row-gap: .3rem; }
+  .tb > .badge { grid-column: 2; justify-self: start; }
+  .rk-row, .an-row { padding: .7rem .4rem; }
+  .rk-rec { font-size: 1.45rem; }
+  .n16 .rk-main { grid-template-columns: 1fr; }
+  .n16 .rk-row, .n16 .an-row { padding: .6rem .4rem; }
+  .n16 .pl .d { display: block; }
+  .n16 .tb { padding: .5rem .8rem; }
+  .an-head, .an-row { column-gap: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) { .rk-row, .an-row { animation: none; } body { transition: none; } }
+</style>
+</head>
+<body data-theme="schwarz">
+<div class="stage" id="stage"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="proj-hint">投影モード中 — H キーで主催者操作を表示</div>
+<nav class="mockbar" aria-label="モックの状態切り替え" id="mockbar"></nav>
+
+<script>
+/* =========================================================
+   サンプルデータ（参加者 8 人・デッキ 3 個ずつ・スイス式・しま2026版ピラミッド）
+   タイトルは titles.js の実在タイトル。コスト上限 6、事後変動の範囲 ±0.5。
+   ========================================================= */
+const PLAYERS8 = {
+  shima:  { name: "しま",   decks: [["葬送のフリーレン", "扉8", 2], ["ホロライブプロダクション", "門8", 2], ["東方Project", "宝4 扉4", 1]] },
+  aoi:    { name: "あおい", decks: [["ブルーアーカイブ", "宝8", 3], ["【推しの子】", "扉8", 2], ["ゆるキャン△", "本8", 1]] },
+  kanata: { name: "かなた", decks: [["ラブライブ！蓮ノ空女学院スクールアイドルクラブ", "門8", 2], ["Fate/Grand Order（アニメ）", "扉8", 2], ["ぼっち・ざ・ろっく！", "チョイス8", 1]] },
+  yuto:   { name: "ゆうと", decks: [["転生したらスライムだった件", "扉8", 2], ["SPY×FAMILY", "門8", 1], ["チェンソーマン", "宝8", 2]] },
+  misaki: { name: "みさき", decks: [["学園アイドルマスター", "門8", 3], ["ご注文はうさぎですか？？", "扉8", 1], ["リコリス・リコイル", "ショット8", 2]] },
+  ren:    { name: "れん",   decks: [["ホロライブプロダクション", "扉8", 2], ["葬送のフリーレン", "門8", 2], ["ダンダダン", "宝8", 1]] },
+  hinata: { name: "ひなた", decks: [["ウマ娘 プリティーダービー", "扉8", 3], ["ガールズバンドクライ", "門8", 1], ["東方Project", "本8", 1]] },
+  sora:   { name: "そら",   decks: [["Re:ゼロから始める異世界生活", "扉8", 2], ["ブルーアーカイブ", "門8", 3], ["魔法少女まどか☆マギカ", "宝8", 1]] }
+};
+// 対戦: [A, Aのデッキ番号, B, Bのデッキ番号, 結果 a|b|draw]
+const ROUNDS8 = [
+  [["shima", 0, "aoi", 0, "a"], ["kanata", 0, "yuto", 0, "b"], ["misaki", 0, "ren", 0, "a"], ["hinata", 0, "sora", 0, "b"]],
+  [["shima", 2, "yuto", 1, "a"], ["misaki", 1, "sora", 2, "b"], ["aoi", 0, "kanata", 1, "a"], ["ren", 2, "hinata", 1, "b"]],
+  [["shima", 1, "sora", 1, "draw"], ["yuto", 1, "misaki", 2, "b"], ["aoi", 1, "hinata", 0, "a"], ["kanata", 2, "ren", 1, "a"]],
+  [["shima", 1, "misaki", 1, "a"], ["sora", 1, "aoi", 2, "a"], ["kanata", 0, "hinata", 2, "b"], ["yuto", 1, "ren", 2, "b"]]
+];
+// 事後コストの抽選結果（増減は 0.1 単位）。持ち込まれた 20 タイトル。コスト表は全 54 行
+const POST8 = {
+  "葬送のフリーレン": [2, 3], "ホロライブプロダクション": [2, -2], "東方Project": [1, 5], "ブルーアーカイブ": [3, 4],
+  "【推しの子】": [2, -1], "ゆるキャン△": [1, 2], "ラブライブ！蓮ノ空女学院スクールアイドルクラブ": [2, -4],
+  "Fate/Grand Order（アニメ）": [2, 1], "ぼっち・ざ・ろっく！": [1, -3], "転生したらスライムだった件": [2, 0],
+  "SPY×FAMILY": [1, 4], "チェンソーマン": [2, -5], "学園アイドルマスター": [3, -2], "ご注文はうさぎですか？？": [1, 3],
+  "リコリス・リコイル": [2, 2], "ダンダダン": [1, -1], "ウマ娘 プリティーダービー": [3, 5], "ガールズバンドクライ": [1, -4],
+  "Re:ゼロから始める異世界生活": [2, 1], "魔法少女まどか☆マギカ": [1, -2]
+};
+const CATALOG_ROWS = 54;
+// 順位（しま2026版ピラミッド＝大会中はコスト制ピラミッドと同じ並び。core.js の計算結果を想定して固定）
+const ORDER8 = {
+  r3live:  ["shima", "sora", "misaki", "kanata", "hinata", "yuto", "aoi", "ren"],
+  r3done:  ["shima", "sora", "aoi", "misaki", "kanata", "hinata", "yuto", "ren"],
+  final:   ["shima", "sora", "hinata", "aoi", "misaki", "kanata", "ren", "yuto"]
+};
+
+/* ===== 画面の状態 ===== */
+const STATES8 = {
+  1: { label: "ラウンド中", round: 3, phase: "published", confirmedRounds: 2, r3: ["none", "confirmed", "pending", "confirmed"], order: "r3live", timer: { remain: 18 * 60 + 42, start: 35 * 60, running: true } },
+  2: { label: "マッチング下書き", round: 4, phase: "draft", confirmedRounds: 3, order: "r3done", timer: { remain: 35 * 60, start: 35 * 60, running: false } },
+  3: { label: "事後コストの下書き", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "draft", drawCount: 2 },
+  4: { label: "事後コスト発表", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "confirmed", drawCount: 2 },
+  5: { label: "ラウンド完了（抽選前）", round: 3, phase: "closed", confirmedRounds: 3, order: "r3done", timer: { remain: 0, start: 35 * 60, running: false } },
+  6: { label: "大会終了直後（事後コスト抽選前）", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "none", drawCount: 0 }
+};
+
+/* ===== 16 人版（?players=16）: 8 卓・デッキ 3 個ずつ。8 人版の 8 人に 8 人を足す =====
+   対戦は スイス式＋ピラミッドの規則で組んだ 3 ラウンド分（再戦なし・勝ったデッキは再使用しない）。
+   Round 3 で ゆい と あおい が 3 個とも使い切って勝ち抜け、大会終了。順位は rankOrder() で計算する。 */
+const PLAYERS16 = Object.assign({}, PLAYERS8, {
+  yui:    { name: "ゆい",   decks: [["ラブライブ！スーパースター!!", "門8", 2], ["甘神さんちの縁結び", "扉8", 1], ["ホロライブプロダクション", "宝8", 2]] },
+  haruto: { name: "はると", decks: [["怪獣８号", "扉8", 2], ["ワールドトリガー", "門8", 1], ["進撃の巨人", "宝8", 2]] },
+  mei:    { name: "めい",   decks: [["アイドルマスター シャイニーカラーズ", "門8", 3], ["魔法少女リリカルなのは", "扉8", 1], ["葬送のフリーレン", "宝8", 2]] },
+  sota:   { name: "そうた", decks: [["ソードアート・オンライン", "扉8", 2], ["この素晴らしい世界に祝福を！", "本8", 1], ["チェンソーマン", "門8", 2]] },
+  rin:    { name: "りん",   decks: [["BanG Dream!", "門8", 2], ["少女☆歌劇 レヴュースタァライト", "扉8", 1], ["ゆるキャン△", "宝8", 1]] },
+  itsuki: { name: "いつき", decks: [["戦姫絶唱シンフォギア", "扉8", 2], ["五等分の花嫁", "門8", 2], ["ダンダダン", "本8", 1]] },
+  sakura: { name: "さくら", decks: [["カードキャプターさくら", "扉8", 1], ["ご注文はうさぎですか？？", "門8", 1], ["ブルーアーカイブ", "宝8", 3]] },
+  kaito:  { name: "かいと", decks: [["ジョジョの奇妙な冒険", "扉8", 2], ["東京リベンジャーズ", "門8", 1], ["学園アイドルマスター", "宝8", 3]] }
+});
+const ROUNDS16 = [
+  [["shima", 1, "aoi", 0, "b"], ["kanata", 2, "yuto", 1, "a"], ["misaki", 1, "ren", 2, "a"], ["hinata", 0, "sora", 1, "b"], ["yui", 2, "haruto", 0, "a"], ["mei", 0, "sota", 1, "b"], ["rin", 1, "itsuki", 1, "a"], ["sakura", 2, "kaito", 0, "b"]],
+  [["rin", 2, "kanata", 0, "b"], ["sota", 2, "yui", 0, "b"], ["misaki", 0, "kaito", 2, "draw"], ["aoi", 2, "sora", 0, "a"], ["itsuki", 0, "sakura", 0, "b"], ["shima", 1, "haruto", 0, "b"], ["hinata", 2, "yuto", 0, "a"], ["ren", 0, "mei", 2, "draw"]],
+  [["kanata", 1, "yui", 1, "b"], ["aoi", 1, "rin", 0, "a"], ["sakura", 1, "sota", 0, "b"], ["hinata", 0, "haruto", 2, "a"], ["misaki", 0, "sora", 2, "a"], ["kaito", 1, "itsuki", 0, "a"], ["shima", 2, "ren", 2, "a"], ["yuto", 2, "mei", 2, "b"]]
+];
+const POST16 = Object.assign({}, POST8, {
+  "ラブライブ！スーパースター!!": [2, 3], "甘神さんちの縁結び": [1, -2], "怪獣８号": [2, 5], "ワールドトリガー": [1, 1],
+  "進撃の巨人": [2, -3], "アイドルマスター シャイニーカラーズ": [3, -1], "魔法少女リリカルなのは": [1, 4],
+  "ソードアート・オンライン": [2, -5], "この素晴らしい世界に祝福を！": [1, 2], "BanG Dream!": [2, 0],
+  "少女☆歌劇 レヴュースタァライト": [1, -1], "戦姫絶唱シンフォギア": [2, 2], "五等分の花嫁": [2, -4],
+  "カードキャプターさくら": [1, 3], "ジョジョの奇妙な冒険": [2, 1], "東京リベンジャーズ": [1, -3]
+});
+const STATES16 = {
+  1: { label: "ラウンド中", round: 3, phase: "published", confirmedRounds: 2, r3: ["pending", "none", "confirmed", "confirmed", "confirmed", "pending", "none", "confirmed"], timer: { remain: 12 * 60 + 8, start: 35 * 60, running: true } },
+  2: { label: "マッチング下書き", round: 3, phase: "draft", confirmedRounds: 2, timer: { remain: 35 * 60, start: 35 * 60, running: false } },
+  3: { label: "事後コストの下書き", round: 3, phase: "done", confirmedRounds: 3, post: "draft", drawCount: 1 },
+  4: { label: "事後コスト発表", round: 3, phase: "done", confirmedRounds: 3, post: "confirmed", drawCount: 1 },
+  5: { label: "ラウンド完了（抽選前）", round: 2, phase: "closed", confirmedRounds: 2, timer: { remain: 0, start: 35 * 60, running: false } },
+  6: { label: "大会終了直後（事後コスト抽選前）", round: 3, phase: "done", confirmedRounds: 3, post: "none", drawCount: 0 }
+};
+
+/* 人数の切り替え。8 人版は順位を固定値（ORDER8）で持ち、16 人版は rankOrder() で計算する */
+let PLAYERS, ROUNDS, POST, ORDER, STATES, N = 8;
+function useDataset(n) {
+  N = n === 16 ? 16 : 8;
+  [PLAYERS, ROUNDS, POST, ORDER, STATES] = N === 16
+    ? [PLAYERS16, ROUNDS16, POST16, null, STATES16]
+    : [PLAYERS8, ROUNDS8, POST8, ORDER8, STATES8];
+  document.body.classList.toggle("n16", N === 16);
+}
+/* コスト制ピラミッドの並び: 使い切ったラウンドが早い → 勝利数 → 登録コストが低い → 使用可能コストが高い → 名前 */
+function rankOrder(rec) {
+  const cost = (id) => PLAYERS[id].decks.reduce((s, d) => s + d[2], 0);
+  const usable = (id) => PLAYERS[id].decks.reduce((s, d, i) => s + (rec[id].used.has(i) ? 0 : d[2]), 0);
+  return Object.keys(PLAYERS).sort((a, b) => (rec[a].done ?? 99) - (rec[b].done ?? 99) || rec[b].w - rec[a].w
+    || cost(a) - cost(b) || usable(b) - usable(a) || PLAYERS[a].name.localeCompare(PLAYERS[b].name, "ja"));
+}
+
+/* ===== 小道具 ===== */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (v) => { const t = (Math.round(v * 1e6) / 1e6).toString(); return t.includes(".") ? t : t + ".0"; }; // core.formatPostCost と同じ表示
+const fmtDelta = (d) => (d >= 0 ? "+" : "−") + fmt(Math.abs(d) / 10);
+const dcls = (d) => (d > 0 ? "up" : d < 0 ? "down" : "zero");
+const name = (id) => PLAYERS[id].name;
+let toastTimer = null;
+function toast(msg) {
+  const el = $("#toast"); el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+/* 確定した対戦の一覧（状態ごと） */
+function confirmedMatches(st) {
+  const list = [];
+  ROUNDS.forEach((round, ri) => {
+    round.forEach((m, mi) => {
+      const ok = ri < st.confirmedRounds || (ri === 2 && st.r3 && st.r3[mi] === "confirmed");
+      if (ok) list.push({ r: ri + 1, a: m[0], ad: m[1], b: m[2], bd: m[3], res: m[4] });
+    });
+  });
+  return list;
+}
+/* 戦績とデッキの公開状態を確定対戦から組み立てる（ピラミッド: 勝ったデッキは使用不可） */
+function buildRecords(st) {
+  const rec = {};
+  for (const id in PLAYERS) rec[id] = { w: 0, l: 0, d: 0, reveal: [], uses: {}, used: new Set() };
+  for (const m of confirmedMatches(st)) {
+    [[m.a, m.ad, "a"], [m.b, m.bd, "b"]].forEach(([id, di, side]) => {
+      const r = rec[id];
+      const out = m.res === "draw" ? "d" : m.res === side ? "w" : "l";
+      if (out === "w") { r.w++; r.used.add(di); if (r.used.size === 3 && r.done == null) r.done = m.r; } else if (out === "l") r.l++; else r.d++;
+      if (!r.uses[di]) { r.uses[di] = []; r.reveal.push(di); }
+      r.uses[di].push({ r: m.r, out });
+    });
+  }
+  return rec;
+}
+
+/* ===== 部品の HTML ===== */
+const OUT_LABEL = { w: "勝", l: "負", d: "分" };
+function deckChip(deck, uses, used) {
+  const [title, cx] = deck;
+  const tags = uses.map((u) => `<i class="${u.out}">R${u.r}${OUT_LABEL[u.out]}</i>`).join("");
+  return `<div class="dk ${used ? "used" : ""}" title="${esc(title)} ${esc(cx)}${used ? "（勝利して使用済み）" : ""}">
+    <span class="dk-t">${esc(title)}</span><span class="dk-cx">${esc(cx)}</span><span class="dk-tags">${tags}</span></div>`;
+}
+const hiddenChip = () => `<div class="dk hid" title="未使用のデッキ（非公開）"><span>？</span><small>未使用</small></div>`;
+
+function rankingPanel(st, rec, opts = {}) {
+  const order = ORDER ? ORDER[st.order] : rankOrder(rec);
+  const done = st.phase === "done";
+  const rows = order.map((id, i) => {
+    const p = PLAYERS[id], r = rec[id];
+    const chips = r.reveal.map((di) => deckChip(p.decks[di], r.uses[di], r.used.has(di)));
+    while (chips.length < 3) chips.push(hiddenChip());
+    const left = 3 - r.used.size;
+    const status = left === 0
+      ? `<span class="badge done">勝ち抜け</span>`
+      : `<div class="pips" title="使用可能なデッキ ${left} 個">${[0, 1, 2].map((k) => `<i class="${k < left ? "on" : "off"}"></i>`).join("")}</div>`;
+    return `<div class="rk-row ${i === 0 ? "top" : ""}" style="animation-delay:${i * 40}ms">
+      <div class="rk-no">${i + 1}</div>
+      <div class="rk-main"><div class="rk-name">${esc(p.name)}</div><div class="decks">${chips.join("")}</div></div>
+      <div class="rk-rec">${r.w}-${r.l}-${r.d}</div>
+      ${opts.compact ? "" : `<div class="num">${status}</div>`}
+    </div>`;
+  }).join("");
+  return `<section class="panel ${opts.compact ? "compact" : ""}" aria-label="勝敗ランキング">
+    <div class="ph"><h2>${done ? "最終順位" : "勝敗ランキング"}</h2>
+      ${done ? `<span class="badge done">最終結果</span>` : `<span class="muted">確定した結果のみ反映</span>`}
+      <div class="right legend">${opts.switcher ? viewSwitch() : ""}${opts.compact ? "" : `<span><span class="s">タイトル</span> 勝利して使用済み</span>`}<span><span class="q">？</span> 未使用（非公開）</span></div>
+    </div>
+    <div class="rk-head"><span>順位</span><span>参加者・登録デッキ（使った順）</span><span class="num">勝-負-分</span>${opts.compact ? "" : `<span class="num">残りデッキ</span>`}</div>
+    <div class="rk-body">${rows}</div>
+  </section>`;
+}
+
+/* 主催者の操作帯（パネルの下端。会場では薄く、投影モードで非表示） */
+const ops = (inner) => `<div class="ops org"><span class="ops-tag">主催者</span>${inner}</div>`;
+const fixLink = (what) => `<a class="link" href="#" onclick="App.fixTab(event)" title="${esc(what)}">大会進行修正 ↗</a>`;
+
+function timerPanel(st) {
+  const t = timer;
+  const remain = timerRemain();
+  const cls = remain <= 0 ? "timeup" : remain <= 300 ? "soon" : "";
+  const pct = t.start ? Math.max(0, Math.min(100, (remain / t.start) * 100)) : 0;
+  const lbl = st.phase === "published" ? `Round ${st.round} の残り時間` : st.phase === "draft" ? `Round ${st.round} 用（停止中）` : `Round ${st.round} 終了`;
+  return `<section class="panel timer" aria-label="カウントダウンタイマー">
+    <div class="ph"><h2>タイマー</h2><span class="muted">${lbl}</span>
+      <span class="right">${t.running ? `<span class="badge open">動作中</span>` : remain <= 0 ? `<span class="badge alert">00:00</span>` : `<span class="badge none">停止中</span>`}</span></div>
+    <input type="text" id="dash-timer" class="timer-display ${cls}" value="${timerFormat(remain)}" ${t.running ? "readonly" : ""}
+      inputmode="numeric" aria-label="タイマー (分:秒)" spellcheck="false" />
+    <div class="tbar ${cls}" id="dash-tbar"><i style="width:${pct}%"></i></div>
+    ${ops(`${t.running
+        ? `<button class="btn danger" onclick="App.timerStop()">STOP</button>`
+        : `<button class="btn primary" onclick="App.timerStart()">START</button>`}
+      <button class="btn ghost" onclick="App.timerReset()" ${t.running ? "disabled" : ""}>RESET</button>
+      <span class="hint">表示を直接編集して START（35:00 の形式、分だけでも可）</span>`)}
+  </section>`;
+}
+
+function playerCell(id, di, side, res, showDeck) {
+  const out = res == null ? null : res === "draw" ? "d" : res === side ? "w" : "l";
+  const deck = showDeck ? PLAYERS[id].decks[di][0] : "";
+  return `<div class="pl ${side} ${out === "l" ? "lose" : ""}">
+    <div class="n">${side === "b" && out === "w" ? `<span class="w">勝</span>` : ""}${esc(name(id))}${side === "a" && out === "w" ? `<span class="w">勝</span>` : ""}</div>
+    ${showDeck ? `<span class="d" title="${esc(deck)}">${esc(deck)}</span>` : `<span class="d">&nbsp;</span>`}</div>`;
+}
+function tableRow(no, m, status) {
+  const [a, ad, b, bd, res] = m;
+  const conf = status === "confirmed";
+  const badge = {
+    confirmed: res === "draw" ? `<span class="badge done">確定: 引き分け</span>` : `<span class="badge done">確定: ${esc(name(res === "a" ? a : b))}の勝ち</span>`,
+    pending: `<span class="badge wait">承諾待ち</span>`,
+    none: `<span class="badge none">未報告</span>`,
+    draft: `<span class="badge none">下書き</span>`
+  }[status];
+  return `<div class="tb ${status === "draft" ? "draft" : ""}">
+    <div class="tb-no">卓<b>${no}</b></div>
+    <div class="vs">${playerCell(a, ad, "a", conf ? res : null, conf)}<span class="x">vs</span>${playerCell(b, bd, "b", conf ? res : null, conf)}</div>
+    ${badge}</div>`;
+}
+
+function progressPanel(st) {
+  const roundIdx = st.round - 1;
+  const matches = ROUNDS[roundIdx];
+  if (st.phase === "published") {
+    const sts = st.r3;
+    const done = sts.filter((s) => s === "confirmed").length;
+    return `<section class="panel" aria-label="進行状況">
+      <div class="ph"><h2>進行状況</h2><span class="badge open">Round ${st.round}</span><span class="badge open">公開中</span>
+        <span class="right">${matches.length}卓中 <b>${done}卓</b> が確定</span></div>
+      <div class="seg" style="grid-template-columns:repeat(${matches.length},1fr)">${sts.map((s) => `<i class="${s}"></i>`).join("")}</div>
+      <div class="tables">${matches.map((m, i) => tableRow(i + 1, m, sts[i])).join("")}</div>
+      ${ops(`<button class="btn primary" disabled title="全卓が確定すると押せます">ラウンドを完了する</button>
+        <span class="hint">全卓確定で押せます</span><span class="sp"></span>${fixLink("承諾の代行・結果の修正")}`)}
+    </section>`;
+  }
+  if (st.phase === "draft") {
+    return `<section class="panel" aria-label="進行状況">
+      <div class="ph"><h2>Round ${st.round} の組み合わせ</h2><span class="badge none">下書き</span><span class="badge wait">未公開</span>
+        <span class="right">${matches.length}卓・再戦なし</span></div>
+      <div class="notice">抽選しました。内容を確認して「公開する」と、参加者の画面に組み合わせが出ます。</div>
+      <div class="tables">${matches.map((m, i) => tableRow(i + 1, m, "draft")).join("")}</div>
+      ${ops(`<button class="btn ghost" onclick="App.toast('（モック）抽選し直しました')">抽選し直す</button>
+        <button class="btn primary" onclick="App.go(1)">公開する</button><span class="sp"></span>${fixLink("組み合わせの手動入れ替え")}`)}
+    </section>`;
+  }
+  // closed（全卓確定・次の抽選前）
+  return `<section class="panel" aria-label="進行状況">
+    <div class="ph"><h2>進行状況</h2><span class="badge open">Round ${st.round}</span><span class="badge done">完了</span>
+      <span class="right">${matches.length}卓中 <b>${matches.length}卓</b> が確定</span></div>
+    <div class="seg" style="grid-template-columns:repeat(${matches.length},1fr)">${matches.map(() => `<i class="confirmed"></i>`).join("")}</div>
+    <div class="tables">${matches.map((m, i) => tableRow(i + 1, m, "confirmed")).join("")}</div>
+    ${ops(`<button class="btn primary" onclick="App.go(2)">Round ${st.round + 1} の組み合わせを作成する</button>
+      <span class="hint">奇数人数のときは 1 人が不戦勝（1 勝扱い）</span><span class="sp"></span>${fixLink("結果の修正")}`)}
+  </section>`;
+}
+
+/* ===== 事後コスト ===== */
+const rowsUsed = () => Object.entries(POST).map(([title, [base, delta]]) => ({ title, base, delta, value: Math.max(0, base + delta / 10) }));
+function costRow(r) {
+  const w = Math.abs(r.delta) / 5 * 50; // 範囲 ±0.5 を半幅に
+  return `<div class="cg-row"><span class="cg-t" title="${esc(r.title)}">${esc(r.title)}</span>
+    <span class="cg-n">${fmt(r.base)}</span>
+    <span class="delta"><span class="dbar">${r.delta ? `<i class="${dcls(r.delta)}" style="width:${w}%"></i>` : ""}</span><span class="dnum ${dcls(r.delta)}">${fmtDelta(r.delta)}</span></span>
+    <span class="cg-v">${fmt(r.value)}</span></div>`;
+}
+const cgHead = `<div class="cg-head"><span>タイトル</span><span style="text-align:right">基本</span><span style="text-align:right">増減</span><span style="text-align:right">事後</span></div>`;
+
+function postDraftPanel(st) {
+  if (st.post === "none") {
+    return `<section class="panel" aria-label="事後コスト">
+      <div class="ph"><h2>事後コスト発表</h2><span class="badge none">抽選前</span><span class="right">変動範囲 <b>±0.5</b>（0.1 刻み）</span></div>
+      <div class="empty-state"><div class="big">事後コストの抽選</div>
+        <p>大会が終了しました。持ち込まれたタイトルのコストが、いまから −0.5〜＋0.5 の範囲で変わります。</p></div>
+      ${ops(`<button class="btn primary" onclick="App.go(3)">事後コストを抽選</button>
+        <span class="hint">抽選は下書きです。確定するまで何度でも再抽選できます</span>`)}
+    </section>`;
+  }
+  const rows = rowsUsed();
+  const half = Math.ceil(rows.length / 2);
+  return `<section class="panel" aria-label="事後コストの下書き">
+    <div class="watermark">下書き</div>
+    <div class="ph"><h2>事後コストの下書き</h2><span class="badge none">下書き</span><span class="badge wait">未確定</span>
+      <span class="right"><span>抽選回数 <b>${st.drawCount}</b></span><span>変動範囲 <b>±0.5</b></span></span></div>
+    <p class="muted" style="margin:-.3rem 0 .7rem">持ち込まれた ${rows.length} タイトルだけを表示。コスト表の全 ${CATALOG_ROWS} 行は CSV に含まれます。</p>
+    <div class="cost-grid">
+      <div class="cg-col">${cgHead}${rows.slice(0, half).map(costRow).join("")}</div>
+      <div class="cg-col">${cgHead}${rows.slice(half).map(costRow).join("")}</div>
+    </div>
+    ${ops(`<button class="btn ghost" onclick="App.toast('（モック）再抽選しました。抽選回数 ${st.drawCount + 1}')">再抽選</button>
+      <button class="btn danger" id="post-confirm" onclick="App.armedConfirm()">確定</button>
+      <span class="hint">確定は 2 度押し。確定後は再抽選できません</span><span class="sp"></span>
+      <button class="btn ghost small" onclick="App.csv()">CSVを書き出す</button>`)}
+  </section>`;
+}
+
+function announcePanels(st) {
+  const rows = rowsUsed();
+  const byTitle = Object.fromEntries(rows.map((r) => [r.title, r]));
+  const people = Object.keys(PLAYERS).map((id) => {
+    const p = PLAYERS[id];
+    const decks = p.decks.map((d) => ({ d, row: byTitle[d[0]] }));
+    const seen = new Set();
+    let total = 0, base = 0;
+    for (const { row } of decks) { if (seen.has(row.title)) continue; seen.add(row.title); total += row.value; base += row.base; }
+    return { id, name: p.name, decks, total: Math.round(total * 1e6) / 1e6, base };
+  }).sort((x, y) => y.total - x.total || x.name.localeCompare(y.name, "ja"));
+  const list = people.map((p, i) => {
+    const diff = Math.round((p.total - p.base) * 10);
+    const chips = p.decks.map(({ d, row }) => `<div class="dk" title="${esc(d[0])} ${esc(d[1])}：${fmt(row.base)} → ${fmt(row.value)}（${fmtDelta(row.delta)}）">
+      <span class="dk-t">${esc(d[0])}</span><span class="dk-tags"><i class="${dcls(row.delta)}">${fmtDelta(row.delta)}</i></span><span class="dk-v">${fmt(row.value)}</span></div>`).join("");
+    return `<div class="an-row ${i === 0 ? "top" : ""}" style="animation-delay:${i * 90}ms">
+      <div class="rk-no">${i + 1}</div>
+      <div class="rk-main"><div class="rk-name">${esc(p.name)}</div><div class="decks">${chips}</div></div>
+      <div class="an-total"><b>${fmt(p.total)}</b><small>基本 ${fmt(p.base)} <span class="${dcls(diff)}">${fmtDelta(diff)}</span></small></div>
+    </div>`;
+  }).join("");
+  const sortedRows = [...rows].sort((a, b) => b.value - a.value || a.title.localeCompare(b.title, "ja"));
+  return `<section class="panel" aria-label="事後コスト発表">
+      <div class="ph"><h2>事後コスト発表</h2><span class="badge done">確定</span>
+        <span class="right"><span>抽選回数 <b>${st.drawCount}</b></span><span class="mono">確定 2026-11-23 17:42</span>${viewSwitch()}${N === 16 ? `<button class="btn ghost small org" onclick="App.csv()">CSVを書き出す</button>` : ""}</span></div>
+      <div class="an-head"><span>順位</span><span>参加者・登録デッキ（増減と事後コスト）</span><span class="num">事後の合計コスト</span></div>
+      <div class="an-body">${list}</div>
+    </section>${N === 16 ? "" : `
+    <section class="panel" aria-label="使用されたコスト行">
+      <div class="ph"><h2>使用されたコスト行</h2><span class="right">${rows.length} 行・事後が高い順</span></div>
+      <div class="rows-wrap"><table class="rows-table">
+        <tr><th>タイトル</th><th class="num">基本</th><th class="num">増減</th><th class="num">事後</th></tr>
+        ${sortedRows.map((r) => `<tr><td class="t" title="${esc(r.title)}">${esc(r.title)}</td><td class="num">${fmt(r.base)}</td><td class="num ${dcls(r.delta)}">${fmtDelta(r.delta)}</td><td class="num v">${fmt(r.value)}</td></tr>`).join("")}
+      </table></div>
+      ${ops(`<button class="btn ghost" onclick="App.csv()">CSVを書き出す</button><span class="hint">全 ${CATALOG_ROWS} 行の基本・増減・事後</span>`)}
+    </section>`}`;
+}
+/* 16 人版: 使用されたコスト行は 36 行あるので、発表とは別の全幅ビューに 2 列で出す */
+function usedRowsPanel(st) {
+  const rows = [...rowsUsed()].sort((a, b) => b.value - a.value || a.title.localeCompare(b.title, "ja"));
+  const half = Math.ceil(rows.length / 2);
+  return `<section class="panel" aria-label="使用されたコスト行">
+    <div class="ph"><h2>使用されたコスト行</h2><span class="badge done">確定</span>
+      <span class="right"><span>${rows.length} 行・事後が高い順</span>${viewSwitch()}</span></div>
+    <div class="cost-grid">
+      <div class="cg-col">${cgHead}${rows.slice(0, half).map(costRow).join("")}</div>
+      <div class="cg-col">${cgHead}${rows.slice(half).map(costRow).join("")}</div>
+    </div>
+    ${ops(`<button class="btn ghost" onclick="App.csv()">CSVを書き出す</button><span class="hint">全 ${CATALOG_ROWS} 行の基本・増減・事後</span>`)}
+  </section>`;
+}
+
+/* 発表後の表示切り替え（事後コスト発表 / 最終順位）。主催者だけが触るので .org */
+const viewSwitch = () => `<span class="seg-switch org" role="group" aria-label="表示の切り替え">
+  <button aria-pressed="${view === "post"}" onclick="App.view('post')">事後コスト発表</button>
+  ${N === 16 ? `<button aria-pressed="${view === "rows"}" onclick="App.view('rows')">使用されたコスト行</button>` : ""}
+  <button aria-pressed="${view === "rank"}" onclick="App.view('rank')">最終順位</button></span>`;
+
+/* ===== ヘッダー ===== */
+function header(st) {
+  const done = st.phase === "done";
+  const roundVal = done ? "終了" : `${st.round}`;
+  return `<header class="top">
+    <div class="brand"><small>しまWS大会 ダッシュボード</small><h1>しまWS 冬の陣 2026</h1></div>
+    <div class="meta">
+      <span class="chip soft">2026-11-23（月・祝）</span>
+      <span class="chip">しま2026版ピラミッド</span><span class="chip">スイス式</span><span class="chip">勝ち抜け</span>
+      <span class="chip soft">参加 ${N} 人</span><span class="chip soft">デッキ 3 個</span><span class="chip soft">コスト上限 6</span>
+      <span class="chip code">SHM-7K2Q</span>
+    </div>
+    <div class="now">
+      <span class="org" style="display:flex;gap:.4rem">
+        <button class="btn ghost small" onclick="App.projecting()" title="主催者のボタンを隠す（H キー）">操作を隠す <span class="mono">H</span></button>
+        <button class="btn ghost small" onclick="App.theme()" title="明るい会場では Weiß が見やすい">${document.body.dataset.theme === "weiss" ? "Schwarz" : "Weiß"}</button>
+        <button class="btn ghost small" onclick="App.full()">全画面</button>
+      </span>
+      <div class="round-mark"><div class="lbl">${done ? `全 ${st.round} ラウンド` : "ROUND"}</div><div class="val">${roundVal}</div></div>
+      <div class="clock">${done ? "17:45" : st.phase === "published" ? "14:32" : "15:08"}<br>15秒ごと更新</div>
+    </div>
+  </header>`;
+}
+
+/* ===== タイマー（その端末だけで動く。アプリと同じ仕様） ===== */
+let timer = null;
+function timerParse(text) {
+  const t = String(text || "").trim();
+  const m = t.match(/^(\d{1,3}):([0-5]?\d)$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  if (/^\d{1,3}$/.test(t)) return Number(t) * 60;
+  return null;
+}
+const timerFormat = (sec) => { const s = Math.max(0, Math.round(sec)); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+const timerRemain = () => (timer.running ? Math.max(0, Math.ceil((timer.endAt - Date.now()) / 1000)) : timer.remain);
+function timerTick() {
+  const remain = timerRemain();
+  const el = $("#dash-timer"), bar = $("#dash-tbar");
+  const cls = remain <= 0 ? "timeup" : remain <= 300 ? "soon" : "";
+  if (el) { el.value = timerFormat(remain); el.className = `timer-display ${cls}`; }
+  if (bar) { bar.className = `tbar ${cls}`; bar.firstElementChild.style.width = `${Math.max(0, (remain / timer.start) * 100)}%`; }
+  if (timer.running && remain <= 0) {
+    timer.running = false; timer.remain = 0; clearInterval(timer.interval);
+    toast("タイマーが 00:00 になりました"); render();
+  }
+}
+
+/* ===== 描画 ===== */
+let current = 1, view = "post";
+function render() {
+  const st = STATES[current];
+  const rec = buildRecords(st);
+  let body;
+  if (st.phase === "done") {
+    if (st.post === "confirmed" && view === "post") body = `<main class="${N === 16 ? "single" : "announce"}">${announcePanels(st)}</main>`;
+    else if (st.post === "confirmed" && view === "rows") body = `<main class="single">${usedRowsPanel(st)}</main>`;
+    else if (st.post === "confirmed") body = `<main class="single">${rankingPanel(st, rec, { switcher: true })}</main>`;
+    else body = `<main class="after">${rankingPanel(st, rec, { compact: true })}${postDraftPanel(st)}</main>`;
+  } else {
+    body = `<main class="round"><div class="left">${timerPanel(st)}${progressPanel(st)}</div>${rankingPanel(st, rec)}</main>`;
+  }
+  $("#stage").innerHTML = header(st) + body;
+  $("#mockbar").innerHTML = `<span>モック:</span>${[8, 16].map((n) => `<button aria-pressed="${N === n}" onclick="App.people(${n})">${n}人</button>`).join("")}<span>｜</span>${Object.entries(STATES).map(([k, s]) => `<button aria-pressed="${String(k) === String(current)}" onclick="App.go(${k})">${k} ${s.label}</button>`).join("")}`;
+}
+
+const App = {
+  go(n) {
+    current = Number(n);
+    const st = STATES[current];
+    if (timer?.interval) clearInterval(timer.interval);
+    timer = st.timer ? { ...st.timer, endAt: Date.now() + st.timer.remain * 1000, interval: null } : null;
+    if (timer?.running) timer.interval = setInterval(timerTick, 250);
+    view = "post";
+    const url = new URL(location.href); url.searchParams.set("state", current); history.replaceState(null, "", url);
+    render();
+  },
+  toast,
+  view(v) { view = v; render(); },
+  people(n) {
+    useDataset(n);
+    const url = new URL(location.href);
+    if (N === 16) url.searchParams.set("players", "16"); else url.searchParams.delete("players");
+    history.replaceState(null, "", url);
+    App.go(current);
+  },
+  timerStart() {
+    const sec = timerParse($("#dash-timer")?.value);
+    if (sec == null || sec <= 0) { toast("「35:00」の形式で入力してください"); return; }
+    timer.start = sec; timer.running = true; timer.endAt = Date.now() + sec * 1000;
+    clearInterval(timer.interval); timer.interval = setInterval(timerTick, 250); render();
+  },
+  timerStop() { if (!timer.running) return; timer.remain = timerRemain(); timer.running = false; clearInterval(timer.interval); render(); },
+  timerReset() { if (timer.running) return; timer.remain = timer.start; render(); },
+  armedConfirm() {
+    const b = $("#post-confirm");
+    if (b.classList.contains("armed")) { App.go(4); toast("事後コストを確定しました"); return; }
+    b.classList.add("armed"); b.textContent = "もう一度押すと確定します";
+    setTimeout(() => { if (b.isConnected) { b.classList.remove("armed"); b.textContent = "確定"; } }, 4000);
+  },
+  csv() { toast(`（モック）全 ${CATALOG_ROWS} タイトルの基本・増減・事後を CSV で書き出します`); },
+  fixTab(e) { e.preventDefault(); toast("（モック）「大会進行修正」タブを開きます"); },
+  projecting() { document.body.classList.toggle("projecting"); },
+  theme() { document.body.dataset.theme = document.body.dataset.theme === "weiss" ? "schwarz" : "weiss"; render(); },
+  full() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); }
+};
+window.App = App;
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, textarea")) return;
+  if (e.key === "h" || e.key === "H") App.projecting();
+  if (/^[1-6]$/.test(e.key)) App.go(e.key);
+});
+
+const params = new URLSearchParams(location.search);
+if (params.get("clean") === "1") document.body.classList.add("clean");
+if (params.get("theme") === "weiss") document.body.dataset.theme = "weiss";
+if (params.get("hide") === "1") document.body.classList.add("projecting");
+useDataset(Number(params.get("players")));
+App.go(STATES[params.get("state")] ? params.get("state") : 1);
+if (["rank", "rows"].includes(params.get("view"))) App.view(params.get("view"));
+</script>
+</body>
+</html>
