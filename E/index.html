@@ -26,11 +26,29 @@
  .sixteen .costRank .score{top:50%;transform:translateY(-50%)}
 }
 @media(max-width:780px){.sixteen .rankheads .rankcap:first-child span:first-child{font-size:0}.sixteen .rankheads .rankcap:first-child span:first-child:after{content:'順位';font-size:.74rem}.sixteen .rankheads .rankcap+ .rankcap{display:none}}
+#detail{width:min(42rem,94vw);background:#202735;color:var(--ink);border:1px solid #697c9b;border-radius:.7rem;padding:1.3rem;font-size:1.15rem}
+#detail::backdrop{background:#07101dcc}#detail header,#detailRows p{display:flex;align-items:center;justify-content:space-between;gap:.8rem}#detail header{margin-bottom:1rem}#detailRows p{border-top:1px solid var(--line);padding:.7rem 0}#detailRows em{font-style:normal;color:var(--blue);white-space:nowrap}
+.full .shell{grid-template-rows:2.8rem 4rem minmax(0,1fr) 2.9rem}
+.full .rankrow,.full.sixteen .rankrow{display:grid;grid-template-columns:2.25rem minmax(0,1fr);padding:.12rem .8rem;gap:.45rem}
+.full .rankrow>div{min-width:0}.full .personline{display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+.full .personline .score{position:static;transform:none;flex:none;font-size:1.18rem}
+.full .rankrow .name{font-family:inherit;font-weight:700;font-size:1.18rem;line-height:1.2;color:var(--ink);background:transparent;border:0;border-bottom:1px dotted #69768c;padding:0;white-space:nowrap}
+.full .decks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.12rem .35rem;margin-top:.13rem}
+.full .deck{display:flex;align-items:center;gap:.25rem;justify-content:space-between;font-size:1rem;line-height:1.15;padding:.06rem .32rem;min-width:0}
+.full .deck .abbr{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.full .deck em{font-family:inherit;font-style:normal;color:#c0d5fa;flex:none}
+.full .deck.back{justify-content:center}.full .rankno{font-size:1.35rem}
+.full .match strong{font-size:1.05rem;line-height:1.25;overflow-wrap:anywhere}
+.full .badge,.full .legend,.full .stage .tag,.full .round,.full .clocklabel,.full .head small,.full .rankcap{font-size:1rem}
+.full .legend{justify-content:space-between;gap:.4rem}.full .rankcap{height:1.85rem}
+.full .rankcap:not(.rankheads .rankcap){display:flex;justify-content:space-between}
+@media(min-width:781px){.full:not(.sixteen) .work{grid-template-columns:1fr 1.15fr}.full .match{column-gap:.35rem}.full.sixteen .match{grid-template-columns:2.5rem 1fr 1.2rem 1fr 4.65rem}}
+@media(max-width:780px){.full .rankrow{min-height:6rem}.full .legend{flex-wrap:wrap}.full .rankcap,.full .rankheads .rankcap{font-size:.8rem}.full .rankrow .name,.full .personline .score,.full .deck{font-size:.95rem}.full .match strong,.full .badge{font-size:.87rem}.full .head small{font-size:.8rem}}
+@media(min-width:781px){.full .rankrow,.full.sixteen .rankrow{padding-block:0;grid-template-rows:minmax(0,1fr)}.full .deck{border:0;padding-block:0;box-shadow:inset 0 0 0 1px #454c58;line-height:1.25}.full .head{height:3.1rem}.full .legend{padding-block:.4rem}}
 </style></head><body><div class="shell">
 <header class="mast"><div class="brand"><span class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 17 7-12 5 8 3-5 5 9ZM3 21h18" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>しまWS大会アプリ<em>ダッシュボード</em></div><span class="role">主催者</span></header>
 <div class="title"><h1>しまWS杯 <small>2026.11.21</small></h1><p class="meta">しま2026版ピラミッド<i></i>スイス式<i></i>参加者 8人</p></div>
 <main class="work" id="work"></main>
-<footer class="foot"><div class="switch"><label>表示場面<select id="scenes"><option value="1">ラウンド中</option><option value="2">マッチング下書き</option><option value="3">事後コスト下書き</option><option value="4">事後コスト発表</option></select></label><button id="report" onclick="confirmed++;render()">次の報告を再現</button></div><a href="../../../organizer.html#o-result" target="_blank" rel="noopener">大会進行修正 ↗</a></footer></div>
+<footer class="foot"><div class="switch"><label>表示場面<select id="scenes"><option value="1">ラウンド中</option><option value="2">マッチング下書き</option><option value="3">事後コスト下書き</option><option value="4">事後コスト発表</option><option value="5">情報量最大</option></select></label><button id="report" onclick="confirmed++;render()">次の報告を再現</button></div><a href="../../../organizer.html#o-result" target="_blank" rel="noopener">大会進行修正 ↗</a></footer></div><dialog id="detail"><header><h2 id="detailTitle"></h2><button onclick="detail.close()">閉じる</button></header><div id="detailRows"></div></dialog>
 <script>
 const sixteen=new URLSearchParams(location.search).get('players')==='16';
 const names=['アオ','ナギ','コハク','シオン','ハル','ミナト','ユズ','リク'];
@@ -55,11 +73,64 @@ if(sixteen){
  document.querySelector('.meta').lastChild.textContent='参加者 16人';
 }
 const tables=names.length/2;
+const ordinary={names:[...names],titles:[...titles],decks:decks.map(d=>[...d])};
+const longNames=['星降る島のアオ','波打ち際のナギさん','琥珀色のカード職人','紫苑のデッキ研究会','春風を待つハル','港町のミナト選手','柚子畑の見習い店長','陸風にのるリク','空色の対戦記録係','林道を歩くリン','永久機関のトワさん','海峡横断のカイ','真夜中のマオ選手','零時のデッキ調整班','水面を渡るスイ','連勝祈願のレンさん'];
+const longTitles=['痛いのは嫌なので防御力に極振りしたいと思います。','ソードアート・オンライン オルタナティブ ガンゲイル・オンライン','とある魔術の禁書目録／とある科学の超電磁砲','プロジェクトセカイ カラフルステージ！ feat. 初音ミク','ラブライブ！虹ヶ咲学園スクールアイドル同好会','かぐや様は告らせたい～天才たちの恋愛頭脳戦～','ダンジョンに出会いを求めるのは間違っているだろうか','ラブライブ！スクールアイドルフェスティバル2'];
+const shortTitles=['防振り','ガンゲイル','とある魔術／科学','プロジェクトセカイ','虹ヶ咲学園','かぐや様','ダンまち','スクフェス2'];
+const cxTypes=['8宝','4扉4門','8電源','4枝4宝','8門','4本4扉'];
+const cxFor=(i,slot)=>cxTypes[(i+slot)%cxTypes.length];
+let fullField=false;
+function setupField(full){
+ fullField=full;
+ names.splice(0,names.length,...(full?longNames.slice(0,tables*2):ordinary.names));
+ titles.splice(0,titles.length,...(full?longTitles:ordinary.titles));
+ decks.splice(0,decks.length,...(full?names.map((_,i)=>[0,1,2,3].map((offset)=>(i+offset*3)%titles.length)):ordinary.decks));
+}
+// 勝数の差が小さい未対戦者を優先。公開情報は確定した卓から集計する。
+function lateRound(){
+ const scores=names.map(()=>0), used=names.map(()=>new Set()), met=new Set(), history=[];
+ const key=(a,b)=>[Math.min(a,b),Math.max(a,b)].join('-');
+ for(let r=0;r<5;r++){
+  const sorted=names.map((_,i)=>i).sort((a,b)=>scores[b]-scores[a]||a-b);
+  function pair(queue){
+   if(!queue.length)return [];
+   const [a,...rest]=queue;
+   for(const b of rest){if(met.has(key(a,b)))continue;const tail=pair(rest.filter(i=>i!==b));if(tail)return [[a,b],...tail]}
+   return null;
+  }
+  const pairs=pair(sorted);
+  const choose=i=>{const order=[0,1,2,3].map(k=>(k+r)%4);if(i%5===0&&r===3)order.unshift(0,1);return order.find(s=>!used[i].has(s))};
+  const matches=pairs.map(([a,b],j)=>{
+   const [w,l]=scores[a]>scores[b]||scores[a]===scores[b]&&(j+r)%2?[b,a]:[a,b];
+   const winSlot=choose(w),loseSlot=choose(l);
+   const draw=r===3&&scores[w]===3;met.add(key(a,b));
+   if(!draw){used[w].add(winSlot);scores[w]++}
+   return [w,l,winSlot,loseSlot,draw];
+  });
+  if(r===4)return {history,live:matches};history.push(...matches);
+ }
+}
+function showDecks(i){
+ const {seen}=record(i);detailTitle.textContent=names[i]+'の登録デッキ';
+ detailRows.innerHTML=[...seen].map(([slot,used])=>'<p><span>'+(used?'<s>':'')+titles[decks[i][slot]]+(used?'</s>':'')+'</span><em>'+cxFor(i,slot)+'</em></p>').join('')+'<p>？　未公開</p>'.repeat(4-seen.size);
+ detail.showModal();
+}
+function fullRow(i,pos){
+ const {w,l,d,seen}=record(i);
+ const slots=[...seen].map(([slot,used])=>{
+ const title=decks[i][slot],label=shortTitles[title];
+ return '<span class="deck" title="'+titles[title]+'（'+cxFor(i,slot)+'）"><span class="abbr">'+(used?'<s>':'')+label+(used?'</s>':'')+'</span><em>'+cxFor(i,slot)+'</em></span>';
+ }).join('')+'<span class="deck back">？</span>'.repeat(4-seen.size);
+ return '<div class="rankrow"><span class="rankno">'+pad(pos+1)+'</span><div><div class="personline"><button class="name" onclick="showDecks('+i+')">'+names[i]+'</button><span class="score">'+w+'−'+l+'−'+d+'</span></div><div class="decks">'+slots+'</div></div></div>';
+}
+
 let pairings,phase,drawCount,costCount,delta,confirmed,armed,running=false,seconds=2100,lastStart=2100,until=0,roundNo=2,finalTime='';
 const fmt=n=>n.toFixed(1), pad=n=>String(n).padStart(2,'0'), clockText=n=>pad(Math.floor(n/60))+':'+pad(n%60);
 function loadScene(n){
  otherDelta=catalog.map((_,i)=>(i%11-5)/10);phase=n;roundNo=2;pairings=second.map(x=>[...x]);drawCount=1;costCount=1;delta=[...initialDelta];confirmed=n===1?tables/2:0;armed=false;
- seconds=n===1?18*60+42:2100;lastStart=2100;running=n===1;until=Date.now()+seconds*1000;finalTime='16:42';render()
+ seconds=n===1?18*60+42:2100;lastStart=2100;running=n===1;until=Date.now()+seconds*1000;finalTime='16:42';
+ if(fullField){const late=lateRound();phase=1;roundNo=5;historyRounds=late.history;pairings=late.live;confirmed=tables/2;seconds=4*60+37;running=true;until=Date.now()+seconds*1000}
+ render()
 }
 function btn(label,action,disabled=false,primary=false){return '<button onclick="'+action+'" '+(disabled?'disabled ':'')+'class="'+(primary?'primary':'')+'">'+label+'</button>'}
 function chart(){
@@ -78,7 +149,7 @@ function hero(){
 }
 let historyRounds=[];
 function matches(){return phase>=3?historyRounds:[...historyRounds,...(phase===1?pairings.slice(0,confirmed):[])]}
-function record(i){let w=0,l=0,seen=new Map();for(const [a,b,ad,bd] of matches()){if(i===a){w++;seen.set(ad,true)}if(i===b){l++;if(!seen.has(bd))seen.set(bd,false)}}return {w,l,seen}}
+function record(i){let w=0,l=0,d=0,seen=new Map();for(const [a,b,ad,bd,draw] of matches()){if(draw){if(i===a||i===b){d++;const slot=i===a?ad:bd;if(!seen.has(slot))seen.set(slot,false)}continue}if(i===a){w++;seen.set(ad,true)}if(i===b){l++;if(!seen.has(bd))seen.set(bd,false)}}return {w,l,d,seen}}
 function total(i){return decks[i].reduce((v,t)=>v+base[t]+delta[t],0)}
 function costOrder(){return names.map((_,i)=>i).sort((a,b)=>Math.round((total(b)-total(a))*10)||names[a].localeCompare(names[b],'ja'))}
 function rankHeaders(cost){
@@ -87,22 +158,22 @@ function rankHeaders(cost){
 }
 function rankings(){const cost=phase===4;
  const ids=cost?costOrder():names.map((_,i)=>i).sort((a,b)=>record(b).w-record(a).w||names[a].localeCompare(names[b],'ja'));
- return '<section class="panel '+(cost?'costRank':'')+'"><div class="head"><h2>'+(cost?'事後コスト順位':'勝敗ランキング')+'</h2><small>'+(cost?'事後合計の高い順':phase===3?'最終結果':'確定した対戦のみ')+'</small></div>'+rankHeaders(cost)+'<div class="ranklist">'+ids.map((i,pos)=>{const {w,l,seen}=record(i);let chips=[...seen].map(([slot,used])=>'<span class="deck">'+(used?'<s>':'')+titles[decks[i][slot]]+(used?'</s>':'')+'</span>').join('')+'<span class="deck back" aria-label="未公開">？</span>'.repeat(3-seen.size);
- return '<div class="rankrow"><span class="rankno">'+pad(pos+1)+'</span><div><div class="name">'+names[i]+'</div><div class="decks">'+(cost?'基本合計 '+fmt(decks[i].reduce((s,t)=>s+base[t],0)):chips)+'</div></div><span class="score">'+(cost?fmt(total(i)):w+'−'+l+'−0')+'</span></div>'}).join('')+'</div><div class="legend">'+(cost?'同点は参加者名順':'<span><s>タイトル</s>　勝利で使用済み</span><span><b class="deck back">？</b>　未公開</span>')+'</div></section>'
+ return '<section class="panel '+(cost?'costRank':'')+'"><div class="head"><h2>'+(cost?'事後コスト順位':'勝敗ランキング')+'</h2><small>'+(cost?'事後合計の高い順':phase===3?'最終結果':'確定した対戦のみ')+'</small></div>'+rankHeaders(cost)+'<div class="ranklist">'+ids.map((i,pos)=>{if(fullField&&!cost)return fullRow(i,pos);const {w,l,seen}=record(i);let chips=[...seen].map(([slot,used])=>'<span class="deck">'+(used?'<s>':'')+titles[decks[i][slot]]+(used?'</s>':'')+'</span>').join('')+'<span class="deck back" aria-label="未公開">？</span>'.repeat(3-seen.size);
+ return '<div class="rankrow"><span class="rankno">'+pad(pos+1)+'</span><div><div class="name">'+names[i]+'</div><div class="decks">'+(cost?'基本合計 '+fmt(decks[i].reduce((s,t)=>s+base[t],0)):chips)+'</div></div><span class="score">'+(cost?fmt(total(i)):w+'−'+l+'−0')+'</span></div>'}).join('')+'</div><div class="legend">'+(cost?'同点は参加者名順':fullField?'<span><s>使用済み</s>　／　？ 未公開</span><span>名前を押して正式名を表示</span>':'<span><s>タイトル</s>　勝利で使用済み</span><span><b class="deck back">？</b>　未公開</span>')+'</div></section>'
 }
 function matching(){let draft=phase===2;return '<section class="panel"><div class="head"><h2>対戦組み合わせ</h2><small>'+(draft?'抽選 <b>'+drawCount+'</b> 回目':'確定 <b>'+confirmed+' / '+tables+'</b> 卓')+'</small></div><div class="matchlist">'+pairings.map(([a,b],j)=>'<div class="match"><span class="tableNo">'+pad(j+1)+'<small>卓</small></span><strong>'+names[a]+'</strong><i class="versus">vs.</i><strong>'+names[b]+'</strong><span class="badge '+(!draft&&j<confirmed?'ok':!draft&&j===confirmed?'wait':'')+'">'+(draft?'下書き':j<confirmed?'確定':j===confirmed?'承諾待ち':'未報告')+'</span></div>').join('')+'</div><div class="bar"><span class="dim">進行状況</span><div class="actions">'+(draft?btn('抽選','drawPair()',drawCount>0)+btn('再抽選','drawPair()',!drawCount)+btn('決定・公開','publish()',!drawCount,true):btn('ラウンド終了','finishRound()',confirmed<tables,true))+'</div></div></section>'}
-function costs(){return '<section class="panel"><div class="head"><h2>タイトル別コスト</h2><small>持ち込み <b>8</b> タイトル</small></div><div class="costcap"><span>タイトル</span><span>基本</span><span>増減</span><span>事後</span></div><div class="costlist">'+titles.map((t,i)=>'<div class="costrow"><strong>'+t+'</strong><span>'+fmt(base[i])+'</span><span class="'+(delta[i]>0?'up':'down')+'">'+(delta[i]>=0?'+':'−')+fmt(Math.abs(delta[i]))+'</span><span>'+fmt(base[i]+delta[i])+'</span></div>').join('')+'</div><div class="bar"><span class="dim">'+(phase===3?'発表前の下書き':'確定済み')+'</span><div class="actions">'+(phase===3?btn('抽選','drawCost()',costCount>0)+btn('再抽選','drawCost()',!costCount)+btn(armed?'もう一度押して確定':'確定','seal()',!costCount,true):btn('全タイトルをCSV出力','exportCsv()'))+'</div></div></section>'}
-function render(){document.querySelector('#report').hidden=phase!==1||confirmed===tables;work.className='work'+(phase>=3?' post':'');work.innerHTML='<div class="left">'+hero()+(phase>=3?costs():matching())+'</div>'+rankings();scenes.value=phase;const c=document.querySelector('#clock');if(c){c.classList.toggle('zero',seconds===0);c.onkeydown=e=>{if(e.key==='Enter'&&!running)timerToggle()}}}
+function costs(){return '<section class="panel"><div class="head"><h2>タイトル別コスト</h2><small>持ち込み <b>8</b> タイトル</small></div><div class="costcap"><span>タイトル</span><span>基本</span><span>増減</span><span>事後</span></div><div class="costlist">'+titles.map((t,i)=>'<div class="costrow"><strong>'+(fullField?shortTitles[i]:t)+'</strong><span>'+fmt(base[i])+'</span><span class="'+(delta[i]>0?'up':'down')+'">'+(delta[i]>=0?'+':'−')+fmt(Math.abs(delta[i]))+'</span><span>'+fmt(base[i]+delta[i])+'</span></div>').join('')+'</div><div class="bar"><span class="dim">'+(phase===3?'発表前の下書き':'確定済み')+'</span><div class="actions">'+(phase===3?btn('抽選','drawCost()',costCount>0)+btn('再抽選','drawCost()',!costCount)+btn(armed?'もう一度押して確定':'確定','seal()',!costCount,true):btn('全タイトルをCSV出力','exportCsv()'))+'</div></div></section>'}
+function render(){document.body.classList.toggle('full',fullField&&phase!==4);document.querySelector('#report').hidden=phase!==1||confirmed===tables;work.className='work'+(phase>=3?' post':'');work.innerHTML='<div class="left">'+hero()+(phase>=3?costs():matching())+'</div>'+rankings();scenes.value=fullField&&phase===1?5:phase;const c=document.querySelector('#clock');if(c){c.classList.toggle('zero',seconds===0);c.onkeydown=e=>{if(e.key==='Enter'&&!running)timerToggle()}}}
 function timerToggle(){if(running){seconds=Math.max(0,Math.ceil((until-Date.now())/1000));running=false}else{const c=document.querySelector('#clock'),m=/^(\d{1,2})(?::([0-5]\d))?$/.exec(c.value.trim());if(!m){c.setCustomValidity('分:秒 または分で入力してください');c.reportValidity();c.oninput=()=>c.setCustomValidity('');return}seconds=Number(m[1])*60+Number(m[2]||0);if(seconds===0)return;lastStart=seconds;until=Date.now()+seconds*1000;running=true}render()}
 function resetClock(){seconds=lastStart;render()}
 setInterval(()=>{if(!running)return;seconds=Math.max(0,Math.ceil((until-Date.now())/1000));if(!seconds){running=false;render()}else document.querySelector('#clock').value=clockText(seconds)},240);
 function drawPair(){drawCount++;if(roundNo===2)pairings=(drawCount%2?second:alternateSecond).map(x=>[...x]);else if(drawCount>1)pairings.push(pairings.shift());render()}
 function publish(){phase=1;confirmed=0;seconds=lastStart=2100;running=false;render()}
-function finishRound(){historyRounds.push(...pairings);if(roundNo===3){phase=3;costCount=0;delta=Array(8).fill(0)}else{roundNo++;phase=2;drawCount=0;pairings=(historyRounds.some(([a,b])=>a===0&&b===3)?alternateThird:third).map(x=>[...x])}running=false;seconds=lastStart=2100;render()}
+function finishRound(){historyRounds.push(...pairings);if(roundNo===3||fullField){phase=3;costCount=0;delta=Array(8).fill(0)}else{roundNo++;phase=2;drawCount=0;pairings=(historyRounds.some(([a,b])=>a===0&&b===3)?alternateThird:third).map(x=>[...x])}running=false;seconds=lastStart=2100;render()}
 function drawCost(){otherDelta=catalog.map(()=>Math.floor(Math.random()*11)/10-.5);delta=titles.map(()=>Math.floor(Math.random()*11)/10-.5);costCount++;armed=false;render()}
 function seal(){if(!costCount)return;if(armed){phase=4;finalTime=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}else armed=true;render()}
 function exportCsv(){const csv='\ufeffタイトル,基本,増減,事後\r\n'+catalog.map((t,j)=>{const i=titles.indexOf(t),b=i<0?2:base[i],d=i<0?otherDelta[j]:delta[i];return [t,fmt(b),fmt(d),fmt(b+d)].join(',')}).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='事後コスト.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function scene(n){historyRounds=n>=3?[...first,...second,...third]:first.slice();loadScene(n)}
+function scene(n){setupField(n===5);historyRounds=n>=3?[...first,...second,...third]:first.slice();loadScene(n)}
 scenes.onchange=()=>{const u=new URL(location.href);u.searchParams.set('state',scenes.value);history.replaceState({},'',u);scene(Number(scenes.value))};
-const initial=Number(new URLSearchParams(location.search).get('state'));scene([1,2,3,4].includes(initial)?initial:1);
+const initial=Number(new URLSearchParams(location.search).get('state'));scene([1,2,3,4,5].includes(initial)?initial:1);
 </script></body></html>

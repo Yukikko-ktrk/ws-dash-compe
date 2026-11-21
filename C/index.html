@@ -503,7 +503,7 @@
   }
   .matches-list.grid-16 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
   .matches-list::-webkit-scrollbar { width: 5px; }
@@ -518,6 +518,8 @@
     flex-direction: column;
     gap: 3px;
     transition: border-color 0.2s;
+    min-width: 0;
+    overflow: hidden;
   }
   .match-card:hover { border-color: var(--card-edge-light); }
   .match-card.confirmed { border-left: 3px solid var(--ok); }
@@ -775,6 +777,138 @@
   .deck-pill.revealed {
     border-color: var(--accent);
     background: rgba(124, 163, 255, 0.08);
+  }
+  .deck-pill.active-now {
+    border-color: var(--wait);
+    background: rgba(251, 191, 36, 0.12);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.25);
+  }
+  .deck-pill.active-now .deck-cost-tag {
+    background: var(--wait-bg);
+    color: var(--wait);
+  }
+
+  /* CX構成タグ */
+  .cx-tag {
+    font-family: var(--font-sans);
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(124, 163, 255, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(124, 163, 255, 0.35);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  .deck-pill.used-win .cx-tag {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink-muted);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .deck-pill.revealed .cx-tag {
+    background: rgba(94, 234, 212, 0.15);
+    color: var(--ok);
+    border-color: rgba(94, 234, 212, 0.35);
+  }
+  .deck-pill.active-now .cx-tag {
+    background: rgba(251, 191, 36, 0.22);
+    color: var(--wait);
+    border-color: var(--wait);
+  }
+
+  /* 状態5 (情報量最大) 専用グリッド・サイズ設計 */
+
+  /* 8人版: 登録デッキ4個を横1行（4カラム）に整然と配置 */
+  .state-max:not(.mode-16) .player-decks-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+
+  /* 16人版 (スプリット2列): 登録デッキ4個を 2×2 の整然としたミニグリッドに配置 */
+  .state-max.mode-16 .player-decks-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 4px;
+    width: 100%;
+  }
+
+  /* 16人版スプリットテーブルの行パディングと高さ最適化 */
+  .state-max.mode-16 table.standings-table td {
+    padding: 3px 4px;
+  }
+  .state-max.mode-16 table.standings-table {
+    border-spacing: 0 2px;
+  }
+
+  /* デッキピルの幅と表示 */
+  .state-max .deck-pill {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 1px 4px;
+    box-sizing: border-box;
+  }
+
+  .state-max .deck-pill-title-trunc {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  /* 状態5 (情報量最大) 専用のフォント最適化: 1080pで本文・プレイヤー名20px以上！ */
+  @media (min-width: 1400px) {
+    .state-max .player-cell-main {
+      font-size: 20px !important;
+      font-weight: 800;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .state-max.mode-16 .player-cell-main {
+      font-size: 20px !important;
+      font-weight: 800;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .state-max:not(.mode-16) .fighter {
+      font-size: 14.5px !important;
+      font-weight: 700;
+    }
+    .state-max.mode-16 .fighter {
+      font-size: 11.5px !important;
+      font-weight: 700;
+    }
+    .state-max.mode-16 .table-num {
+      font-size: 10px;
+    }
+    .state-max.mode-16 .deck-name-trunc {
+      font-size: 9px;
+    }
+    .state-max .rank-badge {
+      width: 26px;
+      height: 26px;
+      font-size: 13px;
+    }
+    .state-max .score-cell {
+      font-size: 15px;
+    }
+    .state-max .omw-cell {
+      font-size: 13px;
+    }
   }
 
   /* 伏せカード (SECRET DECK) */
@@ -1124,6 +1258,37 @@
       padding: 1px 4px;
       gap: 3px;
     }
+    .state-max table.standings-table td {
+      padding: 1.5px 3px;
+    }
+    .state-max table.standings-table {
+      border-spacing: 0 1px;
+    }
+    .state-max .player-cell-main {
+      font-size: 11px !important;
+      max-width: 90px;
+    }
+    .state-max.mode-16 .player-cell-main {
+      font-size: 10.5px !important;
+      max-width: 80px;
+    }
+    .state-max .deck-pill {
+      font-size: 8.5px;
+      padding: 0 2px;
+      gap: 2px;
+    }
+    .state-max .deck-cost-tag {
+      font-size: 8px;
+      padding: 0 2px;
+    }
+    .state-max .cx-tag {
+      font-size: 7.5px;
+      padding: 0 2px;
+    }
+    .state-max .match-card {
+      padding: 2px 5px;
+      gap: 1px;
+    }
     .deck-cost-tag {
       font-size: 8.5px;
     }
@@ -1258,6 +1423,7 @@
         <button class="state-btn" id="btn-state-draft" onclick="switchState('draft')">2. マッチング下書き</button>
         <button class="state-btn" id="btn-state-post-draft" onclick="switchState('post_draft')">3. 事後コスト下書き</button>
         <button class="state-btn" id="btn-state-post-result" onclick="switchState('post_result')">4. 事後コスト発表</button>
+        <button class="state-btn" id="btn-state-max" onclick="switchState('max')">5. 情報量最大</button>
       </div>
 
       <!-- 例外対応・修正用リンク -->
@@ -1422,6 +1588,169 @@ const EXTRA_PLAYERS_8 = [
 function getPlayersData(count) {
   if (count === 8) return BASE_PLAYERS_8;
   const merged = [...BASE_PLAYERS_8, ...EXTRA_PLAYERS_8].sort((a, b) => {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    if (b.omw !== a.omw) return b.omw - a.omw;
+    return a.losses - b.losses;
+  });
+  return merged.map((p, idx) => ({ ...p, rank: idx + 1 }));
+}
+
+// ==========================================================================
+// 状態5用データ: 登録4デッキ、終盤(Round 4)、長文タイトル、CX構成、全角10字以上の参加者名
+// ==========================================================================
+const MAX_PLAYERS_8 = [
+  {
+    id: "p1", name: "アリス＠シャニマス担当P", wins: 3, losses: 0, draws: 0, omw: 0.722, rank: 1,
+    decks: [
+      { title: "アイドルマスター シャイニーカラーズ", cx: "8スタンバイ", baseCost: 3.5, status: "win" },
+      { title: "葬送のフリーレン", cx: "4扉2ディスカバリー", baseCost: 2.0, status: "win" },
+      { title: "魔王学院の不適合者 ～史上最強の魔王の始祖、転生して子孫たちの学校へ通う～", cx: "8門", baseCost: 2.5, status: "win" },
+      { title: "ヘブンバーンズレッド", cx: "8チョイス", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p2", name: "ボブ＠ホロライブ箱推し勢", wins: 3, losses: 0, draws: 0, omw: 0.611, rank: 2,
+    decks: [
+      { title: "ホロライブプロダクション", cx: "8チョイス", baseCost: 4.0, status: "win" },
+      { title: "ぼっち・ざ・ろっく！", cx: "4扉4本", baseCost: 2.5, status: "win" },
+      { title: "痛いのは嫌なので防御力に極振りしたいと思います。", cx: "4扉4本", baseCost: 2.0, status: "win" },
+      { title: "ブルーアーカイブ", cx: "8門", baseCost: 1.0, status: "active" }
+    ]
+  },
+  {
+    id: "p3", name: "ダイヤ＠蓮ノ空スクールアイドル", wins: 2, losses: 1, draws: 0, omw: 0.778, rank: 3,
+    decks: [
+      { title: "ラブライブ！蓮ノ空女学院スクールアイドルクラブ", cx: "8スタンバイ", baseCost: 3.5, status: "win" },
+      { title: "無職転生 ～異世界行ったら本気だす～", cx: "8スタンバイ", baseCost: 3.0, status: "win" },
+      { title: "五等分の花嫁", cx: "4チョイス4扉", baseCost: 2.0, status: "revealed" },
+      { title: "ガールズバンドクライ", cx: "8本", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p4", name: "チャーリー＠ウマ娘トレーナー", wins: 2, losses: 1, draws: 0, omw: 0.667, rank: 4,
+    decks: [
+      { title: "ウマ娘 プリティーダービー", cx: "8宝", baseCost: 3.0, status: "win" },
+      { title: "かぐや様は告らせたい～天才たちの恋愛頭脳戦～", cx: "4扉4本", baseCost: 2.5, status: "win" },
+      { title: "勝利の女神：NIKKE", cx: "4ショット4門", baseCost: 2.0, status: "revealed" },
+      { title: "電撃文庫", cx: "8扉", baseCost: 2.0, status: "active" }
+    ]
+  },
+  {
+    id: "p5", name: "エレン＠進撃の調査兵団分隊長", wins: 1, losses: 2, draws: 0, omw: 0.556, rank: 5,
+    decks: [
+      { title: "進撃の巨人", cx: "4扉4ショット", baseCost: 2.0, status: "win" },
+      { title: "チェンソーマン", cx: "8チョイス", baseCost: 2.5, status: "revealed" },
+      { title: "劇場版 Fate/Grand Order -神聖円卓領域キャメロット-", cx: "4扉4枝", baseCost: 2.0, status: "revealed" },
+      { title: "怪獣８号", cx: "8門", baseCost: 1.0, status: "active" }
+    ]
+  },
+  {
+    id: "p6", name: "フラン＠東方Project幻想郷", wins: 1, losses: 2, draws: 0, omw: 0.444, rank: 6,
+    decks: [
+      { title: "東方Project", cx: "8宝", baseCost: 2.0, status: "win" },
+      { title: "アズールレーン", cx: "4扉4スタンバイ", baseCost: 3.0, status: "revealed" },
+      { title: "Disney100", cx: "8門", baseCost: 2.5, status: "revealed" },
+      { title: "青春ブタ野郎はおでかけシスターの夢を見ない", cx: "8枝", baseCost: 2.0, status: "active" }
+    ]
+  },
+  {
+    id: "p7", name: "ギン＠SAO攻略組トップランカー", wins: 0, losses: 3, draws: 0, omw: 0.611, rank: 7,
+    decks: [
+      { title: "ソードアート・オンライン", cx: "8門", baseCost: 3.0, status: "revealed" },
+      { title: "オーバーロード", cx: "8本", baseCost: 2.5, status: "revealed" },
+      { title: "ダンジョンに出会いを求めるのは間違っているだろうか", cx: "4扉4宝", baseCost: 1.5, status: "revealed" },
+      { title: "Summer Pockets", cx: "8門", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p8", name: "ハル＠学マス全力プロデュース", wins: 0, losses: 3, draws: 0, omw: 0.389, rank: 8,
+    decks: [
+      { title: "学園アイドルマスター", cx: "8チョイス", baseCost: 3.5, status: "revealed" },
+      { title: "SPY×FAMILY", cx: "4扉4本", baseCost: 2.0, status: "revealed" },
+      { title: "アサルトリリィ", cx: "8門", baseCost: 1.5, status: "revealed" },
+      { title: "デート・ア・ライブ", cx: "8スタンバイ", baseCost: 3.5, status: "secret" }
+    ]
+  }
+];
+
+const MAX_EXTRA_PLAYERS_8 = [
+  {
+    id: "p9", name: "イチカ＠リコリス喫茶常連客", wins: 3, losses: 0, draws: 0, omw: 0.667, rank: 3,
+    decks: [
+      { title: "リコリス・リコイル", cx: "8門", baseCost: 3.5, status: "win" },
+      { title: "痛いのは嫌なので防御力に極振りしたいと思います。", cx: "4扉4本", baseCost: 2.0, status: "win" },
+      { title: "ラブライブ！虹ヶ咲学園スクールアイドル同好会", cx: "8チョイス", baseCost: 2.5, status: "win" },
+      { title: "チェンソーマン", cx: "8チョイス", baseCost: 2.5, status: "active" }
+    ]
+  },
+  {
+    id: "p10", name: "ジロウ＠デアラ精霊契約者", wins: 2, losses: 1, draws: 0, omw: 0.722, rank: 5,
+    decks: [
+      { title: "デート・ア・ライブ", cx: "8スタンバイ", baseCost: 3.5, status: "win" },
+      { title: "転生したらスライムだった件", cx: "8チョイス", baseCost: 2.5, status: "win" },
+      { title: "ぼっち・ざ・ろっく！", cx: "8門", baseCost: 2.5, status: "revealed" },
+      { title: "アサルトリリィ", cx: "8門", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p11", name: "サブロウ＠秀知院学園生徒会", wins: 2, losses: 1, draws: 0, omw: 0.556, rank: 7,
+    decks: [
+      { title: "かぐや様は告らせたい～天才たちの恋愛頭脳戦～", cx: "4扉4本", baseCost: 2.5, status: "win" },
+      { title: "ホロライブプロダクション", cx: "8門", baseCost: 4.0, status: "win" },
+      { title: "ウマ娘 プリティーダービー", cx: "8宝", baseCost: 3.0, status: "revealed" },
+      { title: "葬送のフリーレン", cx: "8チョイス", baseCost: 2.0, status: "active" }
+    ]
+  },
+  {
+    id: "p12", name: "シロウ＠無職転生ルーデウス", wins: 2, losses: 1, draws: 0, omw: 0.500, rank: 8,
+    decks: [
+      { title: "無職転生 ～異世界行ったら本気だす～", cx: "8スタンバイ", baseCost: 3.0, status: "win" },
+      { title: "五等分の花嫁", cx: "8本", baseCost: 2.0, status: "win" },
+      { title: "アイドルマスター シャイニーカラーズ", cx: "8チョイス", baseCost: 2.5, status: "revealed" },
+      { title: "リアデイルの大地にて", cx: "8門", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p13", name: "ゴロウ＠バンドリRoselia", wins: 1, losses: 2, draws: 0, omw: 0.611, rank: 11,
+    decks: [
+      { title: "BanG Dream!", cx: "8宝", baseCost: 2.5, status: "win" },
+      { title: "ガールズバンドクライ", cx: "8門", baseCost: 1.5, status: "revealed" },
+      { title: "ヘブンバーンズレッド", cx: "8チョイス", baseCost: 1.5, status: "revealed" },
+      { title: "ホロライブプロダクション", cx: "4扉4本", baseCost: 3.0, status: "active" }
+    ]
+  },
+  {
+    id: "p14", name: "ロクロウ＠ウマ娘有馬記念制覇", wins: 1, losses: 2, draws: 0, omw: 0.500, rank: 12,
+    decks: [
+      { title: "ウマ娘 プリティーダービー", cx: "8チョイス", baseCost: 3.0, status: "win" },
+      { title: "ラブライブ！蓮ノ空女学院スクールアイドルクラブ", cx: "8門", baseCost: 2.5, status: "revealed" },
+      { title: "進撃の巨人", cx: "8門", baseCost: 2.0, status: "revealed" },
+      { title: "ブルーアーカイブ", cx: "8スタンバイ", baseCost: 1.5, status: "active" }
+    ]
+  },
+  {
+    id: "p15", name: "ナナ＠ブルアカ先生キヴォトス", wins: 0, losses: 3, draws: 0, omw: 0.556, rank: 15,
+    decks: [
+      { title: "ソードアート・オンライン", cx: "4扉4本", baseCost: 2.5, status: "revealed" },
+      { title: "ブルーアーカイブ", cx: "8チョイス", baseCost: 1.5, status: "revealed" },
+      { title: "東方Project", cx: "8門", baseCost: 2.0, status: "revealed" },
+      { title: "怪獣８号", cx: "8門", baseCost: 1.0, status: "active" }
+    ]
+  },
+  {
+    id: "p16", name: "ハチロウ＠アズレン指揮官提督", wins: 0, losses: 3, draws: 0, omw: 0.444, rank: 16,
+    decks: [
+      { title: "学園アイドルマスター", cx: "8スタンバイ", baseCost: 3.5, status: "revealed" },
+      { title: "アズールレーン", cx: "8宝", baseCost: 2.5, status: "revealed" },
+      { title: "電撃文庫", cx: "4扉4本", baseCost: 2.0, status: "revealed" },
+      { title: "Summer Pockets", cx: "8門", baseCost: 1.5, status: "secret" }
+    ]
+  }
+];
+
+function getMaxPlayersData(count) {
+  if (count === 8) return MAX_PLAYERS_8;
+  const merged = [...MAX_PLAYERS_8, ...MAX_EXTRA_PLAYERS_8].sort((a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins;
     if (b.omw !== a.omw) return b.omw - a.omw;
     return a.losses - b.losses;
@@ -1598,6 +1927,7 @@ function showToast(msg) {
 }
 
 function switchState(stateName) {
+  if (stateName === "5") stateName = "max";
   currentState = stateName;
   postCostConfirmArmed = false;
   updateUrlParams();
@@ -1630,7 +1960,7 @@ function switchPlayersMode(count) {
 
 function updateUrlParams() {
   const url = new URL(window.location);
-  url.searchParams.set("state", currentState);
+  url.searchParams.set("state", currentState === "max" ? "5" : currentState);
   url.searchParams.set("players", currentPlayers);
   window.history.replaceState({}, "", url);
 }
@@ -1643,6 +1973,7 @@ function renderArena() {
   if (!arena) return;
 
   arena.classList.toggle("mode-16", currentPlayers === 16);
+  arena.classList.toggle("state-max", currentState === "max");
 
   if (currentState === "running") {
     arena.innerHTML = `
@@ -1660,6 +1991,12 @@ function renderArena() {
     arena.innerHTML = renderPostCostDraftView();
   } else if (currentState === "post_result") {
     arena.innerHTML = renderPostCostResultView();
+  } else if (currentState === "max") {
+    arena.innerHTML = `
+      ${renderOpsColumnMax()}
+      ${renderStageColumnStandingsMax()}
+    `;
+    updateTimerDisplay();
   }
 }
 
@@ -2214,6 +2551,378 @@ function renderPlayerStandingRow(player) {
 }
 
 // --------------------------------------------------------------------------
+// 状態5: 情報量最大 (終盤 Round 4、登録4デッキ、長文タイトル、CX構成、全角10字以上の参加者名)
+// --------------------------------------------------------------------------
+function renderOpsColumnMax() {
+  const is16 = currentPlayers === 16;
+  const confirmedCount = is16 ? 3 : 2;
+  const pendingCount = is16 ? 2 : 1;
+  const playingCount = is16 ? 3 : 1;
+  const totalTables = is16 ? 8 : 4;
+  const pct = Math.round((confirmedCount / totalTables) * 100);
+
+  const matches8Max = `
+    <!-- 卓1: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 1</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">アリス＠シャニマス担当P (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">チャーリー＠ウマ娘トレーナー</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: ヘブンバーンズレッド [8チョイス]</span>
+        <span class="deck-name-trunc">使用: 電撃文庫 [8扉]</span>
+      </div>
+    </div>
+    <!-- 卓2: 承諾待ち -->
+    <div class="match-card pending">
+      <div class="match-header">
+        <span class="table-num">TABLE 2</span>
+        <span class="chip" style="background:var(--wait-bg); color:var(--wait); border-color:var(--wait);">ボブ報告・承諾待ち</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">ボブ＠ホロライブ箱推し勢</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ダイヤ＠蓮ノ空スクールアイドル</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: ブルーアーカイブ [8門]</span>
+        <span class="deck-name-trunc">使用: ガールズバンドクライ [8本]</span>
+      </div>
+    </div>
+    <!-- 卓3: 未報告 (対戦中) -->
+    <div class="match-card playing">
+      <div class="match-header">
+        <span class="table-num">TABLE 3</span>
+        <span class="chip" style="background:rgba(124,163,255,0.15); color:var(--accent); border-color:var(--accent);">対戦中 (未報告)</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">エレン＠進撃の調査兵団分隊長</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ギン＠SAO攻略組トップランカー</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 怪獣８号 [8門]</span>
+        <span class="deck-name-trunc">使用: Summer Pockets [8門]</span>
+      </div>
+    </div>
+    <!-- 卓4: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 4</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">フラン＠東方Project幻想郷 (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">ハル＠学マス全力プロデュース</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 青春ブタ野郎はおでかけシスター… [8枝]</span>
+        <span class="deck-name-trunc">使用: デート・ア・ライブ [8スタンバイ]</span>
+      </div>
+    </div>
+  `;
+
+  const extraMatches16Max = `
+    <!-- 卓5: 確定 -->
+    <div class="match-card confirmed">
+      <div class="match-header">
+        <span class="table-num">TABLE 5</span>
+        <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">確定</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter winner">イチカ＠リコリス喫茶常連客 (勝)</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter loser right">サブロウ＠秀知院学園生徒会</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: チェンソーマン [8チョイス]</span>
+        <span class="deck-name-trunc">使用: 葬送のフリーレン [8チョイス]</span>
+      </div>
+    </div>
+    <!-- 卓6: 承諾待ち -->
+    <div class="match-card pending">
+      <div class="match-header">
+        <span class="table-num">TABLE 6</span>
+        <span class="chip" style="background:var(--wait-bg); color:var(--wait); border-color:var(--wait);">ジロウ報告・承諾待ち</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">ジロウ＠デアラ精霊契約者</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">シロウ＠無職転生ルーデウス</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: アサルトリリィ [8門]</span>
+        <span class="deck-name-trunc">使用: リアデイルの大地にて [8門]</span>
+      </div>
+    </div>
+    <!-- 卓7: 未報告 (対戦中) -->
+    <div class="match-card playing">
+      <div class="match-header">
+        <span class="table-num">TABLE 7</span>
+        <span class="chip" style="background:rgba(124,163,255,0.15); color:var(--accent); border-color:var(--accent);">対戦中 (未報告)</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">ゴロウ＠バンドリRoselia</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ロクロウ＠ウマ娘有馬記念制覇</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: ホロライブ [4扉4本]</span>
+        <span class="deck-name-trunc">使用: ブルーアーカイブ [8スタンバイ]</span>
+      </div>
+    </div>
+    <!-- 卓8: 未報告 (対戦中) -->
+    <div class="match-card playing">
+      <div class="match-header">
+        <span class="table-num">TABLE 8</span>
+        <span class="chip" style="background:rgba(124,163,255,0.15); color:var(--accent); border-color:var(--accent);">対戦中 (未報告)</span>
+      </div>
+      <div class="match-fighters">
+        <span class="fighter">ナナ＠ブルアカ先生キヴォトス</span>
+        <span class="vs-sign">VS</span>
+        <span class="fighter right">ハチロウ＠アズレン指揮官提督</span>
+      </div>
+      <div class="match-deck-preview">
+        <span class="deck-name-trunc">使用: 怪獣８号 [8門]</span>
+        <span class="deck-name-trunc">使用: Summer Pockets [8門]</span>
+      </div>
+    </div>
+  `;
+
+  return `
+    <div class="col-ops">
+      <!-- カウントダウンタイマー (終盤残り 07:42) -->
+      <div class="timer-card">
+        <div class="timer-badge-row">
+          <span class="timer-label">ROUND 4/4 (FINAL) TIMER</span>
+          <span class="timer-status-pill" id="timer-status-pill">COUNTING DOWN</span>
+        </div>
+        <div class="timer-display-box">
+          <input type="text" id="timer-input" class="timer-digits" value="07:42"
+                 onchange="onTimerInput(event)" aria-label="対戦タイマー" />
+        </div>
+        <div class="timer-controls">
+          <button class="btn primary" id="btn-timer-start" style="display:none;" onclick="timerStart()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            START
+          </button>
+          <button class="btn danger" id="btn-timer-stop" onclick="timerStop()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            STOP
+          </button>
+          <button class="btn ghost" id="btn-timer-reset" onclick="timerReset()">
+            RESET
+          </button>
+        </div>
+        <div class="timer-hint">※ 数字を直接クリックして時間を編集できます（初期値 35:00）</div>
+      </div>
+
+      <!-- ラウンド進行＆卓状況 (確定・承諾待ち・未報告が混在) -->
+      <div class="card-panel" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+            Round 4 最終ラウンド進行状況 (${totalTables}卓)
+          </span>
+          <span class="chip live">終盤戦</span>
+        </div>
+
+        <div class="progress-summary">
+          <span>報告状況: <strong>${confirmedCount}卓確定 / 承諾待ち${pendingCount} / 未報告${playingCount}</strong></span>
+          <span style="color:var(--ok); font-weight:700;">${pct}% 完了</span>
+        </div>
+        <div class="prog-bar-bg">
+          <div class="prog-bar-fill" style="width: ${pct}%;"></div>
+        </div>
+
+        <div class="matches-list ${is16 ? "grid-16" : ""}">
+          ${matches8Max}
+          ${is16 ? extraMatches16Max : ""}
+        </div>
+
+        <!-- 主催者オペレーションバー -->
+        <div style="margin-top:6px; padding-top:6px; border-top:1px solid var(--card-edge); display:flex; justify-content:space-between; align-items:center; flex:none;">
+          <span style="font-size:11px; color:var(--ink-muted);">全卓確定すると大会終了・事後コスト抽選へ</span>
+          <button class="btn ghost" style="padding:4px 9px; font-size:11px;" onclick="simulateFinalRoundClose()">
+            全卓確定を代行して終了 ❯
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStageColumnStandingsMax() {
+  const is16 = currentPlayers === 16;
+  const players = getMaxPlayersData(currentPlayers);
+
+  let contentHtml = "";
+
+  if (!is16) {
+    contentHtml = `
+      <div class="ranking-table-container">
+        <table class="standings-table" style="table-layout:fixed; width:100%;">
+          <thead>
+            <tr>
+              <th style="width: 36px;">順位</th>
+              <th style="width: 220px;">参加者 (長文表示名)</th>
+              <th>登録デッキ 4個 (ピラミッド制・CX構成表示)</th>
+              <th class="num" style="width: 80px;">勝 - 負 - 分</th>
+              <th class="num" style="width: 70px;">OMW%</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${players.map(p => renderMaxPlayerStandingRow(p)).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    const left8 = players.slice(0, 8);
+    const right8 = players.slice(8, 16);
+
+    contentHtml = `
+      <div class="standings-split-grid">
+        <!-- 左列: 1〜8位 (上位決勝ライン) -->
+        <div class="ranking-table-container">
+          <div style="font-size:11px; font-weight:800; color:var(--accent); margin-bottom:4px; letter-spacing:0.05em;">
+            ◀ TOP 1〜8位 (決勝トーナメント進出ライン)
+          </div>
+          <table class="standings-table" style="table-layout:fixed; width:100%;">
+            <thead>
+              <tr>
+                <th style="width: 28px;">順</th>
+                <th style="width: 140px;">参加者</th>
+                <th>登録4デッキ (ピラミッド消費・CX構成)</th>
+                <th class="num" style="width: 60px;">勝-負</th>
+                <th class="num" style="width: 50px;">OMW</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${left8.map(p => renderMaxPlayerStandingRow(p)).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 右列: 9〜16位 -->
+        <div class="ranking-table-container">
+          <div style="font-size:11px; font-weight:800; color:var(--ink-sub); margin-bottom:4px; letter-spacing:0.05em;">
+            9〜16位
+          </div>
+          <table class="standings-table" style="table-layout:fixed; width:100%;">
+            <thead>
+              <tr>
+                <th style="width: 28px;">順</th>
+                <th style="width: 140px;">参加者</th>
+                <th>登録4デッキ (ピラミッド消費・CX構成)</th>
+                <th class="num" style="width: 60px;">勝-負</th>
+                <th class="num" style="width: 50px;">OMW</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${right8.map(p => renderMaxPlayerStandingRow(p)).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="col-stage">
+      <div class="ranking-card">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"></path><path d="M14 14.66V17c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2.34"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+            情報量最大: 勝敗ランキング & 4デッキ登録状況 (${currentPlayers}名)
+          </span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--ink-muted);">勝利: 取消線 / 使用中: 黄枠発光 / 未使用: 伏せ（？）</span>
+            <span class="chip" style="background:var(--ok-bg); color:var(--ok); border-color:var(--ok);">Round 4 最終戦リアルタイム</span>
+          </div>
+        </div>
+
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderMaxPlayerStandingRow(player) {
+  const rankClass = `rank-${player.rank}`;
+
+  const decksHtml = player.decks.map(d => {
+    if (d.status === "win") {
+      return `
+        <span class="deck-pill used-win" title="${d.title} (${d.cx}) - コスト ${d.baseCost.toFixed(1)} [勝利により使用済み]">
+          <span class="deck-cost-tag">${d.baseCost.toFixed(1)}</span>
+          <span class="cx-tag">${d.cx}</span>
+          <s class="deck-pill-title-trunc">${d.title}</s>
+        </span>
+      `;
+    } else if (d.status === "active") {
+      return `
+        <span class="deck-pill active-now" title="${d.title} (${d.cx}) - コスト ${d.baseCost.toFixed(1)} [現在対戦で使用中]">
+          <span class="deck-cost-tag">${d.baseCost.toFixed(1)}</span>
+          <span class="cx-tag">${d.cx}</span>
+          <span class="deck-pill-title-trunc">${d.title}</span>
+        </span>
+      `;
+    } else if (d.status === "revealed") {
+      return `
+        <span class="deck-pill revealed" title="${d.title} (${d.cx}) - コスト ${d.baseCost.toFixed(1)} [公開済み・使用可能]">
+          <span class="deck-cost-tag">${d.baseCost.toFixed(1)}</span>
+          <span class="cx-tag">${d.cx}</span>
+          <span class="deck-pill-title-trunc">${d.title}</span>
+        </span>
+      `;
+    } else {
+      return `
+        <span class="deck-pill secret" title="未対戦・非公開デッキ">
+          <span class="secret-q">?</span>
+          <span>SECRET</span>
+        </span>
+      `;
+    }
+  }).join("");
+
+  return `
+    <tr class="${rankClass}">
+      <td>
+        <span class="rank-badge">${player.rank}</span>
+      </td>
+      <td>
+        <div class="player-cell-main" title="${player.name}">
+          <span>${player.name}</span>
+        </div>
+      </td>
+      <td>
+        <div class="player-decks-row">
+          ${decksHtml}
+        </div>
+      </td>
+      <td class="score-cell">
+        <span style="color:${player.wins > 0 ? "var(--ok)" : "inherit"}">${player.wins}</span> -
+        <span style="color:${player.losses > 0 ? "var(--danger)" : "inherit"}">${player.losses}</span> -
+        <span>${player.draws}</span>
+      </td>
+      <td class="omw-cell">${(player.omw * 100).toFixed(1)}%</td>
+    </tr>
+  `;
+}
+
+function simulateFinalRoundClose() {
+  showToast("最終ラウンドが完了しました。事後コスト下書きへ進みます");
+  switchState("post_draft");
+}
+
+// --------------------------------------------------------------------------
 // 状態3: 大会終了後・事後コストの下書き (抽選/再抽選/確定)
 // --------------------------------------------------------------------------
 function renderPostCostDraftView() {
@@ -2666,8 +3375,12 @@ window.addEventListener("DOMContentLoaded", () => {
     if (pChip) pChip.textContent = "16名参加 (8卓)";
   }
 
-  if (stateParam && ["running", "draft", "post_draft", "post_result"].includes(stateParam)) {
-    currentState = stateParam;
+  if (stateParam) {
+    if (stateParam === "5" || stateParam === "max") {
+      currentState = "max";
+    } else if (["running", "draft", "post_draft", "post_result"].includes(stateParam)) {
+      currentState = stateParam;
+    }
   }
 
   switchState(currentState);

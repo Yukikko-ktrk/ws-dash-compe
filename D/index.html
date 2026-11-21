@@ -358,6 +358,25 @@ body.clean .mockbar { display: none; }
 .n16 .an-total b { font-size: 1.85rem; order: 2; }
 .n16 .an-total small { display: inline; font-size: .95rem; }
 
+/* ===== 状態 5「情報量最大」（body.max）: デッキ 4 個・CX 構成つき・長い名前 =====
+   デッキ枠は 2 段（上: タイトル 20px／下: CX 構成と使用記録）。長いタイトルは 1 行で省略記号、全文はツールチップ。
+   表示名は省略せず 2 行まで折り返す。卓の確定バッジは「確定」だけにし、勝者は名前の横の「勝」で示す。 */
+.max .decks { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.max .dk { height: auto; min-height: 3.1rem; flex-wrap: wrap; align-content: center; row-gap: 0; padding: .18rem .55rem; }
+.max .dk-t { flex: 1 1 100%; font-size: 1.25rem; line-height: 1.2; }
+.max .dk-cx { display: inline; font-size: .78rem; line-height: 1.3; }
+.max .dk.hid { flex-wrap: nowrap; }
+.max .rk-name { line-height: 1.2; }
+.max .pl .n { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 1.3rem; line-height: 1.15; }
+.max .pl .n .w { display: inline-block; vertical-align: .15em; margin: 0 .25rem; }
+.max.n16 .rk-head, .max.n16 .rk-row { grid-template-columns: 2.8rem minmax(0, 1fr) 5.4rem 5.4rem; }
+.max.n16 .rk-main { grid-template-columns: 7.2rem minmax(0, 1fr); }
+.max.n16 .rk-name { font-size: 1.25rem; line-height: 1.12; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.max.n16 .dk { min-height: 2.85rem; padding: .1rem .5rem; }
+.max.n16 .dk-t { line-height: 1.15; }
+.max.n16 .pl .n { font-size: 1.25rem; line-height: 1.1; }
+.max.n16 .pips { gap: .22rem; }
+
 /* ===== 狭い画面（スマホ）: 縦に積む ===== */
 @media (max-width: 820px) {
   html { font-size: 13px; }
@@ -387,6 +406,8 @@ body.clean .mockbar { display: none; }
   .rk-row, .an-row { padding: .7rem .4rem; }
   .rk-rec { font-size: 1.45rem; }
   .n16 .rk-main { grid-template-columns: 1fr; }
+  .max .decks { grid-template-columns: 1fr 1fr; }
+  .max.n16 .rk-main { grid-template-columns: 1fr; }
   .n16 .rk-row, .n16 .an-row { padding: .6rem .4rem; }
   .n16 .pl .d { display: block; }
   .n16 .tb { padding: .5rem .8rem; }
@@ -446,8 +467,9 @@ const STATES8 = {
   2: { label: "マッチング下書き", round: 4, phase: "draft", confirmedRounds: 3, order: "r3done", timer: { remain: 35 * 60, start: 35 * 60, running: false } },
   3: { label: "事後コストの下書き", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "draft", drawCount: 2 },
   4: { label: "事後コスト発表", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "confirmed", drawCount: 2 },
-  5: { label: "ラウンド完了（抽選前）", round: 3, phase: "closed", confirmedRounds: 3, order: "r3done", timer: { remain: 0, start: 35 * 60, running: false } },
-  6: { label: "大会終了直後（事後コスト抽選前）", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "none", drawCount: 0 }
+  5: { label: "情報量最大", round: 5, phase: "published", confirmedRounds: 4, max: "MAX8", r3: ["confirmed", "pending", "none", "confirmed"], timer: { remain: 4 * 60 + 37, start: 35 * 60, running: true } },
+  6: { label: "大会終了直後（事後コスト抽選前）", round: 4, phase: "done", confirmedRounds: 4, order: "final", post: "none", drawCount: 0 },
+  7: { label: "ラウンド完了（抽選前）", round: 3, phase: "closed", confirmedRounds: 3, order: "r3done", timer: { remain: 0, start: 35 * 60, running: false } }
 };
 
 /* ===== 16 人版（?players=16）: 8 卓・デッキ 3 個ずつ。8 人版の 8 人に 8 人を足す =====
@@ -480,18 +502,79 @@ const STATES16 = {
   2: { label: "マッチング下書き", round: 3, phase: "draft", confirmedRounds: 2, timer: { remain: 35 * 60, start: 35 * 60, running: false } },
   3: { label: "事後コストの下書き", round: 3, phase: "done", confirmedRounds: 3, post: "draft", drawCount: 1 },
   4: { label: "事後コスト発表", round: 3, phase: "done", confirmedRounds: 3, post: "confirmed", drawCount: 1 },
-  5: { label: "ラウンド完了（抽選前）", round: 2, phase: "closed", confirmedRounds: 2, timer: { remain: 0, start: 35 * 60, running: false } },
-  6: { label: "大会終了直後（事後コスト抽選前）", round: 3, phase: "done", confirmedRounds: 3, post: "none", drawCount: 0 }
+  5: { label: "情報量最大", round: 5, phase: "published", confirmedRounds: 4, max: "MAX16", r3: ["confirmed", "pending", "none", "confirmed", "pending", "confirmed", "none", "confirmed"], timer: { remain: 4 * 60 + 37, start: 35 * 60, running: true } },
+  6: { label: "大会終了直後（事後コスト抽選前）", round: 3, phase: "done", confirmedRounds: 3, post: "none", drawCount: 0 },
+  7: { label: "ラウンド完了（抽選前）", round: 2, phase: "closed", confirmedRounds: 2, timer: { remain: 0, start: 35 * 60, running: false } }
 };
 
-/* 人数の切り替え。8 人版は順位を固定値（ORDER8）で持ち、16 人版は rankOrder() で計算する */
-let PLAYERS, ROUNDS, POST, ORDER, STATES, N = 8;
+/* ===== 状態 5「情報量最大」: 登録デッキ 4 個・コスト上限 8 の大会の終盤（Round 5 進行中）=====
+   長いタイトル・長い表示名（全角 10 文字前後）を多めにした別の大会。対戦はスイス式＋ピラミッドの規則で 4 ラウンド分を確定済み、
+   Round 5 は確定・承諾待ち・未報告が混在。デッキは未公開のものを優先して出す想定で、多くの人が 4 個目まで公開済み。 */
+const MAX8 = {
+  players: {
+    shima: {"name": "しまむら＠主催補佐", "decks": [["ソードアート・オンライン オルタナティブ ガンゲイル・オンライン", "扉8", 2], ["葬送のフリーレン", "門4 扉4", 2], ["東方Project", "宝8", 1], ["ゴブリンスレイヤー", "チョイス8", 2]]},
+    aoi: {"name": "あおいはデッキ迷子", "decks": [["ブルーアーカイブ", "宝8", 3], ["プロジェクトセカイ カラフルステージ！ feat. 初音ミク", "扉8", 2], ["ゆるキャン△", "本8", 1], ["負けヒロインが多すぎる！", "門8", 2]]},
+    kanata: {"name": "かなた（初参加です）", "decks": [["ラブライブ！蓮ノ空女学院スクールアイドルクラブ", "門8", 2], ["Fate/Grand Order（アニメ）", "扉8", 2], ["ぼっち・ざ・ろっく！", "チョイス8", 1], ["痛いのは嫌なので防御力に極振りしたいと思います。", "宝8", 2]]},
+    yuto: {"name": "ゆうと", "decks": [["転生したらスライムだった件", "扉8", 2], ["ダンジョンに出会いを求めるのは間違っているだろうか", "門8", 2], ["チェンソーマン", "宝8", 2], ["SPY×FAMILY", "本8", 1]]},
+    misaki: {"name": "みさき・ふるかすたむ", "decks": [["学園アイドルマスター", "門8", 3], ["かぐや様は告らせたい～天才たちの恋愛頭脳戦～", "扉8", 2], ["リコリス・リコイル", "ショット8", 2], ["ご注文はうさぎですか？？", "宝4 門4", 1]]},
+    ren: {"name": "れん", "decks": [["ホロライブプロダクション", "扉8", 2], ["とある魔術の禁書目録／とある科学の超電磁砲", "門8", 2], ["ダンダダン", "宝8", 1], ["幻日のヨハネ -SUNSHINE in the MIRROR-", "扉4 本4", 2]]},
+    hinata: {"name": "ひなたぼっこ中毒者", "decks": [["ウマ娘 プリティーダービー", "扉8", 3], ["ラブライブ！虹ヶ咲学園スクールアイドル同好会", "門8", 2], ["ガールズバンドクライ", "本8", 1], ["無職転生 ～異世界行ったら本気だす～", "宝8", 2]]},
+    sora: {"name": "そらとぶペンギン隊長", "decks": [["Re:ゼロから始める異世界生活", "扉8", 2], ["アイドルマスター シンデレラガールズ", "門8", 2], ["魔法少女まどか☆マギカ", "宝8", 1], ["チェインクロニクル ～ヘクセイタスの閃～", "スタンバイ8", 2]]}
+  },
+  rounds: [
+    [["shima", 1, "aoi", 3, "a"], ["kanata", 3, "yuto", 0, "b"], ["misaki", 1, "ren", 2, "a"], ["hinata", 1, "sora", 2, "b"]],
+    [["sora", 1, "shima", 0, "a"], ["yuto", 2, "misaki", 0, "draw"], ["kanata", 0, "ren", 3, "a"], ["aoi", 0, "hinata", 2, "b"]],
+    [["sora", 0, "kanata", 2, "a"], ["shima", 3, "yuto", 3, "a"], ["hinata", 3, "misaki", 2, "a"], ["ren", 0, "aoi", 1, "a"]],
+    [["sora", 3, "yuto", 1, "b"], ["shima", 2, "kanata", 2, "a"], ["hinata", 0, "ren", 1, "b"], ["misaki", 0, "aoi", 2, "a"]],
+    [["shima", 0, "ren", 3, "a"], ["sora", 3, "misaki", 3, "b"], ["yuto", 2, "hinata", 0, "a"], ["kanata", 1, "aoi", 1, "a"]]
+  ]
+};
+const MAX16 = {
+  players: {
+    shima: {"name": "しまむら＠主催補佐", "decks": [["ソードアート・オンライン オルタナティブ ガンゲイル・オンライン", "扉8", 2], ["葬送のフリーレン", "門4 扉4", 2], ["東方Project", "宝8", 1], ["ゴブリンスレイヤー", "チョイス8", 2]]},
+    aoi: {"name": "あおいはデッキ迷子", "decks": [["ブルーアーカイブ", "宝8", 3], ["プロジェクトセカイ カラフルステージ！ feat. 初音ミク", "扉8", 2], ["ゆるキャン△", "本8", 1], ["負けヒロインが多すぎる！", "門8", 2]]},
+    kanata: {"name": "かなた（初参加です）", "decks": [["ラブライブ！蓮ノ空女学院スクールアイドルクラブ", "門8", 2], ["Fate/Grand Order（アニメ）", "扉8", 2], ["ぼっち・ざ・ろっく！", "チョイス8", 1], ["痛いのは嫌なので防御力に極振りしたいと思います。", "宝8", 2]]},
+    yuto: {"name": "ゆうと", "decks": [["転生したらスライムだった件", "扉8", 2], ["ダンジョンに出会いを求めるのは間違っているだろうか", "門8", 2], ["チェンソーマン", "宝8", 2], ["SPY×FAMILY", "本8", 1]]},
+    misaki: {"name": "みさき・ふるかすたむ", "decks": [["学園アイドルマスター", "門8", 3], ["かぐや様は告らせたい～天才たちの恋愛頭脳戦～", "扉8", 2], ["リコリス・リコイル", "ショット8", 2], ["ご注文はうさぎですか？？", "宝4 門4", 1]]},
+    ren: {"name": "れん", "decks": [["ホロライブプロダクション", "扉8", 2], ["とある魔術の禁書目録／とある科学の超電磁砲", "門8", 2], ["ダンダダン", "宝8", 1], ["幻日のヨハネ -SUNSHINE in the MIRROR-", "扉4 本4", 2]]},
+    hinata: {"name": "ひなたぼっこ中毒者", "decks": [["ウマ娘 プリティーダービー", "扉8", 3], ["ラブライブ！虹ヶ咲学園スクールアイドル同好会", "門8", 2], ["ガールズバンドクライ", "本8", 1], ["無職転生 ～異世界行ったら本気だす～", "宝8", 2]]},
+    sora: {"name": "そらとぶペンギン隊長", "decks": [["Re:ゼロから始める異世界生活", "扉8", 2], ["アイドルマスター シンデレラガールズ", "門8", 2], ["魔法少女まどか☆マギカ", "宝8", 1], ["チェインクロニクル ～ヘクセイタスの閃～", "スタンバイ8", 2]]},
+    yui: {"name": "ゆい", "decks": [["ラブライブ！スーパースター!!", "門8", 2], ["超爆裂異次元メンコバトル ギガントシューター つかさ", "扉8", 1], ["甘神さんちの縁結び", "本8", 1], ["ホロライブプロダクション", "宝8", 2]]},
+    haruto: {"name": "はると＠関西遠征組", "decks": [["怪獣８号", "扉8", 2], ["宇宙をかける少女／舞-HiME＆舞-乙HiME", "門8", 1], ["進撃の巨人", "宝8", 2], ["ありふれた職業で世界最強", "チョイス8", 2]]},
+    mei: {"name": "めい", "decks": [["アイドルマスター シャイニーカラーズ", "門8", 3], ["魔法少女リリカルなのは", "扉8", 1], ["ひなろじ ～from Luck ＆ Logic～", "宝8", 1], ["葬送のフリーレン", "本8", 2]]},
+    sota: {"name": "そうた・オルタナティブ", "decks": [["ソードアート・オンライン", "扉8", 2], ["この素晴らしい世界に祝福を！", "本8", 1], ["「青春ブタ野郎」シリーズ", "門8", 2], ["チェンソーマン", "宝4 扉4", 2]]},
+    rin: {"name": "りん", "decks": [["BanG Dream!", "門8", 2], ["少女☆歌劇 レヴュースタァライト", "扉8", 1], ["探偵オペラ　ミルキィホームズ", "本8", 1], ["ゆるキャン△", "宝8", 1]]},
+    itsuki: {"name": "いつき（デッキ構築中）", "decks": [["戦姫絶唱シンフォギア", "扉8", 2], ["五等分の花嫁", "門8", 2], ["勝利の女神：NIKKE", "ショット8", 2], ["ダンダダン", "本8", 1]]},
+    sakura: {"name": "さくら", "decks": [["カードキャプターさくら", "扉8", 1], ["プリズマ☆イリヤ", "門8", 2], ["魔法少女ノ魔女裁判", "宝8", 2], ["ブルーアーカイブ", "本8", 3]]},
+    kaito: {"name": "かいとは今日も全力", "decks": [["ジョジョの奇妙な冒険", "扉8", 2], ["天元突破グレンラガン", "門8", 2], ["東京リベンジャーズ", "本8", 1], ["学園アイドルマスター", "宝8", 3]]}
+  },
+  rounds: [
+    [["shima", 1, "aoi", 2, "a"], ["kanata", 2, "yuto", 3, "a"], ["misaki", 0, "ren", 3, "a"], ["hinata", 1, "sora", 2, "a"], ["yui", 0, "haruto", 1, "b"], ["mei", 0, "sota", 3, "a"], ["rin", 1, "itsuki", 3, "a"], ["sakura", 2, "kaito", 3, "a"]],
+    [["rin", 0, "kanata", 3, "a"], ["haruto", 3, "shima", 2, "draw"], ["mei", 3, "sakura", 3, "b"], ["hinata", 0, "misaki", 2, "a"], ["yui", 3, "itsuki", 2, "b"], ["sota", 1, "sora", 1, "b"], ["yuto", 1, "ren", 2, "b"], ["aoi", 0, "kaito", 1, "b"]],
+    [["rin", 2, "sakura", 1, "draw"], ["hinata", 2, "kanata", 0, "b"], ["haruto", 3, "ren", 3, "b"], ["itsuki", 0, "shima", 3, "b"], ["sora", 0, "mei", 2, "a"], ["kaito", 2, "misaki", 3, "a"], ["yui", 2, "sota", 0, "b"], ["yuto", 2, "aoi", 1, "a"]],
+    [["rin", 3, "ren", 1, "b"], ["kanata", 1, "shima", 0, "b"], ["sora", 3, "kaito", 0, "a"], ["sakura", 0, "hinata", 3, "draw"], ["haruto", 0, "itsuki", 0, "a"], ["sota", 2, "yuto", 0, "b"], ["mei", 1, "misaki", 1, "a"], ["yui", 1, "aoi", 3, "b"]],
+    [["ren", 0, "shima", 2, "b"], ["sora", 2, "rin", 3, "a"], ["kanata", 3, "haruto", 2, "b"], ["mei", 2, "yuto", 1, "b"], ["kaito", 0, "hinata", 2, "b"], ["sakura", 0, "itsuki", 1, "b"], ["sota", 2, "aoi", 1, "a"], ["misaki", 3, "yui", 1, "a"]]
+  ]
+};
+
+/* 人数の切り替え。8 人版は順位を固定値（ORDER8）で持ち、16 人版と情報量最大は rankOrder() で計算する */
+let PLAYERS, ROUNDS, POST, ORDER, STATES, N = 8, DECKS = 3, COST_LIMIT = 6;
 function useDataset(n) {
   N = n === 16 ? 16 : 8;
   [PLAYERS, ROUNDS, POST, ORDER, STATES] = N === 16
     ? [PLAYERS16, ROUNDS16, POST16, null, STATES16]
     : [PLAYERS8, ROUNDS8, POST8, ORDER8, STATES8];
+  DECKS = 3; COST_LIMIT = 6;
   document.body.classList.toggle("n16", N === 16);
+  document.body.classList.remove("max");
+}
+/* 状態ごとに別の大会を使うとき（情報量最大）だけ差し替える */
+function useStateData(st) {
+  useDataset(N);
+  if (!st.max) return;
+  const d = { MAX8, MAX16 }[st.max];
+  PLAYERS = d.players; ROUNDS = d.rounds; ORDER = null; DECKS = 4; COST_LIMIT = 8;
+  document.body.classList.add("max");
 }
 /* コスト制ピラミッドの並び: 使い切ったラウンドが早い → 勝利数 → 登録コストが低い → 使用可能コストが高い → 名前 */
 function rankOrder(rec) {
@@ -519,7 +602,7 @@ function confirmedMatches(st) {
   const list = [];
   ROUNDS.forEach((round, ri) => {
     round.forEach((m, mi) => {
-      const ok = ri < st.confirmedRounds || (ri === 2 && st.r3 && st.r3[mi] === "confirmed");
+      const ok = ri < st.confirmedRounds || (ri === st.round - 1 && st.r3 && st.r3[mi] === "confirmed");
       if (ok) list.push({ r: ri + 1, a: m[0], ad: m[1], b: m[2], bd: m[3], res: m[4] });
     });
   });
@@ -533,7 +616,7 @@ function buildRecords(st) {
     [[m.a, m.ad, "a"], [m.b, m.bd, "b"]].forEach(([id, di, side]) => {
       const r = rec[id];
       const out = m.res === "draw" ? "d" : m.res === side ? "w" : "l";
-      if (out === "w") { r.w++; r.used.add(di); if (r.used.size === 3 && r.done == null) r.done = m.r; } else if (out === "l") r.l++; else r.d++;
+      if (out === "w") { r.w++; r.used.add(di); if (r.used.size === DECKS && r.done == null) r.done = m.r; } else if (out === "l") r.l++; else r.d++;
       if (!r.uses[di]) { r.uses[di] = []; r.reveal.push(di); }
       r.uses[di].push({ r: m.r, out });
     });
@@ -557,11 +640,11 @@ function rankingPanel(st, rec, opts = {}) {
   const rows = order.map((id, i) => {
     const p = PLAYERS[id], r = rec[id];
     const chips = r.reveal.map((di) => deckChip(p.decks[di], r.uses[di], r.used.has(di)));
-    while (chips.length < 3) chips.push(hiddenChip());
-    const left = 3 - r.used.size;
+    while (chips.length < DECKS) chips.push(hiddenChip());
+    const left = DECKS - r.used.size;
     const status = left === 0
       ? `<span class="badge done">勝ち抜け</span>`
-      : `<div class="pips" title="使用可能なデッキ ${left} 個">${[0, 1, 2].map((k) => `<i class="${k < left ? "on" : "off"}"></i>`).join("")}</div>`;
+      : `<div class="pips" title="使用可能なデッキ ${left} 個">${[...Array(DECKS).keys()].map((k) => `<i class="${k < left ? "on" : "off"}"></i>`).join("")}</div>`;
     return `<div class="rk-row ${i === 0 ? "top" : ""}" style="animation-delay:${i * 40}ms">
       <div class="rk-no">${i + 1}</div>
       <div class="rk-main"><div class="rk-name">${esc(p.name)}</div><div class="decks">${chips.join("")}</div></div>
@@ -614,7 +697,9 @@ function tableRow(no, m, status) {
   const [a, ad, b, bd, res] = m;
   const conf = status === "confirmed";
   const badge = {
-    confirmed: res === "draw" ? `<span class="badge done">確定: 引き分け</span>` : `<span class="badge done">確定: ${esc(name(res === "a" ? a : b))}の勝ち</span>`,
+    confirmed: res === "draw" ? `<span class="badge done">確定: 引き分け</span>`
+      : document.body.classList.contains("max") ? `<span class="badge done">確定</span>`
+      : `<span class="badge done">確定: ${esc(name(res === "a" ? a : b))}の勝ち</span>`,
     pending: `<span class="badge wait">承諾待ち</span>`,
     none: `<span class="badge none">未報告</span>`,
     draft: `<span class="badge none">下書き</span>`
@@ -767,7 +852,7 @@ function header(st) {
     <div class="meta">
       <span class="chip soft">2026-11-23（月・祝）</span>
       <span class="chip">しま2026版ピラミッド</span><span class="chip">スイス式</span><span class="chip">勝ち抜け</span>
-      <span class="chip soft">参加 ${N} 人</span><span class="chip soft">デッキ 3 個</span><span class="chip soft">コスト上限 6</span>
+      <span class="chip soft">参加 ${N} 人</span><span class="chip soft">デッキ ${DECKS} 個</span><span class="chip soft">コスト上限 ${COST_LIMIT}</span>
       <span class="chip code">SHM-7K2Q</span>
     </div>
     <div class="now">
@@ -827,6 +912,7 @@ const App = {
   go(n) {
     current = Number(n);
     const st = STATES[current];
+    useStateData(st);
     if (timer?.interval) clearInterval(timer.interval);
     timer = st.timer ? { ...st.timer, endAt: Date.now() + st.timer.remain * 1000, interval: null } : null;
     if (timer?.running) timer.interval = setInterval(timerTick, 250);
@@ -868,7 +954,7 @@ window.App = App;
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea")) return;
   if (e.key === "h" || e.key === "H") App.projecting();
-  if (/^[1-6]$/.test(e.key)) App.go(e.key);
+  if (/^[1-7]$/.test(e.key)) App.go(e.key);
 });
 
 const params = new URLSearchParams(location.search);

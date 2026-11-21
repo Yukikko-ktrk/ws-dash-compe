@@ -247,6 +247,50 @@
   .players-16 .cost-table td:first-child { font-size: 1.32rem; }
   .players-16 .cost-table td.num { font-size: 1.48rem; }
 
+  .max-info .clock { font-size: 8.2rem; }
+  .max-info .panel { padding-block: .9rem; }
+  .max-info.players-16 .clock { font-size: 6.8rem; }
+  .max-info .pair { font-size: 1.25rem; }
+  .max-info .match-person {
+    display: block; min-width: 0; min-height: 0; padding: 0 .12rem; border-color: transparent;
+    font: inherit; color: inherit; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
+  }
+  .max-info .match-person.winner { color: var(--green); }
+  .max-info .match-table tbody th, .max-info .match-table .badge { font-size: 1.25rem; }
+  .max-info .rank-table { table-layout: fixed; }
+  .max-info .rank-table col.score { width: 4.65rem; }
+  .max-info .rank-table th, .max-info .rank-table td { padding-block: .22rem; }
+  .max-info .rank-table .person { font-size: 1.42rem; overflow-wrap: anywhere; }
+  .max-info .rank-table .score-value { font-size: 1.38rem; }
+  .max-info .deck-strip, .max-info .deck-strip:has(> .deck.back:last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2rem .36rem; margin-top: .16rem;
+  }
+  .max-info .deck {
+    display: flex; min-height: 1.7rem; gap: .34rem; padding: .12rem .32rem;
+    align-items: center; justify-content: flex-start; font-size: 1.25rem; font-weight: 700; text-align: left;
+  }
+  .max-info .deck.back { justify-content: center; }
+  .max-info .deck-label {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .max-info .deck-cx {
+    color: var(--blue); flex: none; font-size: 1.25rem; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .max-info .deck.used .deck-cx { color: var(--muted); }
+  .max-info .deck.active-deck { background: var(--green-bg); border-color: var(--green); }
+  .max-info .deck.active-deck .round-index, .max-info .deck.active-deck .deck-cx { color: var(--green); }
+  .legend .playing { color: var(--green); }
+  .inspect-dialog {
+    width: min(37rem, calc(100% - 2rem)); color: var(--ink); background: var(--panel);
+    border: 1px solid var(--blue); border-radius: .85rem; padding: 1.25rem 1.4rem;
+    font-size: 1.4rem;
+  }
+  .inspect-dialog::backdrop { background: rgb(10 12 17 / 75%); }
+  .inspect-dialog h2 { margin: .6rem 0; overflow-wrap: anywhere; }
+  .inspect-dialog p { overflow-wrap: anywhere; }
+  .inspect-dialog form { display: flex; justify-content: flex-end; margin-top: .8rem; }
+
   @media (max-width: 800px) {
     :root { font-size: 14px; }
     .shell { padding: .8rem; }
@@ -295,6 +339,13 @@
     .players-16 .deck { font-size: .76rem; }
     .players-16 .deck-strip:has(> .deck.back:last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .players-16 .cost-table td:first-child { font-size: 1rem; }
+    .max-info .clock, .max-info.players-16 .clock { font-size: clamp(4.4rem, 19vw, 8rem); }
+    .max-info .match-table tbody th, .max-info .match-table .badge, .max-info .pair { font-size: .85rem; }
+    .max-info .rank-table col.score { width: 3.6rem; }
+    .max-info .rank-table .person { font-size: 1.08rem; }
+    .max-info .rank-table .score-value { font-size: .98rem; }
+    .max-info .deck, .max-info .deck-cx { font-size: .8rem; }
+    .max-info .deck .round-index { font-size: .65rem; }
   }
 </style>
 </head>
@@ -303,7 +354,7 @@
   <header class="masthead">
     <div class="identity">
       <h1>しまWS大会</h1>
-      <p class="meta">しま2026版ピラミッド　／　スイス式・全2ラウンド　／　<span id="player-count">8人</span></p>
+      <p class="meta">しま2026版ピラミッド　／　<span id="format-label">スイス式・全2ラウンド</span>　／　<span id="player-count">8人</span></p>
     </div>
     <span id="tournament-status" class="badge blue"></span>
   </header>
@@ -377,9 +428,10 @@
         </table>
       </div>
       <div class="legend">
-        <span><b>R1・R2</b> 確定した対戦で使った順</span>
+        <span><b id="deck-order-label">R1・R2</b> 確定した対戦で使った順</span>
         <span><s>取り消し線</s> 勝利して使用済み</span>
         <span><b>？</b> 未公開</span>
+        <span id="active-legend" hidden><b class="playing">▶</b> 使用中</span>
       </div>
     </section>
   </main>
@@ -393,6 +445,14 @@
     <a id="repair-back" href="?state=1">ダッシュボードに戻る</a>
   </main>
 
+  <dialog id="detail-dialog" class="inspect-dialog" aria-labelledby="detail-title">
+    <p id="detail-player" class="meta"></p>
+    <h2 id="detail-title"></h2>
+    <p id="detail-cx"></p>
+    <p id="detail-progress"></p>
+    <form method="dialog"><button type="submit">閉じる</button></form>
+  </dialog>
+
   <footer class="preview" id="preview">
     <nav aria-label="モックの表示切り替え">
       <span>モック切り替え</span>
@@ -400,6 +460,7 @@
       <a data-view="2" href="?state=2">マッチング下書き</a>
       <a data-view="3" href="?state=3">事後コスト下書き</a>
       <a data-view="4" href="?state=4">事後コスト発表</a>
+      <a data-view="5" href="?state=5">情報量最大</a>
     </nav>
     <nav class="player-count" aria-label="サンプルの参加人数">
       <a data-players="8" href="?state=1">8人版</a>
@@ -414,6 +475,7 @@
   const byId = id => document.getElementById(id);
   const params = new URLSearchParams(location.search);
   const expanded = params.get("players") === "16";
+  const dense = params.get("state") === "5";
   const route = (view, large = expanded) => "?state=" + view + (large ? "&players=16" : "");
   const titles = [
     { name: "葬送のフリーレン", base: 2.3 },
@@ -459,12 +521,56 @@
   }
   const tableCount = players.length / 2;
   const sampleConfirmed = tableCount / 2;
+  const denseTitles = [
+    "ソードアート・オンライン オルタナティブ ガンゲイル・オンライン",
+    "痛いのは嫌なので防御力に極振りしたいと思います。",
+    "ダンジョンに出会いを求めるのは間違っているだろうか",
+    "アニメ プリンセスコネクト！Re:Dive",
+    "とある魔術の禁書目録／とある科学の超電磁砲",
+    "プロジェクトセカイ カラフルステージ！ feat. 初音ミク",
+    "かぐや様は告らせたい～天才たちの恋愛頭脳戦～",
+    "ラブライブ！蓮ノ空女学院スクールアイドルクラブ",
+    "宇宙をかける少女／舞-HiME＆舞-乙HiME",
+    "アニメーション映画『GODZILLA』",
+    "超爆裂異次元メンコバトル ギガントシューター つかさ",
+    "アイドルマスター シャイニーカラーズ"
+  ];
+  const cxSamples = ["4門4扉", "8宝", "4扉4風", "4宝4本", "8門", "4門4本", "8扉", "4風4本"];
+  const denseNames = [
+    "夜明けの星を数える猫", "風待ちの図書館司書", "こはく", "銀河横断特急の車掌",
+    "春風を運ぶ郵便配達員", "青い硝子のペンギン", "なぎ", "雪明かりの珈琲店主",
+    "ひなた", "月見坂の夜ふかし梟", "雨音を聴く紙飛行機", "海底書庫の案内人",
+    "かえで", "星降る丘の天文部員", "虹色鉛筆のコレクター", "夕焼け通りの時計職人"
+  ];
+  const densePlayers = denseNames.slice(0, players.length).map((name, index) => ({
+    name,
+    decks: Array.from({ length: 4 }, (_, slot) => ({
+      title: denseTitles[(index * 5 + slot * 3) % denseTitles.length],
+      cx: cxSamples[(index + slot * 2) % cxSamples.length]
+    }))
+  }));
+  // 各対戦は参加者2人の番号と勝者の番号。引き分けは null。
+  const denseRounds = expanded ? [
+    [[0, 1, 0], [2, 3, 3], [4, 5, 4], [6, 7, 7], [8, 9, 8], [10, 11, 11], [12, 13, 12], [14, 15, 15]],
+    [[0, 3, 3], [4, 7, 4], [8, 11, 11], [12, 15, 12], [1, 2, 2], [5, 6, 5], [9, 10, 10], [13, 14, 13]],
+    [[3, 4, 3], [11, 12, 12], [0, 2, 0], [5, 7, 7], [8, 10, 8], [13, 15, 15], [1, 6, 1], [9, 14, 14]],
+    [[3, 12, null], [4, 11, 4], [0, 15, 15], [7, 8, 7], [2, 13, 13], [5, 10, 5], [1, 14, 14], [6, 9, 6]],
+    [[4, 12, 4], [3, 15, 15], [7, 11, 11], [13, 0, 0], [5, 8, 5], [14, 2, 2], [1, 9, 9], [6, 10, 10]]
+  ] : [
+    [[0, 1, 0], [2, 3, 3], [4, 5, 4], [6, 7, 7]],
+    [[0, 3, 3], [4, 7, 4], [1, 2, 2], [5, 6, 5]],
+    [[3, 4, 3], [0, 2, 2], [5, 7, 5], [1, 6, 6]],
+    [[3, 5, 5], [4, 2, 4], [0, 6, 6], [7, 1, 1]],
+    [[3, 6, 6], [4, 0, 0], [5, 1, 1], [2, 7, 7]]
+  ];
+  const finalRound = denseRounds.at(-1);
+  const repeatBeforeFinal = new Set(finalRound.slice(-2).map(([a]) => a));
   const sampleDeltas = [
     [4, -3, 2, -5, 3, 0, -2, 5],
     [0, 5, -3, 2, -2, 4, 1, -4]
   ];
   const requested = params.get("state");
-  let scene = ["1", "2", "3", "4", "repair"].includes(requested) ? requested : "1";
+  let scene = ["1", "2", "3", "4", "5", "repair"].includes(requested) ? requested : "1";
   let pairingDraw = 1;
   let costDraw = 1;
   let allConfirmed = false;
@@ -474,7 +580,7 @@
   const button = (id, label, style = "", disabled = false) =>
     `<button type="button" id="${id}" class="${style}" ${disabled ? "disabled" : ""}>${label}</button>`;
   const badge = (label, style = "") => `<span class="badge ${style}">${label}</span>`;
-  const repairLink = `<a class="control-link" href="${route("repair")}" target="_blank" rel="noopener">大会進行修正 ↗</a>`;
+  const repairLink = `<a class="control-link" href="${route("repair")}${dense ? "&from=5" : ""}" target="_blank" rel="noopener">大会進行修正 ↗</a>`;
   const organizer = '<span class="control-label">主催者操作</span>';
   const numeric = value => value.toFixed(1);
   const deltaLabel = delta => (delta > 0 ? "+" : delta < 0 ? "−" : "") + numeric(Math.abs(delta) / 10);
@@ -489,9 +595,15 @@
   function show(next) {
     scene = next;
     confirmArmed = false;
-    const query = next === "closed" ? "1" : next === "cost-ready" ? "3" : next === "pair-ready" ? "2" : next;
-    history.replaceState(null, "", route(query));
+    history.replaceState(null, "", route(currentView()));
     render();
+  }
+
+  function currentView() {
+    if (scene === "closed") return dense ? "5" : "1";
+    if (scene === "cost-ready") return "3";
+    if (scene === "pair-ready") return "2";
+    return scene;
   }
 
   function renderRound() {
@@ -499,8 +611,8 @@
     const ready = scene === "pair-ready";
     const closed = scene === "closed";
     const confirmed = allConfirmed || closed ? tableCount : sampleConfirmed;
-    const pairs = secondRounds[(pairingDraw - 1) % 2];
-    setBadge("round-badge", "Round 2", draft || ready ? "wait" : "blue");
+    const pairs = dense ? finalRound : secondRounds[(pairingDraw - 1) % 2];
+    setBadge("round-badge", dense ? "Round 5" : "Round 2", draft || ready ? "wait" : "blue");
     const statuses = pairs.map((_, i) => draft ? "未公開" : i < confirmed ? "確定" : i % 2 === 0 ? "承諾待ち" : "未報告");
     const pending = (tableCount - confirmed) / 2;
     byId("round-summary").innerHTML = ready
@@ -512,10 +624,13 @@
         <span class="subtle">${closed ? "規定ラウンド完了" : pending === 0 ? "全卓の結果が確定" : `承諾待ち ${pending}卓　／　未報告 ${pending}卓`}</span>`;
     byId("match-rows").innerHTML = ready
       ? '<tr><td colspan="3" class="subtle">抽選すると卓ごとの組み合わせを確認できます。</td></tr>'
-      : pairs.map(([a, b], i) => {
+      : pairs.map(([a, b, drawnWinner], i) => {
       const status = statuses[i];
-      const winner = status === "確定" ? (i < sampleConfirmed ? a : b) : -1;
-      const name = player => winner === player
+      const winner = status === "確定" ? (dense ? drawnWinner : i < sampleConfirmed ? a : b) : -1;
+      const name = dense
+        ? player => `<button type="button" class="match-person ${winner === player ? "winner" : ""}"
+          title="${densePlayers[player].name}" data-person="${player}">${densePlayers[player].name}</button>`
+        : player => winner === player
         ? `<strong aria-label="${players[player].name}（勝利）">${players[player].name}</strong>`
         : `<span>${players[player].name}</span>`;
       return `<tr><th scope="row">${i + 1}卓</th><td><div class="pair">${name(a)}<span class="versus">×</span>${name(b)}</div></td>
@@ -525,7 +640,7 @@
       ? button("pair-draw", "組み合わせを作成する", "primary")
       : draft
       ? button("pair-draw", "抽選", "", true) + button("pair-redraw", "抽選し直す") + button("pair-publish", "公開する", "primary")
-      : closed ? button("tournament-finish", "大会を終了する", "primary")
+      : closed ? (dense ? button("replay-max", "デモを最初に戻す") : button("tournament-finish", "大会を終了する", "primary"))
         : button("round-close", "ラウンドを完了する", "primary", confirmed < tableCount);
     byId("round-controls").innerHTML = organizer + repairLink + actions;
     byId("finish-demo").hidden = draft || ready || closed || allConfirmed;
@@ -551,22 +666,71 @@
     if (requiresFinal || allConfirmed) record(second, 2);
     else if (scene === "1") record(second.slice(0, sampleConfirmed), 2);
     return standings.map(player => {
-      const omw = player.opponents.reduce((sum, id) => {
-        const opponent = standings[id];
-        return sum + opponent.wins / (opponent.wins + opponent.losses);
-      }, 0) / player.opponents.length;
       const sumBase = decks => decks.reduce((sum, deck) => sum + Math.round(titles[deck].base * 10), 0);
       const usedToWin = new Set(player.used.filter(entry => entry.won).map(entry => entry.deck));
       return {
-        ...player, omw, base: sumBase(player.decks),
+        ...player, omw: opponentWinRate(player, standings), base: sumBase(player.decks),
         available: sumBase(player.decks.filter(deck => !usedToWin.has(deck))),
         total: player.decks.reduce((sum, deck) => sum + takeCost(deck), 0)
       };
     });
   }
 
+  function opponentWinRate(player, standings) {
+    return player.opponents.reduce((sum, id) => {
+      const opponent = standings[id];
+      return sum + opponent.wins / (opponent.wins + opponent.losses + (opponent.draws ?? 0));
+    }, 0) / player.opponents.length;
+  }
+
+  function collectDenseStandings() {
+    const standings = densePlayers.map(player => ({
+      ...player, wins: 0, losses: 0, draws: 0, base: 0, available: 0, opponents: [], used: []
+    }));
+    denseRounds.forEach((pairs, step) => {
+      const round = step + 1;
+      pairs.forEach(([a, b, winner], index) => {
+        const confirmed = round < 5 || allConfirmed || index < sampleConfirmed;
+        for (const [id, opponent] of [[a, b], [b, a]]) {
+          const player = standings[id];
+          const useKnown = round === 5 || (round === 4 && repeatBeforeFinal.has(id));
+          const existing = useKnown ? player.used.find(entry => !entry.won) : null;
+          if (!confirmed) {
+            if (existing && index % 2 === 0) existing.active = true;
+            continue;
+          }
+          if (winner === null) player.draws++;
+          else if (winner === id) player.wins++;
+          else player.losses++;
+          player.opponents.push(opponent);
+          if (existing) existing.won = winner === id;
+          else {
+            const deck = useKnown ? player.decks.findIndex((_, slot) => player.used.every(entry => entry.deck !== slot)) : step;
+            player.used.push({ round, deck, won: winner === id });
+          }
+        }
+      });
+    });
+    for (const player of standings) player.omw = opponentWinRate(player, standings);
+    return standings;
+  }
+
+  const deckBack = '<span class="deck back" role="img" aria-label="未公開のデッキ">？</span>';
+
+  function renderDenseDecks(player) {
+    return player.used.map(({ round, deck, won, active }) => {
+      const { title, cx } = player.decks[deck];
+      const status = won ? "勝利して使用済み" : active ? "使用中（承諾待ち）" : "使用可";
+      const label = won ? `<s class="deck-label">${title}</s>` : `<span class="deck-label">${title}</span>`;
+      return `<button type="button" class="deck ${won ? "used" : active ? "active-deck" : ""}" title="${title}（${cx}）"
+        aria-label="${title}、CX ${cx}、第${round}ラウンドで公開、${status}"
+        data-deck-title="${title}" data-cx="${cx}" data-owner="${player.name}" data-summary="第${round}ラウンドで公開・${status}">
+        <span class="round-index" aria-hidden="true">${active ? "▶" : ""}R${round}</span>${label}<span class="deck-cx">${cx}</span></button>`;
+    }).join("") + deckBack.repeat(player.decks.length - player.used.length);
+  }
+
   function renderRank(post, costView) {
-    const order = collectStandings().sort(costView
+    const order = (dense ? collectDenseStandings() : collectStandings()).sort(costView
       ? (a, b) => b.total - a.total || a.name.localeCompare(b.name, "ja")
       : (a, b) => b.wins - a.wins || a.base - b.base || b.available - a.available ||
         Math.round(b.omw * 1000) - Math.round(a.omw * 1000) || a.name.localeCompare(b.name, "ja"));
@@ -574,23 +738,25 @@
     byId("rank-context").innerHTML = scene === "4"
       ? button("switch-rank", costView ? "勝敗ランキングを表示" : "事後合計ランキングを表示")
       : badge(post ? "最終結果" : ["2", "pair-ready"].includes(scene) ? "Round 1 終了時点" : "確定した対戦を反映", post ? "ok" : "blue");
-    const columns = costView ? '<col><col><col class="total">' : '<col><col><col class="score"><col class="omw">';
+    const columns = costView ? '<col><col><col class="total">'
+      : '<col><col><col class="score">' + (dense ? "" : '<col class="omw">');
     const headings = `<tr><th scope="col">順位</th><th scope="col">参加者・デッキ</th>${costView
       ? '<th scope="col" class="num" aria-sort="descending">事後合計 ↓</th>'
-      : '<th scope="col" class="num">勝-負-分</th><th scope="col" class="num">OMW%</th>'}</tr>`;
+      : '<th scope="col" class="num">勝-負-分</th>' + (dense ? "" : '<th scope="col" class="num">OMW%</th>')}</tr>`;
     const rows = order.map((player, index) => {
-      const decks = player.used.map(({ round, deck, won }) => {
+      const decks = dense ? renderDenseDecks(player) : player.used.map(({ round, deck, won }) => {
         const label = titles[deck].name;
         return `<span class="deck ${won ? "used" : ""}">
           <span class="round-index">R${round}</span>${won
             ? `<s class="deck-label" aria-label="${label}（勝利して使用済み）">${label}</s>`
             : `<span class="deck-label">${label}</span>`}</span>`;
-      }).join("") + '<span class="deck back" role="img" aria-label="未公開のデッキ">？</span>'.repeat(player.decks.length - player.used.length);
+      }).join("") + deckBack.repeat(player.decks.length - player.used.length);
       return `<tr class="${index === 0 ? "leader" : ""}">
         <td class="position">${index + 1}</td>
         <th scope="row"><div class="person">${player.name}</div><div class="deck-strip">${decks}</div></th>
         ${costView ? `<td class="num post-total">${numeric(player.total / 10)}</td>`
-          : `<td class="num score-value">${player.wins}-${player.losses}-0</td><td class="num aux-value">${numeric(player.omw * 100)}</td>`}
+          : `<td class="num score-value">${player.wins}-${player.losses}-${player.draws ?? 0}</td>${dense ? ""
+            : `<td class="num aux-value">${numeric(player.omw * 100)}</td>`}`}
       </tr>`;
     });
     const renderTable = (suffix, visibleRows) => {
@@ -640,7 +806,7 @@
     byId("cost-panel").hidden = !post;
     byId("finish-demo").hidden = post;
     byId("before-draw-demo").hidden = post;
-    const current = scene === "closed" ? "1" : scene === "cost-ready" ? "3" : scene === "pair-ready" ? "2" : scene;
+    const current = currentView();
     document.querySelectorAll("[data-view]").forEach(link => {
       link.href = route(link.dataset.view);
       if (link.dataset.view === current) link.setAttribute("aria-current", "true");
@@ -716,6 +882,22 @@
   document.addEventListener("click", event => {
     const target = event.target.closest("button");
     if (!target) return;
+    if (target.dataset.deckTitle) {
+      byId("detail-player").textContent = target.dataset.owner;
+      byId("detail-title").textContent = target.dataset.deckTitle;
+      byId("detail-cx").textContent = "CX構成 " + target.dataset.cx;
+      byId("detail-progress").textContent = target.dataset.summary;
+      byId("detail-dialog").showModal();
+      return;
+    }
+    if (target.dataset.person !== undefined) {
+      byId("detail-player").textContent = "参加者";
+      byId("detail-title").textContent = densePlayers[Number(target.dataset.person)].name;
+      byId("detail-cx").textContent = "";
+      byId("detail-progress").textContent = "";
+      byId("detail-dialog").showModal();
+      return;
+    }
     switch (target.id) {
       case "timer-toggle": toggleTimer(); break;
       case "timer-reset":
@@ -729,6 +911,7 @@
       case "pair-publish": show("1"); break;
       case "finish-demo": allConfirmed = true; render(); byId("round-close").focus(); break;
       case "round-close": stopTimer(); show("closed"); break;
+      case "replay-max": location.reload(); break;
       case "tournament-finish": show("cost-ready"); break;
       case "cost-draw": costDraw = 1; show("3"); break;
       case "cost-redraw": costDraw++; confirmArmed = false; renderCost(); byId("cost-redraw").focus(); break;
@@ -752,12 +935,19 @@
   });
 
   document.body.classList.toggle("players-16", expanded);
+  document.body.classList.toggle("max-info", dense);
+  if (dense) {
+    byId("format-label").textContent = "スイス式・全5ラウンド・登録デッキ4個";
+    byId("deck-order-label").textContent = "R1〜R5";
+    byId("active-legend").hidden = false;
+  }
   byId("player-count").textContent = players.length + "人";
-  byId("repair-back").href = route("1");
+  byId("repair-back").href = route(params.get("from") === "5" ? "5" : "1");
   byId("rank-second").hidden = !expanded;
   render();
   updateTimer(false);
   if (scene === "1") startTimer(24 * 60 + 38, initial);
+  if (scene === "5") startTimer(8 * 60 + 42, initial);
 </script>
 </body>
 </html>

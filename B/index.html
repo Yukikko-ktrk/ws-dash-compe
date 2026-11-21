@@ -172,7 +172,7 @@
   .pips i { width: .55rem; height: 1.15rem; border-radius: .15rem; background: var(--accent); }
   .pips i.off { background: none; border: 1px solid #444a59; }
   .pips b { font-family: var(--font-mono); font-size: 1.15rem; margin-left: .3rem; }
-  .decks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; min-width: 0; }
+  .decks { display: grid; grid-template-columns: repeat(var(--dn, 3), minmax(0, 1fr)); gap: .5rem; min-width: 0; }
   .dk {
     position: relative; height: 4.5rem; min-width: 0; border-radius: .5rem; padding: .35rem .7rem;
     border: 1px solid #4a5a85; background: var(--bg);
@@ -390,6 +390,32 @@
     .an.dense .total .sub { order: 2; font-size: .95rem; }
     .an.dense .total b { order: 3; font-size: 2.1rem; }
     .enter .an.dense .an-row { animation-delay: calc(var(--i) * .07s); }
+    /* ===== 状態 5「情報量最大」: デッキ 4 個・長いタイトル・長い表示名。本文は 1.25rem (1080p で 20px) 以上 ===== */
+    body[data-state="5"] #stage { grid-template-columns: minmax(0, 30fr) minmax(0, 70fr); }
+    body[data-state="5"] input.timer-display { font-size: 10.5rem; }
+    body[data-n="16"][data-state="5"] input.timer-display { font-size: 8.5rem; }
+    body[data-state="5"] .progline p { font-size: 1.25rem; }
+    body[data-state="5"] .card-f .muted { display: none; }
+    .rk.max .rk-head, .rk.max .rk-row { grid-template-columns: 3.2rem 9.5rem 6.2rem 5.2rem minmax(0, 1fr); column-gap: .75rem; }
+    .rk.max .rk-head span:nth-child(5), .rk.max .cost { display: none; }
+    .rk.max .name { font-size: 1.5rem; line-height: 1.2; white-space: normal; }
+    .rk.max .name .nm { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+    .rk.max .name .badge { font-size: 1.25rem; margin-top: .15rem; line-height: 1.3; }
+    .rk.max .wld { font-size: 1.5rem; }
+    .rk.max .pips b { font-size: 1.25rem; }
+    .rk.max .decks { gap: .45rem; }
+    .rk.max .dk { height: 5.6rem; padding: .3rem .55rem; gap: 0; }
+    .rk.max .dk .dt { font-size: 1.25rem; line-height: 1.2; }
+    .rk.max .dk .dm { font-size: 1.25rem; line-height: 1.25; }
+    .rk.max .dk .dtag { display: none; }
+    .rk.max .dk.hid b { font-size: 2.2rem; }
+    .matches.max .tb { font-size: 1.25rem; }
+    .matches.max .pl { font-size: 1.5rem; line-height: 1.2; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .matches.max .pl small, .matches.max .info span:not(.badge) { display: none; }
+    .matches.max .info .badge { font-size: 1.25rem; line-height: 1.35; }
+    .matches.dense.max .match { grid-template-columns: 3rem minmax(0, 1fr) 1.6rem minmax(0, 1fr) 6.3rem; }
+    .matches.dense.max .pl { font-size: 1.25rem; line-height: 1.15; }
+    .matches.dense.max .info .badge { padding: .05rem .45rem; }
   }
 </style>
 </head>
@@ -400,7 +426,7 @@
   <span class="chip code">1121-A</span>
   <span class="chip">しま2026版ピラミッド</span>
   <span class="chip">スイス式</span>
-  <span class="chip">登録デッキ 3個</span>
+  <span class="chip" id="deck-chip">登録デッキ 3個</span>
   <span class="chip">コスト上限 9</span>
   <div class="steps" id="steps" aria-label="大会の進み具合"></div>
   <span class="clock" id="clock" aria-label="現在時刻"></span>
@@ -415,6 +441,7 @@
   <button data-go="1">1 ラウンド中</button>
   <button data-go="3">3 事後コストの下書き</button>
   <button data-go="4">4 事後コスト発表</button>
+  <button data-go="5">5 情報量最大</button>
   <span>（進行の順。キー 1〜4 でも切替）</span>
   <span>｜ 人数</span><button data-n="8">8人</button><button data-n="16">16人</button>
   <span class="sp">主催者のボタンはマウスを 4 秒止めると消え、動かすと戻ります</span>
@@ -439,7 +466,7 @@
   ];
   const buildCost = () => Object.fromEntries(COSTS.map(([t, base, delta]) => [t, { base, delta, post: Math.round((base + delta) * 10) / 10 }]));
   let COST = buildCost();
-  const P = {
+  let P = {
     A: { name: "茜",   decks: [["ホロライブプロダクション", "8宝"], ["ダンダダン", "8門"], ["SPY×FAMILY", "4扉4チョイス"]] },
     B: { name: "蒼真", decks: [["ブルーアーカイブ", "8スタンバイ"], ["五等分の花嫁", "8扉"], ["東方Project", "8本"]] },
     C: { name: "恵麻", decks: [["学園アイドルマスター", "4宝4チョイス"], ["リコリス・リコイル", "8門"], ["チェンソーマン", "8ショット"]] },
@@ -449,7 +476,7 @@
     G: { name: "湊",   decks: [["超かぐや姫！", "8宝"], ["五等分の花嫁", "8スタンバイ"], ["Re:ゼロから始める異世界生活", "4風4本"]] },
     H: { name: "紬",   decks: [["ブルーアーカイブ", "4宝4扉"], ["葬送のフリーレン", "8門"], ["リコリス・リコイル", "8チョイス"]] }
   };
-  const baseTotal = (id) => P[id].decks.reduce((s, [t]) => s + COST[t].base, 0);
+  const baseTotal = (id) => P[id].decks.reduce((s, [t]) => s + (COST[t] ? COST[t].base : 0), 0);
   const postTotal = (id) => Math.round(P[id].decks.reduce((s, [t]) => s + COST[t].post, 0) * 10) / 10;
 
   // 順位表の場面。seen = 確定した対戦で使われた順の [デッキ番号, "used" (勝利して使用済み) | "open" (公開済み・使用可), 勝ったラウンド]
@@ -534,6 +561,48 @@
     });
   }
 
+  // ===== 状態 5「情報量最大」: 登録デッキ 4 個の大会の Round 5。長いタイトル・長い表示名を多めに混ぜる =====
+  const POOL = [
+    "ソードアート・オンライン オルタナティブ ガンゲイル・オンライン", "ホロライブプロダクション", "ラブライブ！蓮ノ空女学院スクールアイドルクラブ",
+    "プロジェクトセカイ カラフルステージ！ feat. 初音ミク", "学園アイドルマスター", "かぐや様は告らせたい～天才たちの恋愛頭脳戦～",
+    "ダンジョンに出会いを求めるのは間違っているだろうか", "魔法少女まどか☆マギカ", "アイドルマスター シンデレラガールズ",
+    "痛いのは嫌なので防御力に極振りしたいと思います。", "ブルーアーカイブ", "ラブライブ！虹ヶ咲学園スクールアイドル同好会",
+    "とある魔術の禁書目録／とある科学の超電磁砲", "葬送のフリーレン", "アイドルマスター シャイニーカラーズ",
+    "無職転生 ～異世界行ったら本気だす～", "五等分の花嫁", "アニメ プリンセスコネクト！Re:Dive",
+    "少女☆歌劇 レヴュースタァライト", "ぼっち・ざ・ろっく！", "この素晴らしい世界に祝福を！",
+    "アイドルマスター ミリオンライブ！", "リコリス・リコイル", "転生したらスライムだった件",
+    "Re:ゼロから始める異世界生活", "【推しの子】", "ウマ娘 プリティーダービー",
+    "ラブライブ！スーパースター!!", "勝利の女神：NIKKE", "負けヒロインが多すぎる！",
+    "小林さんちのメイドラゴン", "チェンソーマン", "ラブライブ！スクールアイドルフェスティバル2",
+    "SPY×FAMILY", "東方Project"
+  ];
+  const CXS = ["8宝", "8門", "8扉", "8スタンバイ", "4宝4チョイス", "8チョイス", "4門4扉", "8ショット", "8本", "4風4本", "8ソウル", "4宝4門"];
+  // 順位順の [表示名, 勝-負-分, デッキ 4 個の状態]。u = 勝利して使用済み、U = このラウンドで使用済み、o = 公開・使用可、? = まだ使われていない
+  const ROWS5 = N === 16 ? [
+    ["ヴァイス大好きおじさん", "4-0-1", "uuuU"], ["蒼真", "3-0-1", "uuuo"], ["くろねこ＠札幌の民", "3-1-0", "uuuo"], ["恵麻", "3-1-0", "uuu?"],
+    ["光希", "3-2-0", "uuuo"], ["だいこんおろし侍", "3-2-0", "uuUo"], ["楓", "2-2-0", "uuoo"], ["凛", "2-2-0", "uuo?"],
+    ["しまりす＠８電源信者", "2-2-0", "uuoo"], ["湊", "2-3-0", "uuoo"], ["紬", "2-3-0", "uuoo"], ["陽向", "2-3-0", "uUoo"],
+    ["ねむいけど対戦したい", "1-3-0", "uooo"], ["澪", "1-3-0", "uoo?"], ["颯", "1-4-0", "uooo"], ["結衣", "1-4-0", "Uooo"]
+  ] : [
+    ["ヴァイス大好きおじさん", "4-1-0", "uuuU"], ["くろねこ＠札幌の民", "3-1-0", "uuuo"], ["蒼真", "3-2-0", "uuuo"], ["茜", "2-2-0", "uuoo"],
+    ["恵麻", "2-2-0", "uuo?"], ["光希", "2-3-0", "uUoo"], ["だいこんおろし侍", "1-3-0", "uooo"], ["しまりす＠８電源信者", "1-4-0", "uoo?"]
+  ];
+  // Round 5 の卓: [左の順位, 右の順位, 状態, 勝者の順位]
+  const TABLES5 = N === 16
+    ? [[2, 3, "none"], [1, 5, "confirmed", 1], [4, 7, "pending"], [10, 6, "confirmed", 6], [8, 9, "none"], [11, 12, "confirmed", 12], [13, 14, "pending"], [15, 16, "confirmed", 16]]
+    : [[1, 3, "confirmed", 1], [2, 4, "pending"], [5, 7, "none"], [8, 6, "confirmed", 6]];
+  const P5 = {};
+  const LIST5 = ROWS5.map(([name, wld, st], i) => {
+    const id = "s" + (i + 1);
+    P5[id] = { name, decks: [0, 1, 2, 3].map((k) => [POOL[(i * 5 + k * 7) % POOL.length], CXS[(i + k * 3) % CXS.length]]) };
+    return { id, wld, note: /^[uU]+$/.test(st) ? "勝ち抜け" : "",
+      seen: [...st].map((c, k) => (c === "?" ? null : [k, c === "o" ? "open" : "used", 5, c === "U" ? "fresh" : ""])).filter(Boolean) };
+  });
+  const MATCHES5 = TABLES5.map(([a, b, status, win]) => ({ a: "s" + a, b: "s" + b, ra: "", rb: "", status, win: "s" + win }));
+  const P_BASE = P;
+  let S5 = false, RN = 3, MATCHES = ROUND3;
+  const roundLabel = () => `Round ${RN} 対戦中`;
+
   // ===== 部品 =====
   const num = (v) => v.toFixed(1);
   const delta = (v) => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toFixed(1);
@@ -548,23 +617,23 @@
         <span class="dm"><span>${cx}</span>${st === "used" ? `<i class="dtag">R${round} 勝ち</i>` : ""}</span></div>`;
     });
     while (shown.length < decks.length) shown.push(`<div class="dk hid" aria-label="まだ使われていないデッキ"><b>？</b></div>`);
-    return `<div class="decks">${shown.join("")}</div>`;
+    return `<div class="decks" style="--dn:${decks.length}">${shown.join("")}</div>`;
   }
 
-  function rankCard(list, { title, badge, sub, compact, dense, nodecks }) {
+  function rankCard(list, { title, badge, sub, compact, dense, nodecks, max, offset = 0, tabs = "" }) {
     const rows = list.map((e, i) => {
       const used = e.seen.filter((s) => s[1] === "used").length;
       const left = P[e.id].decks.length - used;
-      return `<div class="rk-row ${i === 0 ? "rank1" : ""}">
-        <div class="rank">${i + 1}${e.mv ? `<span class="mv ${e.mv}">${e.mv === "up" ? "▲" : "▼"}</span>` : ""}</div>
-        <div class="name">${P[e.id].name}${e.note ? `<span class="badge done">${e.note}</span>` : ""}</div>
+      return `<div class="rk-row ${i + offset === 0 ? "rank1" : ""}">
+        <div class="rank">${i + 1 + offset}${e.mv ? `<span class="mv ${e.mv}">${e.mv === "up" ? "▲" : "▼"}</span>` : ""}</div>
+        <div class="name"><span class="nm">${P[e.id].name}</span>${e.note ? `<span class="badge done">${e.note}</span>` : ""}</div>
         <div class="wld num">${e.wld}</div>
         <div class="pips" aria-label="残デッキ ${left}">${P[e.id].decks.map((_, k) => `<i class="${k < left ? "" : "off"}"></i>`).join("")}<b>${left}</b></div>
         <div class="cost num">${baseTotal(e.id)}</div>
         ${nodecks ? "" : deckCards(e)}
       </div>`;
     }).join("");
-    const cls = [compact && "compact", dense && "dense", nodecks && "nodecks"].filter(Boolean).join(" ");
+    const cls = [compact && "compact", dense && "dense", nodecks && "nodecks", max && "max"].filter(Boolean).join(" ");
     return `<section class="card grow">
       <div class="card-h"><h2>${title}</h2>${badge || ""}${sub ? `<span class="muted">${sub}</span>` : ""}
         ${nodecks ? "" : `<div class="legend">
@@ -572,6 +641,7 @@
           <span><i class="sw open"></i>対戦で公開・使用可</span>
           <span><i class="sw used">済</i>勝利して使用済み</span>
         </div>`}
+        ${tabs}
       </div>
       <div class="rk ${cls}" style="--rows:${list.length}">
         <div class="rk-head"><span>順位</span><span>参加者</span><span class="num">勝-負-分</span><span class="num">残デッキ</span><span class="num">コスト</span><span>登録デッキ (使われた順)</span></div>
@@ -582,7 +652,7 @@
 
   function timerCard(running) {
     return `<section class="card timer">
-      <div class="card-h"><h2>タイマー</h2><span class="badge ${running ? "open" : "none"}" id="timer-badge">${running ? "Round 3 対戦中" : "停止中"}</span>
+      <div class="card-h"><h2>タイマー</h2><span class="badge ${running ? "open" : "none"}" id="timer-badge">${running ? roundLabel() : "停止中"}</span>
         ${opsHtml(`<button class="btn ${running ? "danger" : "primary"}" id="timer-toggle">${running ? "STOP" : "START"}</button>
           <button class="btn ghost" id="timer-reset" ${running ? "disabled" : ""}>RESET</button>`)}
       </div>
@@ -593,9 +663,9 @@
   }
 
   function matchRows(draft) {
-    return ROUND3.map((m, i) => {
+    return MATCHES.map((m, i) => {
       const st = draft ? "draft" : m.status;
-      const badge = st === "confirmed" ? `<span class="badge done">確定: ${P[m.win].name}の勝ち</span>`
+      const badge = st === "confirmed" ? `<span class="badge done">${S5 ? "確定" : `確定: ${P[m.win].name}の勝ち`}</span>`
         : st === "pending" ? `<span class="badge wait">承諾待ち</span>` : `<span class="badge none">未報告</span>`;
       const cls = (id) => (st === "confirmed" ? (m.win === id ? "win" : "lose") : "");
       return `<div class="match ${st}">
@@ -610,12 +680,12 @@
 
   function progressCard() {
     return `<section class="card grow">
-      <div class="card-h"><h2>進行状況</h2><span class="badge open">Round 3 公開中</span>
+      <div class="card-h"><h2>進行状況</h2><span class="badge open">Round ${RN} 公開中</span>
         ${opsHtml(`<button class="btn primary" disabled title="全卓が確定すると押せます">ラウンドを完了する</button>`)}
       </div>
-      <div class="progline"><p>${ROUND3.length}卓中 <strong>${ROUND3.filter((m) => m.status === "confirmed").length}卓</strong> が確定</p>
-        <div class="seg">${["confirmed", "pending", "none"].map((st) => ROUND3.filter((m) => m.status === st).map(() => `<i class="${st === "confirmed" ? "c" : st === "pending" ? "w" : ""}"></i>`).join("")).join("")}</div></div>
-      <div class="matches ${N === 16 ? "dense" : ""}">${matchRows(false)}</div>
+      <div class="progline"><p>${MATCHES.length}卓中 <strong>${MATCHES.filter((m) => m.status === "confirmed").length}卓</strong> が確定</p>
+        <div class="seg">${["confirmed", "pending", "none"].map((st) => MATCHES.filter((m) => m.status === st).map(() => `<i class="${st === "confirmed" ? "c" : st === "pending" ? "w" : ""}"></i>`).join("")).join("")}</div></div>
+      <div class="matches ${N === 16 ? "dense" : ""} ${S5 ? "max" : ""}">${matchRows(false)}</div>
       <div class="card-f"><span class="muted">この画面は即時反映されます (保険として1分ごとに自動更新)。</span>
         <a href="#" class="oplink op" data-toast="「大会進行修正」タブを開きます (モックでは移動しません)">承諾の代行・結果の修正は「大会進行修正」へ →</a></div>
     </section>`;
@@ -707,7 +777,8 @@
     1: [["Round 1", "done"], ["Round 2", "done"], ["Round 3 公開中", "now"], ["事後コスト", ""]],
     2: [["Round 1", "done"], ["Round 2", "done"], ["Round 3 下書き", "draft"], ["事後コスト", ""]],
     3: [["Round 1", "done"], ["Round 2", "done"], ["Round 3", "done"], ["大会終了", "done"], ["事後コスト 下書き", "draft"]],
-    4: [["Round 1", "done"], ["Round 2", "done"], ["Round 3", "done"], ["大会終了", "done"], ["事後コスト 確定", "now"]]
+    4: [["Round 1", "done"], ["Round 2", "done"], ["Round 3", "done"], ["大会終了", "done"], ["事後コスト 確定", "now"]],
+    5: [["Round 1〜4", "done"], ["Round 5 公開中", "now"], ["事後コスト", ""]]
   };
   const SCREENS = N === 16 ? {
     1: () => `<div class="col">${timerCard(true)}${progressCard()}</div>
@@ -728,6 +799,16 @@
       <div class="col">${postDraftCard(false)}</div>`,
     4: () => `<div class="col">${announceCard()}</div><div class="col">${sideCards()}</div>`
   };
+  // 状態 5: 8 人は全員を 1 画面に。16 人はランキングを 8 行ずつ 2 ページにして自動で送る (組み合わせ 8 卓とタイマーは出したまま)
+  SCREENS[5] = () => {
+    const paged = N === 16;
+    const tabs = paged ? `<div class="tabs2" aria-label="表示の切替">
+        <button data-page="1" aria-pressed="${page === 1}">1〜8位</button><button data-page="2" aria-pressed="${page === 2}">9〜16位</button></div>
+      ${opsHtml(`<button class="btn ghost" id="auto">${auto ? "自動切替を止める" : "自動切替を再開"}</button>`)}` : "";
+    const offset = paged ? (page - 1) * 8 : 0;
+    return `<div class="col">${timerCard(true)}${progressCard()}</div>
+      <div class="col">${rankCard(LIST5.slice(offset, offset + 8), { title: "勝敗ランキング", sub: "確定した結果のみ反映", max: true, offset, tabs })}</div>`;
+  };
   let page = params.get("page") === "2" ? 2 : 1;
   let auto = params.get("auto") !== "0";
   let pageTimer = null;
@@ -735,20 +816,25 @@
   const stage = document.getElementById("stage");
   let armed = false;
 
-  function show(n, animate) {
+  function show(n, animate, keepTimer) {
     n = SCREENS[n] ? String(n) : "1";
+    S5 = n === "5";
+    P = S5 ? P5 : P_BASE;
+    RN = S5 ? 5 : 3;
+    MATCHES = S5 ? MATCHES5 : ROUND3;
+    document.getElementById("deck-chip").textContent = `登録デッキ ${S5 ? 4 : 3}個`;
     document.body.dataset.state = n;
     document.body.dataset.n = N;
     document.body.dataset.page = page;
     clearInterval(pageTimer);
-    if (N === 16 && n === "4" && auto) pageTimer = setInterval(() => { page = page === 1 ? 2 : 1; show(4, false); }, 15000);
+    if (N === 16 && (n === "4" || n === "5") && auto) pageTimer = setInterval(() => { page = page === 1 ? 2 : 1; show(n, false, true); }, n === "5" ? 10000 : 15000);
     stage.className = animate ? "enter" : "";
     stage.innerHTML = SCREENS[n]();
     document.getElementById("steps").innerHTML = STEPS[n]
       .map(([label, cls]) => `<span class="st ${cls}"><i></i>${label}</span>`).join(`<span class="ln"></span>`);
     document.querySelectorAll(".mockbar [data-go]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.go === n));
     armed = false;
-    timerSetup(n);
+    if (keepTimer) tPaint(); else timerSetup(n);
     history.replaceState(null, "", "?" + new URLSearchParams({ ...Object.fromEntries(params), state: n }));
   }
 
@@ -777,7 +863,7 @@
     toggle.className = "btn " + (timer.running ? "danger" : "primary");
     document.getElementById("timer-reset").disabled = timer.running;
     const badge = document.getElementById("timer-badge");
-    badge.textContent = timer.running ? "Round 3 対戦中" : remain <= 0 ? "時間切れ" : "停止中";
+    badge.textContent = timer.running ? roundLabel() : remain <= 0 ? "時間切れ" : "停止中";
     badge.className = "badge " + (timer.running ? "open" : "none");
   }
   function tStart(sec) {
@@ -790,6 +876,7 @@
     clearInterval(timer.interval);
     Object.assign(timer, { startSec: 2100, remainSec: 2100, running: false, interval: null });
     if (n === "1") tStart(27 * 60 + 43); // ラウンド中の見本: 35:00 から始めて 27:43 まで進んだところ
+    if (n === "5") tStart(4 * 60 + 53); // 終盤の見本: 残り 5 分を切って黄色
     tPaint();
   }
 
@@ -808,8 +895,8 @@
     if (el.tagName === "A") ev.preventDefault();
     if (el.dataset.go) { page = 1; return show(el.dataset.go, true); }
     if (el.dataset.n) { params.set("players", el.dataset.n); params.set("state", document.body.dataset.state); location.search = params.toString(); return; }
-    if (el.dataset.page) { page = Number(el.dataset.page); return show(4, false); }
-    if (el.id === "auto") { auto = !auto; return show(4, false); }
+    if (el.dataset.page) { page = Number(el.dataset.page); return show(document.body.dataset.state, false, true); }
+    if (el.id === "auto") { auto = !auto; return show(document.body.dataset.state, false, true); }
     if (el.dataset.toast) return toast(el.dataset.toast);
     if (el.id === "publish") { show(1, true); return toast("マッチングを公開しました"); }
     if (el.id === "redraw") {
