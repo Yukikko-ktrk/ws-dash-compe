@@ -2220,6 +2220,65 @@ function renderPostCostDraftView() {
   const is16 = currentPlayers === 16;
   const players = getPlayersData(currentPlayers);
 
+  let playerTablesHtml = "";
+  if (!is16) {
+    playerTablesHtml = `
+      <table class="post-standings-table">
+        <thead>
+          <tr>
+            <th style="width:36px;">暫定</th>
+            <th style="width:95px;">参加者</th>
+            <th>各デッキの事後コスト (基本 ＋ 増減 ＝ 事後)</th>
+            <th class="num" style="width:80px;">事後合計</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${renderPostDraftPlayerRows(players)}
+        </tbody>
+      </table>
+    `;
+  } else {
+    const sorted = getSortedPostCostPlayers(players);
+    const left8 = sorted.slice(0, 8);
+    const right8 = sorted.slice(8, 16);
+    playerTablesHtml = `
+      <div class="standings-split-grid">
+        <div>
+          <div style="font-size:11px; font-weight:800; color:var(--accent); margin-bottom:4px;">◀ TOP 1〜8位 (暫定上位)</div>
+          <table class="post-standings-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">順</th>
+                <th style="width:75px;">参加者</th>
+                <th>事後デッキ内訳</th>
+                <th class="num" style="width:65px;">事後合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderPostDraftPlayerRowsChunk(left8, 0)}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:11px; font-weight:800; color:var(--ink-sub); margin-bottom:4px;">9〜16位</div>
+          <table class="post-standings-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">順</th>
+                <th style="width:75px;">参加者</th>
+                <th>事後デッキ内訳</th>
+                <th class="num" style="width:65px;">事後合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderPostDraftPlayerRowsChunk(right8, 8)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   return `
     <div style="grid-column: 1 / -1; height: 100%; display: flex; flex-direction: column; gap: 10px; min-height: 0;">
       <!-- 事後コストヒーローヘッダー -->
@@ -2247,8 +2306,8 @@ function renderPostCostDraftView() {
         </div>
       </div>
 
-      <!-- 2カラム比較グリッド -->
-      <div class="postcost-tables-grid">
+      <!-- 2カラム比較グリッド (16人時は mode-16) -->
+      <div class="postcost-tables-grid ${is16 ? "mode-16" : ""}">
         
         <!-- 左: 参加者ごとの事後コスト下書き順位プレビュー -->
         <div class="post-card">
@@ -2257,19 +2316,7 @@ function renderPostCostDraftView() {
             <span class="chip" style="font-size:10.5px;">事後合計の高い順にソート</span>
           </h3>
           <div style="flex:1; overflow-y:auto;">
-            <table class="post-standings-table">
-              <thead>
-                <tr>
-                  <th style="width:36px;">暫定</th>
-                  <th style="width:95px;">参加者</th>
-                  <th>各デッキの事後コスト (基本 ＋ 増減 ＝ 事後)</th>
-                  <th class="num" style="width:80px;">事後合計</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderPostDraftPlayerRows(players)}
-              </tbody>
-            </table>
+            ${playerTablesHtml}
           </div>
         </div>
 
@@ -2307,8 +2354,8 @@ function renderPostCostDraftView() {
   `;
 }
 
-function renderPostDraftPlayerRows(players) {
-  const sorted = [...players].map(p => {
+function getSortedPostCostPlayers(players) {
+  return [...players].map(p => {
     let totalAfter = 0;
     const deckBreakdown = p.decks.map(d => {
       const match = BASE_TITLES.find(rt => rt.title === d.title) || { base: d.baseCost, delta: 0, after: d.baseCost };
@@ -2326,19 +2373,21 @@ function renderPostDraftPlayerRows(players) {
       deckBreakdown
     };
   }).sort((a, b) => b.totalAfter - a.totalAfter);
+}
 
-  return sorted.map((p, idx) => `
+function renderPostDraftPlayerRowsChunk(chunk, offsetIndex) {
+  return chunk.map((p, idx) => `
     <tr>
-      <td><span class="rank-badge" style="width:22px; height:22px; font-size:11px;">${idx + 1}</span></td>
+      <td><span class="rank-badge" style="width:20px; height:20px; font-size:10.5px;">${offsetIndex + idx + 1}</span></td>
       <td style="font-weight:700;">${p.name}</td>
       <td>
         <div style="display:flex; flex-direction:column; gap:2px;">
           ${p.deckBreakdown.map(d => `
-            <div style="font-size:11px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:4px;">
-              <span style="max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
+            <div style="font-size:10px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:3px;">
+              <span style="max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
               <span>
                 ${d.base.toFixed(1)} 
-                <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 3px; font-size:9.5px;">
+                <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 2px; font-size:9px;">
                   ${d.delta > 0 ? "+" + d.delta.toFixed(1) : d.delta.toFixed(1)}
                 </span>
                 ＝ <strong>${d.after.toFixed(1)}</strong>
@@ -2354,12 +2403,76 @@ function renderPostDraftPlayerRows(players) {
   `).join("");
 }
 
+function renderPostDraftPlayerRows(players) {
+  const sorted = getSortedPostCostPlayers(players);
+  return renderPostDraftPlayerRowsChunk(sorted, 0);
+}
+
 // --------------------------------------------------------------------------
 // 状態4: 事後コスト発表 (確定後のソート表・演出画面)
 // --------------------------------------------------------------------------
 function renderPostCostResultView() {
   const is16 = currentPlayers === 16;
   const players = getPlayersData(currentPlayers);
+
+  let resultTablesHtml = "";
+  if (!is16) {
+    resultTablesHtml = `
+      <table class="post-standings-table">
+        <thead>
+          <tr>
+            <th style="width:36px;">順</th>
+            <th style="width:100px;">参加者</th>
+            <th>登録3デッキの事後内訳 (基本 → 事後)</th>
+            <th class="num" style="width:90px;">事後合計コスト</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${renderPostResultPlayerRows(players)}
+        </tbody>
+      </table>
+    `;
+  } else {
+    const sorted = getSortedPostCostPlayers(players);
+    const left8 = sorted.slice(0, 8);
+    const right8 = sorted.slice(8, 16);
+    resultTablesHtml = `
+      <div class="standings-split-grid">
+        <div>
+          <div style="font-size:11px; font-weight:800; color:var(--ok); margin-bottom:4px;">🏆 TOP 1〜8位 (ハイローラー)</div>
+          <table class="post-standings-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">順</th>
+                <th style="width:75px;">参加者</th>
+                <th>事後デッキ内訳</th>
+                <th class="num" style="width:65px;">事後合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderPostResultPlayerRowsChunk(left8, 0)}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:11px; font-weight:800; color:var(--ink-sub); margin-bottom:4px;">9〜16位</div>
+          <table class="post-standings-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">順</th>
+                <th style="width:75px;">参加者</th>
+                <th>事後デッキ内訳</th>
+                <th class="num" style="width:65px;">事後合計</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderPostResultPlayerRowsChunk(right8, 8)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
 
   return `
     <div style="grid-column: 1 / -1; height: 100%; display: flex; flex-direction: column; gap: 10px; min-height: 0;">
@@ -2385,8 +2498,8 @@ function renderPostCostResultView() {
         </div>
       </div>
 
-      <!-- 2カラム結果発表グリッド -->
-      <div class="postcost-tables-grid">
+      <!-- 2カラム結果発表グリッド (16人時は mode-16) -->
+      <div class="postcost-tables-grid ${is16 ? "mode-16" : ""}">
         
         <!-- 左: 事後合計コストが高い順のソート発表表 (ハイローラーボード) -->
         <div class="post-card">
@@ -2395,19 +2508,7 @@ function renderPostCostResultView() {
             <span class="chip" style="background:var(--accent-dark); color:var(--accent); border-color:var(--accent);">高コスト順ソート</span>
           </h3>
           <div style="flex:1; overflow-y:auto;">
-            <table class="post-standings-table">
-              <thead>
-                <tr>
-                  <th style="width:36px;">順</th>
-                  <th style="width:100px;">参加者</th>
-                  <th>登録3デッキの事後内訳 (基本 → 事後)</th>
-                  <th class="num" style="width:90px;">事後合計コスト</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderPostResultPlayerRows(players)}
-              </tbody>
-            </table>
+            ${resultTablesHtml}
           </div>
         </div>
 
@@ -2446,49 +2547,30 @@ function renderPostCostResultView() {
   `;
 }
 
-function renderPostResultPlayerRows(players) {
-  const sorted = [...players].map(p => {
-    let totalAfter = 0;
-    const deckBreakdown = p.decks.map(d => {
-      const match = BASE_TITLES.find(rt => rt.title === d.title) || { base: d.baseCost, delta: 0, after: d.baseCost };
-      totalAfter += match.after;
-      return {
-        title: d.title,
-        base: match.base,
-        delta: match.delta,
-        after: match.after
-      };
-    });
-    return {
-      ...p,
-      totalAfter,
-      deckBreakdown
-    };
-  }).sort((a, b) => b.totalAfter - a.totalAfter);
-
-  return sorted.map((p, idx) => {
-    const isTop = idx === 0;
+function renderPostResultPlayerRowsChunk(chunk, offsetIndex) {
+  return chunk.map((p, idx) => {
+    const isTop = (offsetIndex === 0 && idx === 0);
     return `
       <tr style="${isTop ? "background:rgba(94, 234, 212, 0.06);" : ""}">
         <td>
-          <span class="rank-badge ${idx < 3 ? "rank-" + (idx + 1) : ""}" style="width:22px; height:22px; font-size:11px;">
-            ${idx + 1}
+          <span class="rank-badge ${offsetIndex + idx < 3 ? "rank-" + (offsetIndex + idx + 1) : ""}" style="width:20px; height:20px; font-size:10.5px;">
+            ${offsetIndex + idx + 1}
           </span>
         </td>
         <td>
-          <div style="font-weight:700; color:#fff; font-size:13px;">
+          <div style="font-weight:700; color:#fff; font-size:12px;">
             ${p.name}
-            ${isTop ? `<span class="chip" style="margin-left:3px; background:var(--gold); color:#120a02; font-size:9px; padding:1px 4px;">MAX</span>` : ""}
+            ${isTop ? `<span class="chip" style="margin-left:2px; background:var(--gold); color:#120a02; font-size:8.5px; padding:0 3px;">MAX</span>` : ""}
           </div>
         </td>
         <td>
           <div style="display:flex; flex-direction:column; gap:2px;">
             ${p.deckBreakdown.map(d => `
-              <div style="font-size:10.5px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:4px;">
-                <span style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
+              <div style="font-size:10px; color:var(--ink-sub); display:flex; justify-content:space-between; gap:3px;">
+                <span style="max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</span>
                 <span>
                   ${d.base.toFixed(1)}
-                  <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 3px; font-size:9px;">
+                  <span class="cost-delta-badge ${d.delta > 0 ? "plus" : d.delta < 0 ? "minus" : "zero"}" style="padding:0 2px; font-size:8.5px;">
                     ${d.delta > 0 ? "+" + d.delta.toFixed(1) : d.delta.toFixed(1)}
                   </span>
                   → <strong style="color:var(--ink);">${d.after.toFixed(1)}</strong>
@@ -2498,11 +2580,16 @@ function renderPostResultPlayerRows(players) {
           </div>
         </td>
         <td class="num">
-          <span class="total-cost-display" style="${isTop ? "font-size:16px; color:var(--ok);" : ""}">${p.totalAfter.toFixed(1)}</span>
+          <span class="total-cost-display" style="${isTop ? "font-size:15px; color:var(--ok);" : ""}">${p.totalAfter.toFixed(1)}</span>
         </td>
       </tr>
     `;
   }).join("");
+}
+
+function renderPostResultPlayerRows(players) {
+  const sorted = getSortedPostCostPlayers(players);
+  return renderPostResultPlayerRowsChunk(sorted, 0);
 }
 
 // ==========================================================================
