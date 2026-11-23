@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>しまWS ダッシュボード — 再コンペ F 案</title>
+<style>
+:root{
+  --bg:#0f1116; --panel:#171a22; --card:#1d212b; --card2:#232836; --edge:#2b3140; --edge2:#3a4257;
+  --ink:#eeede6; --soft:#aab1bf; --dim:#737b8c;
+  --acc:#8fb0ff; --acc-soft:#20304f;
+  --ok:#7fd39a; --ok-soft:#183223;
+  --wait:#f0c264; --wait-soft:#3a2d12;
+  --play:#7cc8ea; --play-soft:#14303e;
+  --ack:#c8a6ff; --ack-soft:#2d2347;
+  --ng:#ff8d85; --ng-soft:#3c1d1d;
+  --gold:#f2c14e; --silver:#cfd6e0; --bronze:#de9a62;
+  --up:#ffa27e; --down:#6fd8ea;
+  --f:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;
+  --fm:"Consolas","Cascadia Mono","BIZ UDGothic",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#07080b}
+body{font-family:var(--f);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit}
+.num{font-family:var(--fm);font-variant-numeric:tabular-nums}
+
+/* ===== 16:9 固定ステージ (1920×1080 で設計し、画面に合わせて等倍率で拡縮) ===== */
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
+  padding:12px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden;
+  background:radial-gradient(1200px 500px at 78% -10%,#1b2440 0%,transparent 60%),radial-gradient(900px 600px at -5% 110%,#1a1730 0%,transparent 60%),var(--bg)}
+
+/* ===== ヘッダー ===== */
+header.top{height:60px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px 0 18px;
+  background:linear-gradient(90deg,#1a1f2c,#161a23);border:1px solid var(--edge);border-radius:14px;position:relative}
+.brand{display:flex;align-items:center;gap:10px;flex:none}
+.brand .logo{font-weight:800;font-size:22px;letter-spacing:.06em;padding-left:12px;border-left:5px solid var(--acc);line-height:1.1}
+.brand .tname{font-weight:700;font-size:20px;white-space:nowrap}
+.chips{display:flex;gap:8px;align-items:center;flex:1;min-width:0;overflow:hidden}
+.chip{flex:none;font-size:16px;font-weight:700;line-height:28px;height:30px;padding:0 11px;border-radius:999px;background:#252a37;border:1px solid var(--edge2);color:var(--soft);white-space:nowrap}
+.chip.phase{background:var(--acc-soft);border-color:#3c5694;color:#d3e0ff}
+.chip.phase.live::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:8px;vertical-align:1px;box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+.chip.phase.post{background:#3a2a17;border-color:#6d4e22;color:#ffd99a}
+.chip.win{background:#3a3115;border-color:#6b5a1d;color:#ffe08a}
+@keyframes pulse{50%{opacity:.35}}
+
+/* 主催者だけが触るもの: 低コントラストの小型ボタン。H キーで丸ごと隠せる */
+.dock{display:flex;align-items:center;gap:6px;flex:none;padding-left:12px;border-left:1px solid var(--edge)}
+.dock .who{font-size:14px;color:var(--dim);letter-spacing:.08em;margin-right:2px}
+.ob{font-size:16px;font-weight:700;height:32px;line-height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--edge2);background:transparent;color:var(--soft);cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+.ob:hover:not(:disabled){border-color:var(--acc);color:var(--ink);background:#20283a}
+.ob:disabled{opacity:.42;cursor:not-allowed}
+.ob.pri{background:#2a3f6e;border-color:#4d6bb0;color:#e3ebff}
+.ob.pri:hover:not(:disabled){background:#33508c}
+.ob.arm{background:#5a2a24;border-color:#c0574b;color:#ffd6d1;animation:pulse 1s infinite}
+.ob.lnk::after{content:" ↗"}
+body.clean .org{visibility:hidden!important}
+.mockbtn{font-size:13px;height:26px;line-height:24px;padding:0 8px;border-radius:6px;border:1px dashed #444b5c;background:transparent;color:#5f6676;cursor:pointer;flex:none}
+#mockmenu{position:absolute;right:10px;top:58px;z-index:50;background:#1d2230;border:1px solid var(--edge2);border-radius:10px;padding:10px;display:none;gap:6px;flex-direction:column;box-shadow:0 12px 30px #0009}
+#mockmenu.open{display:flex}
+#mockmenu .row{display:flex;gap:6px}
+#mockmenu button{font-size:14px;padding:5px 10px;border-radius:6px;border:1px solid var(--edge2);background:#262c3b;color:var(--soft);cursor:pointer}
+#mockmenu button.on{background:var(--acc-soft);color:#dfe8ff;border-color:#4d6bb0}
+
+/* ===== 共通パネル ===== */
+main{flex:1;min-height:0;display:grid;gap:16px}
+main.m-round{grid-template-columns:600px minmax(0,1fr)}
+main.m-post{grid-template-columns:minmax(0,1fr) 640px}
+.panel{background:var(--panel);border:1px solid var(--edge);border-radius:14px;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
+.ph{flex:none;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--edge)}
+.ph h2{font-size:21px;font-weight:800;white-space:nowrap;flex:none}
+.ph .sp{flex:1;min-width:0}
+.ph .note{font-size:15px;color:var(--dim);white-space:nowrap;flex:none}
+.colL{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.colL>.panel{flex:1}
+.trunc{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}
+.trunc.cut{cursor:help;text-decoration:underline dotted #ffffff55;text-underline-offset:5px}
+
+/* ===== タイマー ===== */
+.timer{flex:none;background:linear-gradient(160deg,#1c2232,#171a23);border:1px solid var(--edge);border-radius:14px;padding:8px 16px 10px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.timer::before{content:"";position:absolute;left:0;top:0;height:3px;width:var(--tp,100%);background:linear-gradient(90deg,var(--acc),#b7cbff);transition:width 1s linear}
+.tm-h{display:flex;align-items:center;gap:10px;height:24px;white-space:nowrap}
+.tm-h .lbl{font-size:16px;font-weight:700;letter-spacing:.12em;color:var(--soft)}
+.tm-h .stt{font-size:15px;font-weight:700;color:var(--dim)}
+.timer.run .tm-h .stt{color:var(--ok)}
+.tm-h .init{margin-left:auto;font-size:15px;color:var(--dim)}
+.tm-b{flex:1;display:flex;align-items:center;gap:14px;min-height:0}
+#tm{font-family:var(--fm);font-weight:700;font-size:var(--tmfs);line-height:1;width:5.1ch;background:transparent;border:0;color:#fff;letter-spacing:-.02em;text-shadow:0 0 28px #8fb0ff40;outline:none;border-radius:8px;padding:0}
+#tm:not([readonly]){cursor:text}
+#tm:not([readonly]):hover,#tm:not([readonly]):focus{background:#ffffff0d}
+.timer.warn #tm{color:var(--wait);text-shadow:0 0 28px #f0c26450}
+.timer.zero #tm{color:var(--ng);text-shadow:0 0 28px #ff8d8560}
+.timer.warn::before{background:var(--wait)}
+.tm-c{margin-left:auto;display:flex;flex-direction:column;gap:8px}
+.tm-c .ob{width:104px;text-align:center}
+
+/* ===== 対戦卓 ===== */
+.bar{flex:none;height:4px;background:#262b38}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#b6f0c8);box-shadow:0 0 10px var(--ok)}
+.prog{font-size:20px;font-weight:700;white-space:nowrap;flex:none;color:var(--soft)}
+.prog b{color:var(--ok);font-size:24px}
+.tlist{flex:1;min-height:0;display:grid;grid-auto-rows:minmax(0,1fr);gap:var(--tgap);padding:8px 10px 10px}
+.tb{min-height:0;min-width:0;border-radius:10px;background:var(--card);border:1px solid var(--edge);border-left:6px solid var(--edge2);
+  padding:var(--tpad) 12px;display:flex;flex-direction:column;justify-content:center;gap:var(--tlg)}
+.tb-h{display:flex;align-items:center;gap:10px;height:var(--tlh);min-width:0}
+.tb-no{font-size:var(--tbno);font-weight:800;white-space:nowrap;flex:none;letter-spacing:.02em}
+.tb-no small{font-size:.8em;color:var(--soft);font-weight:700;margin-right:2px}
+.badge{flex:none;font-size:20px;font-weight:800;line-height:var(--tlh);height:var(--tlh);padding:0 10px;border-radius:6px;white-space:nowrap}
+.tb-note{flex:1;font-size:18px;color:var(--soft);text-align:right}
+.st-ok{border-left-color:var(--ok)} .st-ok .badge{background:var(--ok-soft);color:var(--ok)}
+.st-wait{border-left-color:var(--wait);background:linear-gradient(90deg,#2a2416,var(--card) 55%)} .st-wait .badge{background:var(--wait-soft);color:var(--wait)}
+.st-play{border-left-color:var(--play)} .st-play .badge{background:var(--play-soft);color:var(--play)}
+.st-ack{border-left-color:var(--ack);background:linear-gradient(90deg,#28203d,var(--card) 60%)} .st-ack .badge{background:var(--ack-soft);color:var(--ack)}
+.st-ack .badge::before,.st-wait .badge::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:2px;animation:pulse 1.4s infinite}
+.st-draft{border-left-color:var(--acc)}
+.st-draft .badge{background:var(--acc-soft);color:var(--acc)}
+.tb-p{display:grid;align-items:center;column-gap:10px;min-width:0}
+.mk{grid-area:mk;font-size:20px;font-weight:800;width:var(--mkw);height:var(--tlh);line-height:var(--tlh);text-align:center;border-radius:6px;background:#2a2f3c;color:var(--dim)}
+.mk.w{background:var(--ok);color:#0e1a12}
+.mk.l{background:#343a48;color:#b5bcc9}
+.mk.d{background:#3d4252;color:#e4e6ec}
+.mk.rep{background:transparent;outline:2px dashed var(--wait);outline-offset:-2px;color:var(--wait)}
+.mk.bye{background:var(--ack);color:#1e1530}
+.mk.bye.pend{background:transparent;outline:2px dashed var(--ack);outline-offset:-2px;color:var(--ack)}
+.tb-p .nm{grid-area:nm;font-size:var(--tbnm);font-weight:700;line-height:var(--tlh)}
+.tb-p.lose .nm{color:var(--soft)}
+.tb-p .dx{grid-area:dx;font-size:20px;line-height:var(--tlh);color:var(--soft);display:flex;align-items:center;gap:8px;min-width:0}
+.tb-p .dx .c{flex:none}
+.tb-p .dx .t{flex:1}
+.tb-p .dx.wait{color:var(--wait)} .tb-p .dx.ack{color:var(--ack)} .tb-p .dx.mute{color:var(--dim)}
+.tb-p .rec{grid-area:rec;font-size:20px;color:var(--soft);white-space:nowrap}
+.tb-p .rec b{color:var(--ink);font-family:var(--fm)}
+
+/* ===== 順位表 ===== */
+.legend{display:flex;gap:14px;font-size:15px;color:var(--dim);white-space:nowrap;flex:none}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:26px;height:14px;border-radius:3px}
+.lg-open{background:var(--acc-soft);border:1px solid #4a66a8}
+.lg-used{background:#262a33;border:1px solid #3a3f4c;position:relative}
+.lg-used::after{content:"";position:absolute;left:3px;right:3px;top:6px;border-top:2px solid #8a90a0}
+.lg-hid{border:1px dashed #5a6070}
+.sorthint{font-size:15px;color:var(--dim);white-space:nowrap}
+.sorthint b{color:var(--soft)}
+.sh{flex:none;display:grid;align-items:end;column-gap:10px;padding:6px 22px 4px 16px;font-size:15px;color:var(--dim);font-weight:700;height:28px;white-space:nowrap}
+.sh .r{text-align:right}
+.rows{flex:1;min-height:0;display:grid;grid-auto-rows:minmax(0,1fr);gap:var(--rgap);padding:2px 10px 10px}
+.srow{min-height:0;min-width:0;display:grid;align-items:center;column-gap:10px;padding:0 12px 0 6px;border-radius:9px;background:var(--card);outline:1px solid var(--edge);outline-offset:-1px}
+.srow:nth-child(odd){background:#1a1e28}
+.srow.drop{opacity:.62}
+.g-st{grid-template-columns:48px var(--nmw) minmax(0,1fr) 104px 96px}
+.st2{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:var(--st2g);min-width:0}
+.rk{width:40px;height:36px;line-height:36px;text-align:center;border-radius:8px;font-family:var(--fm);font-weight:700;font-size:22px;background:#2a2f3c;color:var(--soft);justify-self:center}
+.rk.r1{background:var(--gold);color:#2a1f00;box-shadow:0 0 14px #f2c14e66}
+.rk.r2{background:var(--silver);color:#1c2028}
+.rk.r3{background:var(--bronze);color:#2a1606}
+.who{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:2px}
+.who .nm{font-size:var(--snm);font-weight:800;line-height:1.25}
+.who .sub{display:flex;gap:6px;align-items:center;min-width:0}
+.who.inl{flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
+.tag{flex:none;font-size:20px;font-weight:700;line-height:24px;padding:0 8px;border-radius:5px;background:var(--ng-soft);color:var(--ng)}
+.tag.byew{background:var(--ack-soft);color:var(--ack)}
+.decks{display:grid;gap:var(--dgap) 8px;min-width:0}
+.dk{display:flex;align-items:center;gap:7px;min-width:0;height:var(--dkh);padding:0 8px 0 3px;border-radius:6px;font-size:var(--dkfs);line-height:var(--dkh);outline:1px solid transparent;outline-offset:-1px}
+.dk .c{flex:none;font-family:var(--fm);font-weight:700;font-size:var(--dkfs);line-height:calc(var(--dkh) - 2px);padding:0 5px;border-radius:4px;background:#2c3550;color:#cfe0ff}
+.dk .t{flex:1}
+.dk .cx{flex:none;font-size:15px;font-weight:700;line-height:20px;padding:0 4px;border-radius:4px;background:#2b2a1d;color:#e9d58e;outline:1px solid #57502b;outline-offset:-1px;max-width:104px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dk.open{background:var(--acc-soft);outline-color:#3d5793}
+.dk.used{color:#8a90a0;background:#20232b;outline-color:#2e323d}
+.dk.used .t{text-decoration:line-through;text-decoration-color:#a3a9b6;text-decoration-thickness:2px}
+.dk.used .c{background:#2a2d35;color:#8a90a0}
+.dk.used .cx{background:#24242a;color:#8c8a7a;outline-color:#3a3a32}
+.dk.hid{outline:1px dashed #4d5466;color:#6f7789}
+.dk.hid .c{background:transparent;color:#6f7789}
+.dk .bymark{flex:none;font-size:14px;font-weight:800;color:var(--ack);border:1px solid #6f5aa0;border-radius:4px;padding:0 4px;line-height:18px}
+.wl{font-family:var(--fm);font-size:var(--wlfs);font-weight:700;text-align:right;white-space:nowrap}
+.wl .w{color:var(--ok)} .wl .l{color:var(--ng)} .wl .d{color:var(--soft)} .wl i{color:var(--dim);font-style:normal;margin:0 1px}
+.cell{font-family:var(--fm);font-size:var(--cellfs);text-align:right;white-space:nowrap;color:var(--soft)}
+.cell.hi{color:var(--ink);font-weight:700}
+
+/* ===== 事後コスト ===== */
+.g-post{grid-template-columns:48px var(--nmw) minmax(0,1fr) 124px}
+.ptwrap{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:var(--st2g)}
+.ptwrap .sub2{font-family:var(--fm);font-size:20px;color:var(--soft);white-space:nowrap}
+.dk.pc{background:#1f2433;outline-color:#30384c}
+.dk .pv{flex:none;font-family:var(--fm);font-size:var(--dkfs);white-space:nowrap;color:var(--soft)}
+.dk .pv b{font-weight:700}
+.up{color:var(--up)} .down{color:var(--down)} .zero{color:var(--soft)}
+.ptot{font-family:var(--fm);font-weight:800;font-size:var(--ptfs);text-align:right;color:#fff}
+.st2>*,.ptwrap>*{line-height:var(--st2lh)}
+.ptwrap>.ptot{line-height:calc(var(--ptfs) * 1.14)}
+.srow.top1{background:linear-gradient(90deg,#3a2f12,#1d212b 50%)!important;outline:1px solid #7a6424;outline-offset:-1px}
+.crown{font-size:15px;font-weight:800;color:#2a1f00;background:var(--gold);border-radius:5px;padding:0 6px;line-height:22px;flex:none}
+.ctrl{flex:none;padding:10px 14px 12px;border-bottom:1px solid var(--edge);display:flex;flex-direction:column;gap:8px;background:linear-gradient(180deg,#1c2130,#171a22)}
+.ctrl .l1{display:flex;align-items:center;gap:10px}
+.ctrl h2{font-size:22px;font-weight:800;white-space:nowrap}
+.ctrl .l2{display:flex;align-items:center;gap:8px}
+.ctrl .meta{font-size:17px;color:var(--soft);white-space:nowrap}
+.ctrl .meta b{color:var(--ink);font-family:var(--fm)}
+.bdg{flex:none;font-size:16px;font-weight:800;line-height:26px;padding:0 9px;border-radius:6px;white-space:nowrap}
+.bdg.draft{background:var(--wait-soft);color:var(--wait);border:1px solid #6b5420}
+.bdg.fix{background:var(--ok-soft);color:var(--ok);border:1px solid #2f6a44}
+.bdg.sec{background:var(--ng-soft);color:var(--ng);border:1px solid #6c302c}
+.tth,.ttr{display:grid;grid-template-columns:minmax(0,1fr) 92px 30px 48px 62px 52px;column-gap:8px;align-items:center}
+.tth{flex:none;padding:6px 22px 4px 22px;font-size:15px;color:var(--dim);font-weight:700;height:28px;white-space:nowrap}
+.tth .r,.ttr .r{text-align:right}
+.ttl{flex:1;min-height:0;display:grid;grid-auto-rows:minmax(0,1fr);padding:0 10px 10px;align-content:start}
+.ttl.fill{align-content:stretch}
+.ttr{min-height:0;padding:0 12px;border-bottom:1px solid #232835;font-size:20px;line-height:24px}
+.ttr:nth-child(odd){background:#1a1e27}
+.ttr .tt{font-weight:700}
+.ttr .tt.virt{color:var(--soft)}
+.ttr .tcx{font-size:15px;color:#e1cf8c;white-space:nowrap}
+.ttr .tcx.base{color:var(--dim)}
+.ttr .n{font-family:var(--fm);font-size:20px;text-align:right;white-space:nowrap}
+.ttr .n.cnt{color:var(--soft)}
+.ttr .n.fin{font-weight:800;color:#fff}
+.dlt{display:inline-block;min-width:56px;text-align:center;border-radius:4px;font-weight:700}
+.dlt.up{background:#45261c} .dlt.down{background:#16343b} .dlt.zero{background:#2a2f3c}
+.foot{flex:none;padding:6px 16px 8px;font-size:15px;color:var(--dim);white-space:nowrap;display:flex;gap:12px;align-items:center;border-top:1px solid var(--edge)}
+.foot .sp{flex:1}
+
+/* ===== 下書き (マッチング) ===== */
+.dinfo{flex:none;display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:17px;color:var(--soft);border-bottom:1px solid var(--edge);background:#1a1f2b;white-space:nowrap}
+.dinfo b{color:var(--ink)}
+.dinfo .sp{flex:1}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--soft);font-size:20px;text-align:center;padding:20px}
+.empty .ob{font-size:20px;height:44px;line-height:42px;padding:0 22px}
+
+/* ===== ポップオーバー (省略した文字列の全文) / トースト ===== */
+#tip{position:absolute;z-index:60;max-width:760px;background:#f5f3ea;color:#1a1d24;border-radius:10px;padding:10px 14px;font-size:22px;font-weight:700;line-height:1.4;box-shadow:0 14px 40px #000a;display:none;pointer-events:none}
+#tip small{display:block;font-size:15px;color:#5b6170;font-weight:700;margin-bottom:2px}
+#tip.on{display:block}
+#toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);z-index:70;background:#263252;border:1px solid #4d6bb0;color:#e8efff;font-size:20px;font-weight:700;padding:12px 22px;border-radius:12px;box-shadow:0 12px 36px #000b;display:none;white-space:nowrap}
+#toast.on{display:block}
+
+/* ===== 人数ごとの寸法 ===== */
+#stage[data-p="16"]{--tmfs:92px;--tmh:153px;--tgap:5px;--tpad:6px;--tlg:3px;--tlh:24px;--tbno:20px;--tbnm:20px;--mkw:36px;--dnow:64px;
+  --nmw:232px;--snm:22px;--rgap:4px;--dgap:3px;--dkh:24px;--dkfs:20px;--wlfs:22px;--cellfs:20px;--st2g:0px;--st2lh:25px;--ptfs:23px}
+#stage[data-p="8"]{--tmfs:136px;--tmh:206px;--tgap:10px;--tpad:10px;--tlg:6px;--tlh:30px;--tbno:24px;--tbnm:26px;--mkw:44px;--dnow:76px;
+  --nmw:300px;--snm:28px;--rgap:6px;--dgap:1px;--dkh:26px;--dkfs:21px;--wlfs:30px;--cellfs:24px;--st2g:6px;--st2lh:38px;--ptfs:34px}
+.timer{height:var(--tmh)}
+/* 16 人: 1 卓 = 見出し 1 行 + 対戦者 2 行 (印・名前・使用デッキを横並び) */
+#stage[data-p="16"] .tb-p{grid-template-columns:var(--mkw) 228px minmax(0,1fr);grid-template-areas:"mk nm dx"}
+/* 8 人: 対戦者ごとに 名前 / 使用デッキ の 2 段 */
+#stage[data-p="8"] .tb-p{grid-template-columns:var(--mkw) minmax(0,1fr);grid-template-areas:"mk nm" ". dx";row-gap:2px}
+#stage[data-p="8"] .tb-p .dx{font-size:22px}
+#stage[data-p="16"] .decks{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#stage[data-p="8"] .decks{grid-template-columns:minmax(0,1fr)}
+/* 下書きの卓 (2 行: 名前と成績) */
+#stage .tb.drow{flex-direction:row;align-items:center;justify-content:flex-start;gap:12px}
+.dno{width:var(--dnow);text-align:center}
+.dps{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--tlg)}
+#stage .tb.drow .tb-p{grid-template-columns:var(--mkw) minmax(0,1fr) auto;grid-template-areas:"mk nm rec";row-gap:0}
+</style>
+</head>
+<body>
+<div id="stage" data-p="8">
+  <header class="top" id="hdr"></header>
+  <main id="main"></main>
+  <div id="mockmenu"></div>
+  <div id="tip"></div>
+  <div id="toast"></div>
+</div>
+<script>
+"use strict";
+/* ============================================================
+   しまWS 大会ダッシュボード — 再コンペ F 案 (モック)
+   1 ファイル自己完結。外部読み込みなし。ブラウザ標準のダイアログ (警告・確認) は使わず、トーストと 2 度押しで知らせる。
+   ?state=1..5  ?players=8|16  ?clean=1 (主催者操作を隠す)  ?check=1 (見切れ自己検査)
+   ============================================================ */
+
+/* ---------- タイトル別コスト表 (titles.js の実在タイトル) ---------- */
+const COST_ROWS = [
+  ["アイドルマスター シャイニーカラーズ","",3.5],["葬送のフリーレン","",2.0],["葬送のフリーレン","8チョイス",2.5],
+  ["ヘブンバーンズレッド","",1.5],["痛いのは嫌なので防御力に極振りしたいと思います。","",2.0],["ホロライブプロダクション","",4.0],
+  ["ぼっち・ざ・ろっく！","",2.5],["ブルーアーカイブ","",1.0],["ブルーアーカイブ","8門",1.5],["怪獣８号","",1.0],
+  ["ウマ娘 プリティーダービー","",3.0],["勝利の女神：NIKKE","",2.0],["かぐや様は告らせたい～天才たちの恋愛頭脳戦～","",2.5],
+  ["電撃文庫","",2.0],["ラブライブ！蓮ノ空女学院スクールアイドルクラブ","",3.5],["五等分の花嫁","",2.0],
+  ["無職転生 ～異世界行ったら本気だす～","",3.0],["ガールズバンドクライ","",1.5],["進撃の巨人","",2.0],["チェンソーマン","",2.5],
+  ["東方Project","",2.0],["アズールレーン","",3.0],["Disney100","",2.5],["「青春ブタ野郎」シリーズ","",2.0],
+  ["ソードアート・オンライン","",3.0],["オーバーロード","",2.5],["ダンジョンに出会いを求めるのは間違っているだろうか","",1.5],
+  ["学園アイドルマスター","",3.5],["SPY×FAMILY","",2.0],
+  // 今大会では誰も持ち込んでいない行 (画面には出さず CSV にだけ入る)
+  ["アイドルマスター シンデレラガールズ","",3.0],["【推しの子】","",2.0],["転生したらスライムだった件","",2.5],["BanG Dream!","",2.5],
+  ["リコリス・リコイル","",1.5],["プロジェクトセカイ カラフルステージ！ feat. 初音ミク","",3.0],["魔法少女まどか☆マギカ","",2.0],
+  ["Fate/Grand Order（アニメ）","",2.0],["Summer Pockets","",1.5],["アサルトリリィ","",1.5],["ホロライブプロダクション","8スタンバイ",4.5],
+  ["ウマ娘 プリティーダービー","4宝4扉",3.5],["チェンソーマン","4ショット4門",3.0]
+];
+const CAP = 10.0, RANGE = 0.5, ROUNDS = 4, DECKS = 4;
+
+const PL8 = [
+  ["アリス",[["アイドルマスター シャイニーカラーズ","8スタンバイ"],["葬送のフリーレン","8チョイス"],["ヘブンバーンズレッド","8門"],["痛いのは嫌なので防御力に極振りしたいと思います。","4宝4扉"]]],
+  ["ボブ",[["ホロライブプロダクション","8チョイス"],["ぼっち・ざ・ろっく！","4扉4本"],["ブルーアーカイブ","8門"],["怪獣８号","8門"]]],
+  ["チャーリー＠ウマ娘勢",[["ウマ娘 プリティーダービー","8宝"],["勝利の女神：NIKKE","4ショット4門"],["かぐや様は告らせたい～天才たちの恋愛頭脳戦～","4扉4本"],["電撃文庫","8扉"]]],
+  ["ダイヤ",[["ラブライブ！蓮ノ空女学院スクールアイドルクラブ","8スタンバイ"],["五等分の花嫁","4チョイス4扉"],["無職転生 ～異世界行ったら本気だす～","8スタンバイ"],["ガールズバンドクライ","8本"]]],
+  ["進撃の調査兵団エレン",[["進撃の巨人","4ショット4扉"],["チェンソーマン","8チョイス"],["怪獣８号","8門"],["ホロライブプロダクション","8チョイス"]]],
+  ["フラン",[["東方Project","8宝"],["アズールレーン","4扉4スタンバイ"],["Disney100","8門"],["「青春ブタ野郎」シリーズ","8扉"]]],
+  ["ギン",[["ソードアート・オンライン","8門"],["オーバーロード","8本"],["ダンジョンに出会いを求めるのは間違っているだろうか","4宝4扉"],["ガールズバンドクライ","8本"]],1],
+  ["ハル＠学マス全力応援",[["学園アイドルマスター","8チョイス"],["SPY×FAMILY","4扉4本"],["ブルーアーカイブ","8門"],["ヘブンバーンズレッド","8門"]]]
+];
+const PL16 = PL8.concat([
+  ["イチカ",[["ぼっち・ざ・ろっく！","8本"],["ウマ娘 プリティーダービー","8宝"],["ブルーアーカイブ","8チョイス"],["進撃の巨人","8ショット"]]],
+  ["ジロウ",[["ホロライブプロダクション","8チョイス"],["葬送のフリーレン","8扉"],["ステラソラ","8門"],["ガールズバンドクライ","8本"]]],
+  ["サブロウ",[["かぐや様は告らせたい～天才たちの恋愛頭脳戦～","8チョイス"],["ラブライブ！蓮ノ空女学院スクールアイドルクラブ","8スタンバイ"],["ヘブンバーンズレッド","8門"],["五等分の花嫁","8扉"]]],
+  ["シロウ",[["無職転生 ～異世界行ったら本気だす～","8スタンバイ"],["チェンソーマン","8チョイス"],["勝利の女神：NIKKE","8門"],["ガールズバンドクライ","8本"]]],
+  ["ゴロウ＠ガルクラ布教中",[["ガールズバンドクライ","8本"],["ぼっち・ざ・ろっく！","4扉4本"],["ブルーアーカイブ","8門"],["東方Project","8宝"]]],
+  ["ロクロウ・ザ・ピラミッド王",[["ホロライブプロダクション","8チョイス"],["アズールレーン","8スタンバイ"],["怪獣８号","8門"],["痛いのは嫌なので防御力に極振りしたいと思います。","8宝"]]],
+  ["ナナ",[["ウマ娘 プリティーダービー","8宝"],["学園アイドルマスター","8チョイス"],["SPY×FAMILY","4扉4本"],["ダンジョンに出会いを求めるのは間違っているだろうか","4宝4扉"]]],
+  ["ハチロウ",[["ソードアート・オンライン","8門"],["Disney100","8門"],["電撃文庫","8扉"],["進撃の巨人","4ショット4扉"]]]
+]);
+
+/* ---------- 小道具 ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function rng(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1);
+const fd = (d) => (d > 0 ? "+" : d < 0 ? "−" : "±") + Math.abs(d).toFixed(1);
+const pct = (x) => (x == null ? "—" : (x * 100).toFixed(1) + "%");
+const cmpName = (a, b) => a.localeCompare(b, "ja");
+
+// コスト行の当て方: CX 構成完全一致 > 基本行 > 未設定 (基本 0 の仮想行)
+function rowFor(title, cx) {
+  let i = COST_ROWS.findIndex((r) => r[0] === title && r[1] === cx);
+  if (i < 0) i = COST_ROWS.findIndex((r) => r[0] === title && r[1] === "");
+  if (i >= 0) return { key: "r" + i, title, cx: COST_ROWS[i][1], base: COST_ROWS[i][2], virt: false };
+  return { key: "v:" + title, title, cx: "", base: 0, virt: true };
+}
+
+/* ---------- 大会の経過 (シード固定のシミュレーション) ---------- */
+function makePlayers(n) {
+  return (n === 16 ? PL16 : PL8).map((p, i) => {
+    const decks = p[1].map((d, j) => ({ j, title: d[0], cx: d[1], row: rowFor(d[0], d[1]) }));
+    const seen = new Set(); let reg = 0;
+    for (const d of decks) if (!seen.has(d.row.key)) { seen.add(d.row.key); reg += d.row.base; }
+    return { id: i, name: p[0], decks, drop: p[2] || 0, reg: Math.round(reg * 10) / 10 };
+  });
+}
+
+// 確定済みの出来事 (対戦・了解済みの不戦勝) から成績を作る
+function statsOf(P, events) {
+  const S = P.map((p) => ({ p, w: 0, l: 0, d: 0, n: 0, bye: 0, opps: [], used: new Set(), shown: new Set(), byeDeck: new Set() }));
+  for (const e of events) {
+    if (e.bye) { const s = S[e.a]; s.w++; s.n++; s.bye++; if (e.deck != null) { s.used.add(e.deck); s.shown.add(e.deck); s.byeDeck.add(e.deck); } continue; }
+    const A = S[e.a], B = S[e.b];
+    A.n++; B.n++; A.opps.push(e.b); B.opps.push(e.a);
+    A.shown.add(e.da); B.shown.add(e.db);
+    if (e.res === "a") { A.w++; B.l++; A.used.add(e.da); }
+    else if (e.res === "b") { B.w++; A.l++; B.used.add(e.db); }
+    else { A.d++; B.d++; }
+  }
+  for (const s of S) s.wr = s.n ? s.w / s.n : null;
+  for (const s of S) {
+    const o = s.opps.map((i) => S[i]).filter((x) => x.n).map((x) => Math.max(1 / 3, x.w / x.n));
+    s.omw = o.length ? o.reduce((a, b) => a + b, 0) / o.length : null;
+  }
+  return S;
+}
+// 順位: 勝ち数 → 勝率 → 登録デッキの合計コストが低い → OMW% → 名前
+function rankCmp(a, b) {
+  return (b.w - a.w) || ((b.wr ?? -1) - (a.wr ?? -1)) || (a.p.reg - b.p.reg) || ((b.omw ?? -1) - (a.omw ?? -1)) || cmpName(a.p.name, b.p.name);
+}
+
+function pairRound(P, S, r, R, shuffle) {
+  const act = S.filter((s) => !(s.p.drop && r > s.p.drop));
+  let order = act.slice().sort(rankCmp);
+  if (shuffle) { // 再抽選: 同じ勝ち数の中で並びを入れ替える
+    const g = {}; for (const s of order) (g[s.w] = g[s.w] || []).push(s);
+    order = Object.keys(g).sort((a, b) => b - a).flatMap((k) => { const a = g[k]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; });
+  }
+  let bye = null;
+  if (order.length % 2) {
+    for (let i = order.length - 1; i >= 0; i--) if (!order[i].bye) { bye = order[i]; break; }
+    if (!bye) bye = order[order.length - 1];
+    order = order.filter((s) => s !== bye);
+  }
+  const tables = []; const rest = order.slice(); let rematch = false;
+  while (rest.length) {
+    const a = rest.shift();
+    let k = rest.findIndex((b) => !a.opps.includes(b.p.id));
+    if (k < 0) { k = 0; rematch = true; }
+    const b = rest.splice(k, 1)[0];
+    tables.push({ a: a.p.id, b: b.p.id });
+  }
+  return { tables, bye: bye ? { a: bye.p.id } : null, rematch };
+}
+
+function simulate(n) {
+  const P = makePlayers(n);
+  const R = rng(n === 16 ? 160423 : 80117);
+  const rounds = []; const events = [];
+  for (let r = 1; r <= ROUNDS; r++) {
+    const S = statsOf(P, events);
+    const pr = pairRound(P, S, r, R, false);
+    const pick = (id) => { // 使える (未消費の) デッキから選ぶ。まだ見せていないデッキを優先
+      const s = S[id]; const av = P[id].decks.filter((d) => !s.used.has(d.j));
+      const fresh = av.filter((d) => !s.shown.has(d.j));
+      const pool = fresh.length && R() < 0.97 ? fresh : av;
+      return pool[Math.floor(R() * pool.length)].j;
+    };
+    for (const t of pr.tables) {
+      t.da = pick(t.a); t.db = pick(t.b);
+      const x = R(); t.res = x < 0.06 ? "d" : x < 0.53 ? "a" : "b";
+      events.push({ a: t.a, b: t.b, da: t.da, db: t.db, res: t.res });
+      // 同じラウンド内の消費を反映 (次の pick には影響しないが、明示しておく)
+    }
+    if (pr.bye) { const s = S[pr.bye.a]; const av = P[pr.bye.a].decks.filter((d) => !s.used.has(d.j)); pr.bye.deck = av[Math.floor(R() * av.length)].j; pr.bye.how = R() < 0.5 ? "random" : "choose"; events.push({ bye: true, a: pr.bye.a, deck: pr.bye.deck }); }
+    rounds.push({ n: r, tables: pr.tables, bye: pr.bye });
+  }
+  return { P, rounds };
+}
+
+/* ---------- 画面の状態 ---------- */
+const Q = new URLSearchParams(location.search);
+const UI = {
+  state: Math.min(5, Math.max(1, Number(Q.get("state")) || 1)),
+  players: Q.get("players") === "16" ? 16 : 8,
+  clean: Q.get("clean") === "1",
+  check: Q.has("check"),
+  draft: Q.get("draft") === "0" ? 0 : 1, // マッチング下書きの抽選回数 (0 = 未抽選)
+  published: false, // 下書きを決定・公開した後 (Round 3 開始)
+  postDraw: 2, // 事後コストの抽選回数
+  postFixed: false,
+  armed: null
+};
+const TIMER = { running: false, endAt: 0, remain: 35 * 60, startSec: 35 * 60, iv: null };
+let M = null; // シミュレーション結果
+
+// 状態ごとの進み具合
+const PATTERN = {
+  8: { 1: ["ok", "wait", "play"], 5: ["ok", "ok", "wait"] },
+  16: { 1: ["ok", "ok", "wait", "ok", "play", "wait", "play"], 5: ["ok", "ok", "ok", "wait", "ok", "ok", "play"] }
+};
+
+function eventsThrough(done, cur) {
+  const ev = [];
+  for (const rd of M.rounds) {
+    if (rd.n <= done) {
+      for (const t of rd.tables) ev.push({ a: t.a, b: t.b, da: t.da, db: t.db, res: t.res });
+      if (rd.bye) ev.push({ bye: true, a: rd.bye.a, deck: rd.bye.deck });
+    } else if (cur && rd.n === cur.n) {
+      rd.tables.forEach((t, i) => { if (cur.st[i] === "ok") ev.push({ a: t.a, b: t.b, da: t.da, db: t.db, res: t.res }); });
+      if (rd.bye && cur.bye === "acked") ev.push({ bye: true, a: rd.bye.a, deck: rd.bye.deck });
+    }
+  }
+  return ev;
+}
+
+function scene() {
+  const s = UI.state, p = UI.players;
+  if (s === 1) return { kind: "round", done: 1, cur: { n: 2, st: PATTERN[p][1], bye: "wait" }, timer: [35 * 60 - 13 * 60 - 24, true] };
+  if (s === 5) return { kind: "round", done: 3, cur: { n: 4, st: PATTERN[p][5], bye: "acked" }, timer: [4 * 60 + 48, true], final: true, cx: true };
+  if (s === 2) return UI.published ? { kind: "round", done: 2, cur: { n: 3, st: null, bye: "wait", fresh: true }, timer: [35 * 60, false] } : { kind: "draft", done: 2, timer: [35 * 60, false] };
+  return { kind: "post", done: 4, fixed: s === 4 || UI.postFixed };
+}
+
+/* ---------- 描画: ヘッダー ---------- */
+function headerHtml(sc, S) {
+  const p = UI.players; const dropN = M.P.filter((x) => x.drop).length;
+  let phase = "";
+  if (sc.kind === "round") phase = `<span class="chip phase live">${sc.final ? "最終 " : ""}Round ${sc.cur.n} / ${ROUNDS} 対戦中</span>`;
+  else if (sc.kind === "draft") phase = `<span class="chip phase">Round 3 / ${ROUNDS} 組み合わせ準備中</span>`;
+  else phase = `<span class="chip phase post">大会終了 · 事後コスト${sc.fixed ? "発表" : "抽選中"}</span>`;
+  let win = "";
+  if (sc.kind === "post") { const top = S.slice().sort(rankCmp)[0]; win = `<span class="chip win trunc" data-full="${esc(top.p.name)}" style="max-width:300px">優勝 ${esc(top.p.name)}</span>`; }
+  return `<div class="brand"><span class="logo">しまWS</span><span class="tname">第3回 しま交流CS ピラミッド王決定戦</span></div>
+  <div class="chips">${phase}${win}<span class="chip">しま2026版ピラミッド</span><span class="chip">4 デッキ · 上限 ${f1(CAP)}</span><span class="chip">${p} 名${dropN ? ` · 棄権 ${dropN}` : ""}</span></div>
+  <div class="dock org"><span class="who">主催者</span>
+    <button class="ob" data-act="fs" title="会場モニターでは全画面 (F11) を推奨">⛶ 全画面</button>
+    <a class="ob lnk" href="#" data-act="fix">大会進行修正</a>
+    <button class="ob" data-act="clean" title="H キーでも切り替え">操作を隠す</button>
+  </div>
+  <button class="mockbtn" data-act="mock" title="モックの状態切り替え (1〜5 キー / P キー)">モック ▾</button>`;
+}
+
+/* ---------- 描画: デッキ欄 ---------- */
+function deckChip(d, st, sid, opt) {
+  // st: 'used' 勝利(または不戦勝)で使用済み / 'open' 確定した対戦で公開済み / 'hid' 未公開
+  if (st === "hid") return `<span class="dk hid"><b class="c">？</b><span class="t">未公開</span></span>`;
+  const full = `${d.title}${opt.cx && d.cx ? ` ／ CX ${d.cx}` : ""} ／ コスト ${f1(d.row.base)}${st === "used" ? " ／ 使用済み" : ""}`;
+  return `<span class="dk ${st}"><b class="c">${d.row.virt ? "0.0" : f1(d.row.base)}</b>${opt.cx ? `<i class="cx trunc" data-full="CX 構成 ${esc(d.cx)}">${esc(d.cx)}</i>` : ""}<span class="t trunc" data-full="${esc(full)}">${esc(d.title)}</span>${opt.bye ? `<span class="bymark">不戦</span>` : ""}</span>`;
+}
+function decksHtml(s, opt) {
+  // 見えるもの (使用済み・公開済み) を先に、伏せたものを後ろに並べる
+  const p = s.p; const vis = [], hid = [];
+  for (const d of p.decks) { if (s.used.has(d.j)) vis.push([d, "used"]); else if (s.shown.has(d.j)) vis.push([d, "open"]); else hid.push([d, "hid"]); }
+  return `<span class="decks">${vis.concat(hid).map(([d, st]) => deckChip(d, st, s, { cx: opt.cx, bye: s.byeDeck.has(d.j) })).join("")}</span>`;
+}
+const wlHtml = (s) => `<span class="wl"><span class="w">${s.w}</span><i>-</i><span class="l">${s.l}</span><i>-</i><span class="d">${s.d}</span></span>`;
+
+function standingsHtml(S, sc) {
+  const rows = S.slice().sort(rankCmp);
+  return `<section class="panel">
+    <div class="ph"><h2>勝敗ランキング</h2><span class="sorthint">並び: <b>勝ち数 → 勝率 → 登録コストが低い → OMW%</b></span><span class="sp"></span>
+      <span class="legend"><span><i class="lg-open"></i>公開済み</span><span><i class="lg-used"></i>勝利で使用済み</span><span><i class="lg-hid"></i>未公開</span></span></div>
+    <div class="sh g-st"><span>順位</span><span>参加者</span><span>登録デッキ（4）${sc.cx ? " · コスト · CX 構成" : " · コスト"}</span><span class="r">勝敗/勝率</span><span class="r">登録計/OMW</span></div>
+    <div class="rows">${rows.map((s, i) => {
+      const rk = i + 1; const dropped = s.p.drop && (sc.cur ? sc.cur.n : 99) > s.p.drop;
+      return `<div class="srow g-st${dropped ? " drop" : ""}">
+        <span class="rk${rk <= 3 ? " r" + rk : ""}">${rk}</span>
+        <span class="who${dropped ? " inl" : ""}"><span class="nm trunc" data-full="${esc(s.p.name)}">${esc(s.p.name)}</span>${dropped ? `<span class="tag">棄権</span>` : ""}</span>
+        ${decksHtml(s, { cx: sc.cx })}
+        <span class="st2">${wlHtml(s)}<span class="cell">${pct(s.wr)}</span></span><span class="st2"><span class="cell hi">${f1(s.p.reg)}</span><span class="cell">${pct(s.omw)}</span></span>
+      </div>`; }).join("")}</div>
+  </section>`;
+}
+
+/* ---------- 描画: タイマー ---------- */
+function timerHtml(label) {
+  return `<section class="timer" id="timer"><div class="tm-h"><span class="lbl">${label}</span><span class="stt" id="tmstt"></span><span class="init">初期値 35:00 · 数字を押して編集</span></div>
+    <div class="tm-b"><input id="tm" class="num" inputmode="numeric" aria-label="タイマー (分:秒)" spellcheck="false" autocomplete="off">
+    <div class="tm-c org"><button class="ob pri" id="tmgo" data-act="tgo">START</button><button class="ob" id="tmrs" data-act="trs">RESET</button></div></div></section>`;
+}
+
+/* ---------- 描画: 対戦卓 ---------- */
+function deckLine(P, id, j, withCost) {
+  const d = P[id].decks[j];
+  return `${withCost ? `<b class="c dk-c num">${f1(d.row.base)}</b>` : ""}<span class="t trunc" data-full="${esc(d.title + " ／ CX " + d.cx + " ／ コスト " + f1(d.row.base))}">${esc(d.title)}</span>`;
+}
+function tablesHtml(sc) {
+  const P = M.P; const rd = M.rounds[sc.cur.n - 1]; const wide = UI.players === 8;
+  const tables = sc.cur.fresh ? UI.freshTables : rd.tables;
+  const bye = sc.cur.fresh ? UI.freshBye : rd.bye;
+  const st = sc.cur.fresh ? tables.map(() => "play") : sc.cur.st;
+  const okN = st.filter((x) => x === "ok").length + (bye && sc.cur.bye === "acked" ? 1 : 0);
+  const total = tables.length + (bye ? 1 : 0);
+  const nm = (id) => `<span class="nm trunc" data-full="${esc(P[id].name)}">${esc(P[id].name)}</span>`;
+  const cards = tables.map((t, i) => {
+    const s = st[i]; const no = `<span class="tb-no"><small>卓</small>${i + 1}</span>`;
+    if (s === "ok") {
+      const res = t.res; const mA = res === "a" ? "w" : res === "b" ? "l" : "d", mB = res === "b" ? "w" : res === "a" ? "l" : "d";
+      const lab = { w: "勝", l: "負", d: "分" };
+      return `<div class="tb st-ok">
+        <div class="tb-h">${no}<span class="badge">確定</span><span class="tb-note trunc" data-full="">${res === "d" ? "引き分け" : ""}</span></div>
+        <div class="tb-p ${mA === "l" ? "lose" : ""}"><span class="mk ${mA}">${lab[mA]}</span>${nm(t.a)}<span class="dx">${deckLine(P, t.a, t.da, wide)}</span></div>
+        <div class="tb-p ${mB === "l" ? "lose" : ""}"><span class="mk ${mB}">${lab[mB]}</span>${nm(t.b)}<span class="dx">${deckLine(P, t.b, t.db, wide)}</span></div></div>`;
+    }
+    if (s === "wait") { // A が報告済み。B の承諾待ち (デッキは確定まで伏せる)
+      const aWin = t.res !== "b"; const rA = t.res === "d" ? "分" : aWin ? "勝" : "負", rB = t.res === "d" ? "分" : aWin ? "負" : "勝";
+      const note = "デッキは確定後に公開";
+      return `<div class="tb st-wait">
+        <div class="tb-h">${no}<span class="badge">承諾待ち</span><span class="tb-note trunc" data-full="${esc(note)}">${esc(note)}</span></div>
+        <div class="tb-p"><span class="mk rep">${rA}</span>${nm(t.a)}<span class="dx mute">報告済み</span></div>
+        <div class="tb-p"><span class="mk rep">${rB}</span>${nm(t.b)}<span class="dx wait">▶ 承諾待ち</span></div></div>`;
+    }
+    return `<div class="tb st-play">
+      <div class="tb-h">${no}<span class="badge">対戦中</span><span class="tb-note"></span></div>
+      <div class="tb-p"><span class="mk"></span>${nm(t.a)}<span class="dx mute">未報告</span></div>
+      <div class="tb-p"><span class="mk"></span>${nm(t.b)}<span class="dx mute">未報告</span></div></div>`;
+  });
+  if (bye) {
+    const acked = sc.cur.bye === "acked";
+    if (acked) {
+      const how = bye.how === "random" ? "ランダムで選んで了解" : "デッキを選んで了解";
+      cards.push(`<div class="tb st-ok">
+        <div class="tb-h"><span class="tb-no">不戦勝</span><span class="badge">確定</span><span class="tb-note trunc" data-full="${how}">${how}</span></div>
+        <div class="tb-p"><span class="mk bye">${wide ? "不戦" : "不"}</span>${nm(bye.a)}<span class="dx">${deckLine(P, bye.a, bye.deck, wide)}</span></div>
+        <div class="tb-p lose"><span class="mk" style="visibility:hidden"></span><span class="nm" style="color:var(--dim)">（対戦相手なし）</span><span class="dx"></span></div></div>`);
+    } else {
+      cards.push(`<div class="tb st-ack">
+        <div class="tb-h"><span class="tb-no">不戦勝</span><span class="badge">了解待ち</span><span class="tb-note trunc" data-full="本人の「了解」で確定します">本人の了解で確定</span></div>
+        <div class="tb-p"><span class="mk bye pend">${wide ? "不戦" : "不"}</span>${nm(bye.a)}<span class="dx ack trunc" data-full="使用済みにするデッキを選ぶ／ランダムで選んで了解">デッキを選ぶ／ランダム</span></div>
+        <div class="tb-p"><span class="mk" style="visibility:hidden"></span><span class="nm" style="color:var(--dim)">（対戦相手なし）</span><span class="dx mute"></span></div></div>`);
+    }
+  }
+  const allOk = okN === total;
+  const ctl = sc.final
+    ? `<button class="ob org" data-act="rend" ${allOk ? "" : "disabled"} title="全卓が確定すると押せます">ラウンド終了</button><button class="ob org" data-act="tend" ${allOk ? "" : "disabled"} title="全卓が確定すると押せます (2 度押し)">大会終了</button>`
+    : `<button class="ob org" data-act="rend" ${allOk ? "" : "disabled"} title="全卓が確定すると押せます">ラウンド終了</button>`;
+  return `<section class="panel tables">
+    <div class="ph"><h2>Round ${sc.cur.n} の対戦卓</h2><span class="sp"></span><span class="prog">確定 <b>${okN}</b> / ${total}</span>${ctl}</div>
+    <div class="bar"><i style="width:${Math.round((okN / total) * 100)}%"></i></div>
+    <div class="tlist" style="grid-template-rows:repeat(${UI.players === 8 ? 4 : 8},minmax(0,1fr))">${cards.join("")}</div>
+  </section>`;
+}
+
+/* ---------- 描画: マッチング下書き ---------- */
+function draftHtml(S) {
+  const P = M.P;
+  if (!UI.draft) {
+    return `<section class="panel tables"><div class="ph"><h2>Round 3 の組み合わせ</h2><span class="sp"></span><span class="bdg draft">未抽選</span></div>
+      <div class="empty"><div>Round 2 は終了しました。<br>次の組み合わせを抽選します（下書きは参加者には見えません）。</div>
+      <button class="ob pri org" data-act="ddraw">組み合わせを抽選</button></div></section>`;
+  }
+  const R = rng(9000 + UI.draft * 31 + UI.players);
+  const pr = UI.draft === 1 ? { tables: M.rounds[2].tables.map((t) => ({ a: t.a, b: t.b })), bye: M.rounds[2].bye ? { a: M.rounds[2].bye.a } : null, rematch: false } : pairRound(P, S, 3, R, true);
+  UI.draftPairs = pr;
+  const rec = (id) => { const s = S[id]; const left = DECKS - s.used.size; return `<span class="rec"><b>${s.w}-${s.l}-${s.d}</b> · 残り ${left}</span>`; };
+  const nm = (id) => `<span class="nm trunc" data-full="${esc(P[id].name)}">${esc(P[id].name)}</span>`;
+  const cards = pr.tables.map((t, i) => `<div class="tb st-draft drow"><span class="tb-no dno"><small>卓</small>${i + 1}</span><div class="dps">
+      <div class="tb-p"><span class="mk">A</span>${nm(t.a)}${rec(t.a)}</div>
+      <div class="tb-p"><span class="mk">B</span>${nm(t.b)}${rec(t.b)}</div></div></div>`);
+  if (pr.bye) cards.push(`<div class="tb st-ack drow"><span class="tb-no dno">不戦勝</span><div class="dps">
+      <div class="tb-p"><span class="mk bye pend">${UI.players === 8 ? "不戦" : "不"}</span>${nm(pr.bye.a)}${rec(pr.bye.a)}</div>
+      <div class="tb-p"><span class="mk" style="visibility:hidden"></span><span class="nm trunc" style="color:var(--dim)" data-full="対戦相手なし。不戦勝の回数が最少の人から選び、公開後に本人の「了解」で確定します">相手なし · 本人の了解で確定</span><span class="rec"></span></div></div></div>`);
+  const armed = UI.armed === "dpub";
+  return `<section class="panel tables">
+    <div class="ph"><h2>Round 3 の組み合わせ</h2><span class="bdg draft">下書き · 参加者には未公開</span><span class="sp"></span></div>
+    <div class="dinfo org"><span>抽選 <b>${UI.draft}</b> 回目 · ${pr.rematch ? `<b style="color:var(--wait)">再戦を含む</b>` : "再戦なし"}</span><span class="sp"></span>
+      <button class="ob" data-act="dredraw">再抽選</button><button class="ob ${armed ? "arm" : "pri"}" data-act="dpub">${armed ? "もう一度押して公開" : "決定して公開"}</button></div>
+    <div class="tlist" style="grid-template-rows:repeat(${UI.players === 8 ? 4 : 8},minmax(0,1fr))">${cards.join("")}</div>
+    <div class="foot org"><span>勝ち数の近い人どうし · 再戦を避けて組んでいます</span><span class="sp"></span><span>手直しは <a class="ob lnk" href="#" data-act="fix" style="height:28px;line-height:26px;font-size:15px">大会進行修正</a></span></div>
+  </section>`;
+}
+
+/* ---------- 描画: 事後コスト ---------- */
+function postData(draw) {
+  // コスト表の全行 + コスト表に無い登録タイトル (仮想行) を、行ごとに別々に抽選する
+  const R = rng(4242 + draw * 977 + UI.players);
+  const virt = []; const seenV = new Set();
+  for (const p of M.P) for (const d of p.decks) if (d.row.virt && !seenV.has(d.row.key)) { seenV.add(d.row.key); virt.push(d.row); }
+  const all = COST_ROWS.map((r, i) => ({ key: "r" + i, title: r[0], cx: r[1], base: r[2], virt: false })).concat(virt.map((v) => ({ ...v })));
+  const steps = Math.round(RANGE * 10);
+  for (const r of all) { const k = Math.floor(R() * (2 * steps + 1)) - steps; r.delta = k / 10; r.post = Math.max(0, Math.round((r.base * 10 + k)) / 10); }
+  const byKey = Object.fromEntries(all.map((r) => [r.key, r]));
+  const used = {}; // 持ち込みに当たった行と人数
+  for (const p of M.P) { const s = new Set(p.decks.map((d) => d.row.key)); for (const k of s) used[k] = (used[k] || 0) + 1; }
+  const people = M.P.map((p) => {
+    const seen = new Set(); let base = 0, post = 0;
+    for (const d of p.decks) if (!seen.has(d.row.key)) { seen.add(d.row.key); base += d.row.base; post += byKey[d.row.key].post; }
+    return { p, base: Math.round(base * 10) / 10, post: Math.round(post * 10) / 10 };
+  }).sort((a, b) => (b.post - a.post) || cmpName(a.p.name, b.p.name));
+  const rows = all.filter((r) => used[r.key]).map((r) => ({ ...r, cnt: used[r.key] })).sort((a, b) => (b.cnt - a.cnt) || cmpName(a.title, b.title) || cmpName(a.cx, b.cx));
+  return { all, byKey, used, people, rows };
+}
+function postHtml(sc) {
+  const D = postData(UI.postDraw); UI.postCache = D;
+  const fixed = sc.fixed;
+  const dcls = (d) => (d > 0 ? "up" : d < 0 ? "down" : "zero");
+  const people = D.people.map((x, i) => {
+    const decks = x.p.decks.map((d) => {
+      const r = D.byKey[d.row.key];
+      const full = `${d.title} ／ CX ${d.cx}${d.row.virt ? " ／ コスト表に無いタイトル (基本 0)" : d.row.cx ? " ／ CX 一致の行" : " ／ 基本行"} ／ ${f1(r.base)} → ${f1(r.post)}（${fd(r.delta)}）`;
+      return `<span class="dk pc"><span class="t trunc" data-full="${esc(full)}">${esc(d.title)}</span><span class="pv">${f1(r.base)}→<b class="${dcls(r.delta)}">${f1(r.post)}</b></span></span>`;
+    }).join("");
+    const diff = Math.round((x.post - x.base) * 10) / 10;
+    return `<div class="srow g-post${fixed && i === 0 ? " top1" : ""}">
+      <span class="rk${i < 3 ? " r" + (i + 1) : ""}">${i + 1}</span>
+      <span class="who"><span class="nm trunc" data-full="${esc(x.p.name)}">${esc(x.p.name)}</span>${fixed && i === 0 ? `<span class="sub"><span class="crown">事後コスト 最高</span></span>` : ""}</span>
+      <span class="decks">${decks}</span>
+      <span class="ptwrap"><span class="ptot">${f1(x.post)}</span><span class="sub2"><span class="pbase">${f1(x.base)}</span> <span class="${dcls(diff)}">${fd(diff)}</span></span></span></div>`;
+  }).join("");
+  const rows = D.rows.map((r) => `<div class="ttr"><span class="tt trunc${r.virt ? " virt" : ""}" data-full="${esc(r.title + (r.virt ? "（コスト表に無いタイトル・基本 0）" : ""))}">${esc(r.title)}</span>
+      <span class="tcx trunc${r.cx ? "" : " base"}" data-full="${esc(r.cx || (r.virt ? "未設定 (仮想行)" : "基本行 (全 CX 共通)"))}">${r.cx ? esc(r.cx) : r.virt ? "未設定" : "基本行"}</span>
+      <span class="n cnt">${r.cnt}</span><span class="n">${f1(r.base)}</span><span class="n"><span class="dlt ${dcls(r.delta)}">${fd(r.delta)}</span></span><span class="n fin">${f1(r.post)}</span></div>`).join("");
+  const rest = D.all.length - D.rows.length;
+  const armed = UI.armed === "pfix";
+  const ctrl = fixed
+    ? `<div class="ctrl"><div class="l1"><h2>コスト行ごとの抽選結果</h2><span class="bdg fix">確定</span><span class="sp" style="flex:1"></span><button class="ob org" data-act="csv">CSV 書き出し</button></div>
+       <div class="l2"><span class="meta">範囲 <b>±${f1(RANGE)}</b> · 抽選 <b>${UI.postDraw}</b> 回 · 確定 <b>2026/11/23 17:42</b></span></div></div>`
+    : `<div class="ctrl"><div class="l1"><h2>コスト行ごとの抽選（下書き）</h2><span class="bdg sec">参加者には非公開</span></div>
+       <div class="l2 org"><span class="meta">範囲 <b>±${f1(RANGE)}</b> · 抽選 <b>${UI.postDraw}</b> 回目</span><span style="flex:1"></span>
+       <button class="ob" data-act="predraw">再抽選</button><button class="ob ${armed ? "arm" : "pri"}" data-act="pfix">${armed ? "もう一度押して確定" : "確定して発表"}</button><button class="ob" data-act="csv">CSV</button></div></div>`;
+  return `<section class="panel">
+      <div class="ph"><h2>${fixed ? "事後コスト発表" : "事後合計コスト（下書きプレビュー）"}</h2>${fixed ? "" : `<span class="bdg draft">下書き</span>`}<span class="sorthint">事後合計コストが<b>高い順</b> · 勝敗の順位とは別の表</span><span class="sp"></span><span class="note">右端の下段: 登録計と増減 · <span class="up">↑上がった</span> <span class="down">↓下がった</span></span></div>
+      <div class="sh g-post"><span>順位</span><span>参加者</span><span>登録デッキ（4）· 基本 → 事後</span><span class="r">事後合計</span></div>
+      <div class="rows">${people}</div>
+    </section>
+    <section class="panel">${ctrl}
+      <div class="tth"><span>持ち込まれたタイトル（${D.rows.length} 行）</span><span>CX 構成</span><span class="r">人</span><span class="r">基本</span><span class="r">増減</span><span class="r">事後</span></div>
+      <div class="ttl" style="grid-template-rows:repeat(${Math.max(D.rows.length, 28)},minmax(0,1fr))">${rows}</div>
+      <div class="foot"><span>誰も持ち込んでいない ${rest} 行は画面に出さず、CSV（全行）に入ります</span></div>
+    </section>`;
+}
+
+/* ---------- 全体の描画 ---------- */
+function render() {
+  const stage = $("#stage");
+  stage.dataset.p = String(UI.players); stage.dataset.s = String(UI.state);
+  document.body.classList.toggle("clean", UI.clean);
+  const sc = scene(); UI.scene = sc;
+  const ev = eventsThrough(sc.done, sc.kind === "round" && !sc.cur.fresh ? sc.cur : null);
+  const S = statsOf(M.P, ev);
+  $("#hdr").innerHTML = headerHtml(sc, S);
+  const main = $("#main");
+  if (sc.kind === "post") { main.className = "m-post"; main.innerHTML = postHtml(sc); }
+  else {
+    main.className = "m-round";
+    const left = sc.kind === "draft" ? draftHtml(S) : tablesHtml(sc);
+    const lbl = sc.kind === "draft" ? "Round 3 タイマー" : `Round ${sc.cur.n} タイマー`;
+    main.innerHTML = `<div class="colL">${timerHtml(lbl)}${left}</div>${standingsHtml(S, sc)}`;
+  }
+  mockMenu();
+  timerPaint();
+  requestAnimationFrame(markCuts);
+}
+
+// 省略記号で切れているものに印を付ける (点線の下線 + ポインタで全文)
+function markCuts() {
+  for (const el of document.querySelectorAll(".trunc")) el.classList.toggle("cut", el.scrollWidth > el.clientWidth);
+}
+
+/* ---------- タイマー ---------- */
+const tfmt = (s) => `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, "0")}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
+function tremain() { return TIMER.running ? Math.max(0, Math.ceil((TIMER.endAt - Date.now()) / 1000)) : TIMER.remain; }
+function timerSet(sec, run) {
+  clearInterval(TIMER.iv); TIMER.iv = null; TIMER.startSec = 35 * 60; TIMER.remain = sec; TIMER.running = false;
+  if (run) { TIMER.running = true; TIMER.endAt = Date.now() + sec * 1000; TIMER.iv = setInterval(timerPaint, 250); }
+}
+function timerPaint() {
+  const el = $("#tm"); if (!el) return;
+  const r = tremain();
+  if (TIMER.running && r <= 0) { TIMER.running = false; TIMER.remain = 0; clearInterval(TIMER.iv); TIMER.iv = null; toast("タイマーが 00:00 になりました"); }
+  if (document.activeElement !== el || TIMER.running) el.value = tfmt(r);
+  el.readOnly = TIMER.running;
+  const box = $("#timer");
+  box.classList.toggle("run", TIMER.running); box.classList.toggle("warn", r > 0 && r <= 300); box.classList.toggle("zero", r <= 0);
+  box.style.setProperty("--tp", Math.round((r / Math.max(1, TIMER.startSec)) * 100) + "%");
+  $("#tmstt").textContent = TIMER.running ? "● 動作中" : r <= 0 ? "■ 時間切れ" : "■ 停止中";
+  const go = $("#tmgo"); go.textContent = TIMER.running ? "STOP" : "START"; go.classList.toggle("pri", !TIMER.running);
+  $("#tmrs").disabled = TIMER.running;
+}
+function tparse(t) { const m = String(t).trim().match(/^(\d{1,3}):([0-5]?\d)$/); if (m) return +m[1] * 60 + +m[2]; if (/^\d{1,3}$/.test(String(t).trim())) return +t * 60; return null; }
+
+/* ---------- 操作 ---------- */
+let toastT = null;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
+let armT = null;
+function arm(key) { UI.armed = key; clearTimeout(armT); armT = setTimeout(() => { UI.armed = null; render(); }, 4000); render(); }
+function go(state, players) {
+  UI.state = state; if (players) UI.players = players;
+  UI.published = false; UI.draft = 1; UI.postDraw = 2; UI.postFixed = false; UI.armed = null;
+  M = simulate(UI.players);
+  const sc = scene(); if (sc.timer) timerSet(sc.timer[0], sc.timer[1]); else timerSet(35 * 60, false);
+  const q = new URLSearchParams(location.search); q.set("state", String(UI.state)); q.set("players", String(UI.players)); q.delete("draft");
+  history.replaceState(null, "", "?" + q.toString());
+  render();
+}
+function mockMenu() {
+  const m = $("#mockmenu");
+  const names = ["1 ラウンド中", "2 マッチング下書き", "3 事後コスト下書き", "4 事後コスト発表", "5 情報量最大"];
+  m.innerHTML = `<div style="font-size:13px;color:#7b8394">モックの状態（キー 1〜5 / P で人数）</div>
+    ${names.map((n, i) => `<button class="${UI.state === i + 1 ? "on" : ""}" data-act="st" data-v="${i + 1}">${n}</button>`).join("")}
+    <div class="row"><button class="${UI.players === 8 ? "on" : ""}" data-act="pl" data-v="8">8 人</button><button class="${UI.players === 16 ? "on" : ""}" data-act="pl" data-v="16">16 人</button></div>`;
+}
+function csv() {
+  const D = UI.postCache || postData(UI.postDraw);
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = [["タイトル", "CX構成", "基本", "増減", "事後", "持ち込み人数", "備考"].map(q).join(",")];
+  for (const r of D.all) lines.push([r.title, r.cx, f1(r.base), (r.delta > 0 ? "+" : "") + r.delta.toFixed(1), f1(r.post), D.used[r.key] || 0, r.virt ? "コスト表に無いタイトル(基本0)" : ""].map(q).join(","));
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `事後コスト_第3回しま交流CS_抽選${UI.postDraw}回.csv`; document.body.appendChild(a); a.click(); a.remove();
+  toast(`全 ${D.all.length} 行を CSV に書き出しました`);
+}
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  const menu = $("#mockmenu");
+  if (!b) { if (!e.target.closest("#mockmenu")) menu.classList.remove("open"); tipClick(e); return; }
+  e.preventDefault();
+  const a = b.dataset.act;
+  if (a === "mock") { menu.classList.toggle("open"); return; }
+  if (a === "st") { menu.classList.remove("open"); go(+b.dataset.v); return; }
+  if (a === "pl") { menu.classList.remove("open"); go(UI.state, +b.dataset.v); return; }
+  if (a === "clean") { UI.clean = !UI.clean; render(); toast("主催者の操作を隠しました（H キーで戻す）"); return; }
+  if (a === "fs") { const d = document.documentElement; (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen?.())?.catch?.(() => {}); return; }
+  if (a === "fix") { toast("（モック）主催者画面の「大会進行修正」タブを開きます"); return; }
+  if (a === "tgo") {
+    if (TIMER.running) { TIMER.remain = tremain(); TIMER.running = false; clearInterval(TIMER.iv); TIMER.iv = null; }
+    else { const v = tparse($("#tm").value); if (v == null || v <= 0) { toast("「35:00」の形式で入力してください"); return; } TIMER.startSec = v; TIMER.remain = v; TIMER.running = true; TIMER.endAt = Date.now() + v * 1000; TIMER.iv = setInterval(timerPaint, 250); }
+    timerPaint(); return;
+  }
+  if (a === "trs") { if (!TIMER.running) { TIMER.remain = TIMER.startSec; timerPaint(); } return; }
+  if (a === "rend") { toast("（モック）ラウンドを終了し、マッチング下書きへ進みます"); go(2); return; }
+  if (a === "tend") { if (UI.armed !== "tend") { arm("tend"); return; } toast("大会を終了しました。事後コストを抽選します"); go(3); return; }
+  if (a === "ddraw") { UI.draft = 1; render(); toast("Round 3 の組み合わせを抽選しました（下書き）"); return; }
+  if (a === "dredraw") { UI.draft++; UI.armed = null; render(); toast(`再抽選しました（${UI.draft} 回目）`); return; }
+  if (a === "dpub") {
+    if (UI.armed !== "dpub") { arm("dpub"); return; }
+    UI.armed = null; UI.published = true; UI.freshTables = UI.draftPairs.tables.map((t) => ({ ...t })); UI.freshBye = UI.draftPairs.bye ? { ...UI.draftPairs.bye } : null;
+    timerSet(35 * 60, false); render(); toast("Round 3 の組み合わせを公開しました。タイマーを START してください"); return;
+  }
+  if (a === "predraw") { UI.postDraw++; UI.armed = null; render(); toast(`事後コストを再抽選しました（${UI.postDraw} 回目）`); return; }
+  if (a === "pfix") { if (UI.armed !== "pfix") { arm("pfix"); return; } UI.armed = null; UI.state = 4; UI.postFixed = true; history.replaceState(null, "", `?state=4&players=${UI.players}`); render(); toast("事後コストを確定し、発表しました"); return; }
+  if (a === "csv") { csv(); return; }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") { if (e.key === "Enter") { e.target.blur(); } return; }
+  if (/^[1-5]$/.test(e.key)) go(+e.key);
+  else if (e.key === "p" || e.key === "P") go(UI.state, UI.players === 8 ? 16 : 8);
+  else if (e.key === "h" || e.key === "H") { UI.clean = !UI.clean; render(); }
+  else if (e.key === "Escape") { hideTip(); $("#mockmenu").classList.remove("open"); }
+});
+document.addEventListener("change", (e) => {
+  if (e.target.id === "tm") { const v = tparse(e.target.value); if (v == null) { toast("「35:00」の形式で入力してください"); } else { TIMER.remain = v; TIMER.startSec = v; } timerPaint(); }
+});
+document.addEventListener("focusout", (e) => { if (e.target.id === "tm") timerPaint(); });
+
+/* ---------- 省略した文字列の全文 (ポインタを乗せる / タップ / キーボードのフォーカス) ---------- */
+let tipEl = null;
+function showTip(el) {
+  const tip = $("#tip"); const sc = SCALE.s; const st = $("#stage").getBoundingClientRect(); const r = el.getBoundingClientRect();
+  tip.innerHTML = `<small>全文</small>${esc(el.dataset.full)}`; tip.classList.add("on"); tipEl = el;
+  const x = (r.left - st.left) / sc, y = (r.bottom - st.top) / sc + 6;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(1920 - w - 8, x)) + "px";
+  tip.style.top = (y + h > 1072 ? (r.top - st.top) / sc - h - 6 : y) + "px";
+}
+function hideTip() { $("#tip").classList.remove("on"); tipEl = null; }
+function cutTarget(t) { const el = t && t.closest && t.closest(".trunc.cut"); return el && el.dataset.full ? el : null; }
+document.addEventListener("mouseover", (e) => { const el = cutTarget(e.target); if (el) showTip(el); else if (tipEl) hideTip(); });
+function tipClick(e) { const el = cutTarget(e.target); if (el) { tipEl === el ? hideTip() : showTip(el); } else hideTip(); }
+
+/* ---------- 画面に合わせた拡縮 (16:9 で設計し、等倍率で収める) ---------- */
+const SCALE = { s: 1 };
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080); SCALE.s = s;
+  const x = (innerWidth - 1920 * s) / 2, y = (innerHeight - 1080 * s) / 2;
+  $("#stage").style.transform = `translate(${x}px,${y}px) scale(${s})`;
+}
+addEventListener("resize", () => { fit(); hideTip(); });
+
+/* ---------- 見切れの自己検査 (?check=1) ---------- */
+function describe(el) {
+  const c = typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\s+/).join(".") : "";
+  return el.tagName.toLowerCase() + c + ` 「${(el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 30)}」`;
+}
+function runCheck() {
+  const stage = $("#stage"); const s = SCALE.s;
+  const out = { query: location.search, viewport: [innerWidth, innerHeight], scale: +s.toFixed(4), problems: [], truncated: [], truncatedWithoutFull: [], fonts: {}, counts: {} };
+  const de = document.documentElement;
+  if (de.scrollWidth > innerWidth || de.scrollHeight > innerHeight) out.problems.push(`ページ全体がはみ出し: ${de.scrollWidth}x${de.scrollHeight} > ${innerWidth}x${innerHeight}`);
+  const sr = stage.getBoundingClientRect();
+  if (sr.left < -0.5 || sr.top < -0.5 || sr.right > innerWidth + 0.5 || sr.bottom > innerHeight + 0.5) out.problems.push(`ステージが画面外: ${JSON.stringify([sr.left, sr.top, sr.right, sr.bottom])}`);
+  const els = [stage, ...stage.querySelectorAll("*")];
+  let checked = 0;
+  for (const el of els) {
+    if (el.closest("#tip,#toast,#mockmenu")) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") continue;
+    checked++;
+    const intended = el.classList.contains("trunc");
+    if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth) {
+      if (intended) { out.truncated.push((el.dataset.full || el.textContent).slice(0, 60)); if (!el.dataset.full) out.truncatedWithoutFull.push(describe(el)); }
+      else out.problems.push(`横はみ出し ${el.scrollWidth}>${el.clientWidth}: ${describe(el)}`);
+    }
+    if (el.clientHeight > 0 && el.scrollHeight > el.clientHeight) out.problems.push(`縦はみ出し ${el.scrollHeight}>${el.clientHeight}: ${describe(el)}`);
+    // 親の枠 (パネル・カード・行) からのはみ出しも見る
+    const box = el.parentElement && el.parentElement.closest(".panel,.timer,header.top,.tb,.srow,.ttr,.dk");
+    if (box && el.getClientRects().length) {
+      const r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), tol = 1;
+      if (r.width && r.height && (r.left < b.left - tol || r.right > b.right + tol || r.top < b.top - tol || r.bottom > b.bottom + tol))
+        out.problems.push(`枠外 ${describe(el)} in ${describe(box).slice(0, 40)}`);
+    }
+  }
+  out.counts.checkedElements = checked;
+  // 本文 (参加者名・デッキ名・卓の名前・報告状況・勝敗・コスト) の文字サイズ (画面上の px)
+  const cats = { "参加者名": ".nm", "デッキ名": ".dk .t,.tb-p .dx .t,.ttr .tt", "卓の名前": ".tb-no", "報告状況": ".tb .badge,.tb-p .dx.wait,.tb-p .dx.ack", "勝敗": ".mk,.wl,.cell", "コスト": ".dk .c,.dk-c,.pv,.ptot,.ttr .n" };
+  for (const [k, sel] of Object.entries(cats)) {
+    let min = Infinity, n = 0;
+    for (const el of stage.querySelectorAll(sel)) { if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue; if (!el.textContent.trim()) continue; n++; min = Math.min(min, parseFloat(getComputedStyle(el).fontSize) * s); }
+    out.fonts[k] = n ? { min: +min.toFixed(2), n } : { min: null, n: 0 };
+  }
+  out.counts.tables = stage.querySelectorAll(".tb").length;
+  out.counts.standingRows = stage.querySelectorAll(".srow").length;
+  out.counts.deckChipsPerRow = [...stage.querySelectorAll(".srow")].map((r) => r.querySelectorAll(".dk").length).filter((n, i, a) => a.indexOf(n) === i);
+  out.counts.titleRows = stage.querySelectorAll(".ttr").length;
+  out.counts.hiddenDecks = stage.querySelectorAll(".dk.hid").length;
+  const node = document.createElement("script"); node.type = "application/json"; node.id = "check-result"; node.textContent = JSON.stringify(out);
+  document.body.appendChild(node);
+}
+
+/* ---------- 起動 ---------- */
+fit();
+M = simulate(UI.players);
+{ const sc = scene(); if (sc.timer) timerSet(sc.timer[0], sc.timer[1]); }
+render();
+if (UI.check) (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(() => requestAnimationFrame(() => { markCuts(); runCheck(); })));
+</script>
+</body>
+</html>

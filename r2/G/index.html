@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>しまWS大会ダッシュボード</title>
+<style>
+:root {
+  font-size: min(calc(100vw / 1920), calc(100dvh / 1080));
+  color-scheme: dark;
+  --bg: #101222;
+  --panel: #161a2d;
+  --line: #303752;
+  --ink: #f7f5ff;
+  --muted: #aab3d1;
+  --iris: #bfb4ff;
+  --mint: #73eacb;
+  --gold: #ffce80;
+  --coral: #ffa3ad;
+  --blue: #a7cbff;
+  --mono: "Bahnschrift", "Consolas", monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  background: var(--bg);
+  font: 20rem/1.28 "Yu Gothic UI", Meiryo, sans-serif;
+}
+h1, h2, h3, p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .55; }
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 2rem solid var(--gold);
+  outline-offset: 2rem;
+}
+a { color: inherit; }
+#board {
+  width: 1920rem;
+  height: 1080rem;
+  padding: 22rem 30rem 15rem;
+  display: grid;
+  grid-template-rows: 130rem minmax(0, 1fr) 53rem;
+  gap: 15rem;
+  background: radial-gradient(ellipse at 55% 0%, #282145, transparent 64%), var(--bg);
+}
+.masthead {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  border: 1rem solid var(--line);
+  border-top: 2rem solid #796cab;
+  border-radius: 14rem;
+  background: linear-gradient(105deg, #25233f, #171a31 55%, #20233b);
+}
+.identity, .summary { padding: 0 22rem; min-width: 0; }
+.identity { display: flex; align-items: center; gap: 16rem; }
+.mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 69rem;
+  height: 77rem;
+  border-radius: 9rem;
+  border: 1rem solid #71659d;
+  color: #e3dcff;
+  background: linear-gradient(148deg, #484063, #282541);
+  font: 700 31rem/1 var(--mono);
+  letter-spacing: -.05em;
+  box-shadow: inset 0 -5rem #917fd7;
+}
+.identity h1 { font-size: 32rem; line-height: 44rem; }
+.identity p { color: var(--muted); margin-top: 4rem; line-height: 29rem; }
+.kicker { color: var(--iris); font-size: 17rem; font-weight: 700; letter-spacing: .09em; }
+.phase {
+  min-width: 0;
+  padding: 0 16rem;
+  height: 101rem;
+  border-inline: 1rem solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 17rem;
+}
+.phase-label { display: grid; gap: 5rem; white-space: nowrap; }
+.phase strong { font-size: 33rem; line-height: 45rem; }
+.timer {
+  width: 242rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6rem;
+  background: transparent;
+  text-align: center;
+  font: 700 76rem/1.08 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.timer[readonly] { color: var(--mint); }
+.timer.expired { color: var(--coral); }
+.summary-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12rem; }
+.summary-title strong { font-size: 26rem; line-height: 37rem; }
+.summary p { margin-top: 8rem; color: var(--muted); }
+.segments { display: flex; gap: 5rem; margin-top: 10rem; height: 6rem; }
+.segments span { flex: 1; border-radius: 3rem; background: var(--line); }
+.segments .done { background: var(--mint); }
+.segments .wait { background: var(--gold); }
+.segments .bye { background: var(--iris); }
+.segments .live { background: var(--blue); }
+.main {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 690rem) minmax(0, 1fr);
+  gap: 15rem;
+}
+.panel {
+  display: grid;
+  grid-template-rows: 58rem minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  padding: 0 13rem 12rem;
+  background: var(--panel);
+  border: 1rem solid var(--line);
+  border-radius: 12rem;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rem;
+  min-width: 0;
+  padding: 0 5rem;
+}
+.panel-head h2 {
+  font-size: 27rem;
+  display: flex;
+  align-items: center;
+  gap: 10rem;
+  white-space: nowrap;
+}
+.panel-head h2::before {
+  content: "";
+  width: 5rem;
+  height: 23rem;
+  border-radius: 4rem;
+  background: var(--accent, var(--iris));
+}
+.panel-head p { color: var(--muted); font-size: 17rem; white-space: nowrap; }
+.match-board { --accent: var(--mint); }
+[data-phase="matching"] .match-board { --accent: var(--iris); }
+.match-list {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  gap: 6rem;
+}
+.match-row {
+  --status: var(--blue);
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 70rem minmax(0, 1fr);
+  border: 1rem solid var(--line);
+  border-radius: 9rem;
+  background: #1b2035;
+}
+.match-row.done { --status: var(--mint); }
+.match-row.wait { --status: var(--gold); }
+.match-row.bye, .match-row.draft { --status: var(--iris); }
+.match-row.alternate { background: #1a1e31; }
+.table-number {
+  color: var(--status);
+  border-left: 3rem solid var(--status);
+  border-right: 1rem solid var(--line);
+  border-radius: 7rem 0 0 7rem;
+  background: #20263d;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  line-height: 1;
+  gap: 3rem;
+}
+.table-number strong { font: 700 29rem/1 var(--mono); }
+.table-number span { line-height: 27rem; }
+.match-info {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 28rem auto;
+  gap: 1rem;
+  align-content: center;
+  padding: 0 11rem;
+}
+.match-top { display: flex; align-items: center; justify-content: space-between; gap: 10rem; }
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7rem;
+  white-space: nowrap;
+  color: var(--status);
+  font-weight: 700;
+  line-height: 27rem;
+}
+.status::before { content: ""; width: 7rem; height: 7rem; border-radius: 100%; background: currentColor; }
+.match-note { color: var(--muted); }
+.sides {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8rem;
+}
+.side { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.side-name { display: flex; min-width: 0; align-items: center; gap: 5rem; font-weight: 700; }
+.side-name .ellipsis { flex: 0 1 auto; width: auto; }
+.side-name .win { flex: none; color: var(--mint); font-weight: 700; }
+.side-name .loss { flex: none; color: var(--muted); font-weight: 500; }
+.side-deck { min-width: 0; color: #c6ccee; line-height: 27rem; }
+.side-record { color: var(--muted); font-variant-numeric: tabular-nums; }
+.vs { color: #a5afd4; font: 600 20rem/1 var(--mono); text-align: center; }
+[data-players="8"] .match-info { gap: 13rem; }
+[data-players="8"] .side-name { font-size: 24rem; }
+[data-players="8"] .side-deck { font-size: 22rem; line-height: 30rem; }
+.no-pair { grid-template-columns: minmax(0, 1fr); }
+.empty-state {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10rem;
+  color: var(--muted);
+  border: 1rem dashed var(--line);
+  border-radius: 9rem;
+  text-align: center;
+}
+.empty-state strong { color: var(--ink); font-size: 28rem; }
+.rank-grid { display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 10rem; min-height: 0; }
+.rank-col {
+  display: grid;
+  grid-template-rows: 28rem repeat(8, minmax(0, 1fr));
+  gap: 3rem;
+  min-height: 0;
+  min-width: 0;
+}
+.rank-head, .rank-top {
+  display: grid;
+  grid-template-columns: 38rem minmax(0, 1fr) 70rem 66rem 62rem 72rem;
+  align-items: center;
+  gap: 5rem;
+  text-align: right;
+}
+.rank-head { color: var(--muted); font-size: 17rem; padding: 0 8rem; }
+.rank-head :nth-child(-n+2), .rank-top :nth-child(-n+2) { text-align: left; }
+.rank-row {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 56rem;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0 7rem 2rem;
+  border: 1rem solid #2b324d;
+  border-radius: 8rem;
+  background: #1b2035;
+}
+.rank-row:nth-child(odd) { background: #191e32; }
+.rank-row.leader { border-color: #745e5d; background: #2b253a; }
+.rank-number {
+  display: grid;
+  place-items: center;
+  justify-self: start;
+  width: 32rem;
+  height: 23rem;
+  border-radius: 4rem;
+  color: var(--iris);
+  background: #292947;
+  font: 700 20rem/1 var(--mono);
+}
+.leader .rank-number { background: var(--gold); color: #261e2b; }
+.rank-name { font-weight: 700; }
+.rank-stat { font: 600 20rem/1.16 var(--mono); white-space: nowrap; }
+.rank-stat.emph { color: var(--gold); }
+.rank-stat.muted { color: var(--muted); }
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2rem 5rem;
+  min-height: 0;
+}
+.deck-slot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5rem;
+  padding: 0 6rem;
+  border-radius: 4rem;
+  background: #253553;
+  color: #e0ecff;
+  line-height: 26rem;
+}
+.deck-slot.spent { background: #294041; color: #c1f1dc; }
+.deck-slot.spent .ellipsis { text-decoration: line-through; }
+.deck-slot.secret { background: #262b42; color: #a8b0cb; }
+.deck-slot .ellipsis { flex: 1 1 auto; }
+.cost { flex: none; color: var(--gold); font: 600 20rem/1.1 var(--mono); white-space: nowrap; }
+.cx { color: #e2ceff; flex: none; white-space: nowrap; font-size: 20rem; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.secret .deck-back {
+  flex: none;
+  width: 12rem;
+  height: 15rem;
+  border: 1rem solid #8790b1;
+  border-radius: 2rem;
+  background: repeating-linear-gradient(127deg, #303850 0 3rem, #4b5474 3rem 4rem);
+}
+[data-players="8"] .rank-top, [data-players="8"] .rank-head {
+  grid-template-columns: 44rem minmax(0, 1fr) 111rem 105rem 100rem 108rem;
+  gap: 9rem;
+}
+[data-players="8"] .rank-row { grid-template-rows: 1fr 1fr; padding: 5rem 9rem; }
+[data-players="8"] .deck-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+[data-players="8"] .rank-name { font-size: 24rem; }
+.post-board { --accent: var(--gold); }
+.post-list {
+  display: grid;
+  grid-template-rows: 30rem repeat(var(--titles), minmax(0, 1fr));
+  min-height: 0;
+  gap: 3rem;
+}
+.post-line, .post-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 105rem 65rem 65rem 68rem;
+  gap: 8rem;
+  align-items: center;
+  padding: 0 9rem;
+  min-width: 0;
+}
+.post-head { color: var(--muted); font-size: 17rem; }
+.post-line { border: 1rem solid #2b324d; border-radius: 7rem; background: #1b2035; }
+.post-line:nth-child(odd) { background: #191e32; }
+.post-line :nth-child(n+3), .post-head :nth-child(n+3) { text-align: right; }
+.post-line .delta-positive { color: var(--mint); }
+.post-line .delta-negative { color: var(--coral); }
+#board .post-ranks .rank-head, #board .post-ranks .rank-top {
+  grid-template-columns: 38rem minmax(0, 1fr) 100rem 100rem;
+}
+.post-ranks .rank-top > :last-child { color: var(--gold); }
+.dock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12rem;
+  border-top: 1rem solid var(--line);
+  padding: 4rem 3rem 0;
+  min-width: 0;
+}
+.dock-group, .scenario-nav { display: flex; align-items: center; gap: 6rem; min-width: 0; }
+.dock-label { color: var(--muted); margin-right: 3rem; white-space: nowrap; font-size: 17rem; }
+.detail-hint { margin: 0 auto; color: var(--muted); white-space: nowrap; font-size: 17rem; }
+.control {
+  display: inline-block;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 17rem;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 8rem 10rem;
+  border: 1rem solid #414966;
+  border-radius: 6rem;
+  background: #1b2034;
+  color: #d6dbef;
+}
+.control:hover:not(:disabled), .control[aria-current="true"] { background: #373355; color: #fff; }
+.control.primary { border-color: #8073ae; color: #eee8ff; background: #392f56; }
+.control[aria-current="true"] { border-color: #8073ae; }
+.control .arrow { color: var(--iris); }
+.ellipsis {
+  display: block;
+  min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+button.ellipsis {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
+button.ellipsis[data-cut="true"] { cursor: zoom-in; }
+button.ellipsis[data-cut="true"]:hover { color: var(--iris); text-decoration-line: underline; }
+button.ellipsis:not([data-cut="true"]) { cursor: inherit; }
+dialog {
+  width: min(720rem, calc(100vw - 32px));
+  max-width: none;
+  color: var(--ink);
+  background: #212741;
+  border: 1rem solid #7770a6;
+  border-radius: 15rem;
+  padding: 24rem;
+  box-shadow: 0 18rem 70rem #080713b0;
+  overflow: visible;
+}
+dialog::backdrop { background: #0a0b19b5; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 10rem; }
+.dialog-head h2 { font-size: 25rem; }
+.dialog-body { display: grid; gap: 13rem; margin-top: 16rem; }
+.dialog-body p { overflow-wrap: anywhere; }
+.dialog-body .full-text { font-size: 28rem; font-weight: 700; }
+.dialog-body .actions { display: flex; flex-wrap: wrap; gap: 8rem; }
+.dialog-body .control { white-space: normal; max-width: 100%; text-align: left; }
+#notice {
+  position: fixed;
+  bottom: 73rem;
+  right: 34rem;
+  padding: 9rem 14rem;
+  background: #2f2b4a;
+  color: #f4eeff;
+  border: 1rem solid #7668a6;
+  border-radius: 7rem;
+  box-shadow: 0 4rem 18rem #111021;
+}
+</style>
+</head>
+<body>
+<div id="board">
+  <header class="masthead" id="masthead"></header>
+  <main class="main" id="content"></main>
+  <footer class="dock" id="dock"></footer>
+</div>
+<dialog id="detail" aria-labelledby="detail-title">
+  <form method="dialog" class="dialog-head">
+    <h2 id="detail-title"></h2>
+    <button class="control">閉じる</button>
+  </form>
+  <div id="detail-body" class="dialog-body"></div>
+</dialog>
+<div id="notice" role="status" hidden></div>
+<script>
+"use strict";
+const titleMaster = [{"id":40,"name":"アイドルマスター"},{"id":110,"name":"アイドルマスター シャイニーカラーズ"},{"id":27,"name":"アイドルマスター シンデレラガールズ"},{"id":88,"name":"アイドルマスター ミリオンライブ！"},{"id":162,"name":"あおぎり高校"},{"id":51,"name":"アクセル・ワールド"},{"id":99,"name":"アサルトリリィ"},{"id":127,"name":"アズールレーン"},{"id":108,"name":"アニメ プリンセスコネクト！Re:Dive"},{"id":81,"name":"アニメーション映画『GODZILLA』"},{"id":167,"name":"anemoi"},{"id":158,"name":"甘神さんちの縁結び"},{"id":145,"name":"あやかしトライアングル"},{"id":140,"name":"アリス・ギア・アイギス"},{"id":132,"name":"ありふれた職業で世界最強"},{"id":105,"name":"痛いのは嫌なので防御力に極振りしたいと思います。"},{"id":58,"name":"うーさーのその日暮らし"},{"id":136,"name":"ウマ娘 プリティーダービー"},{"id":45,"name":"ヱヴァンゲリヲン新劇場版"},{"id":11,"name":"Angel Beats!／クドわふたー"},{"id":90,"name":"オーバーロード"},{"id":146,"name":"【推しの子】"},{"id":68,"name":"おそ松さん"},{"id":95,"name":"カードキャプターさくら"},{"id":30,"name":"カードゲームしよ子"},{"id":176,"name":"ガールズ＆パンツァー"},{"id":157,"name":"ガールズバンドクライ"},{"id":24,"name":"ガールフレンド(仮)"},{"id":163,"name":"怪獣８号"},{"id":156,"name":"学園アイドルマスター"},{"id":106,"name":"かぐや様は告らせたい～天才たちの恋愛頭脳戦～"},{"id":48,"name":"刀語"},{"id":89,"name":"角川スニーカー文庫"},{"id":41,"name":"CANAAN"},{"id":109,"name":"彼女、お借りします"},{"id":111,"name":"神様になった日"},{"id":61,"name":"艦隊これくしょん -艦これ-"},{"id":102,"name":"Key"},{"id":70,"name":"キズナイーバー"},{"id":153,"name":"『キャプテン翼』"},{"id":69,"name":"境界のRINNE"},{"id":50,"name":"ギルティクラウン"},{"id":59,"name":"キルラキル"},{"id":164,"name":"きんいろモザイク"},{"id":6,"name":"CLANNAD"},{"id":169,"name":"グランブルーファンタジー"},{"id":97,"name":"グリザイアシリーズ"},{"id":62,"name":"クレヨンしんちゃん"},{"id":74,"name":"けものフレンズ"},{"id":22,"name":"幻影ヲ駆ケル太陽"},{"id":142,"name":"幻日のヨハネ -SUNSHINE in the MIRROR-"},{"id":28,"name":"ご注文はうさぎですか？？"},{"id":104,"name":"五等分の花嫁"},{"id":32,"name":"この素晴らしい世界に祝福を！"},{"id":122,"name":"小林さんちのメイドラゴン"},{"id":92,"name":"ゴブリンスレイヤー"},{"id":54,"name":"PSYCHO-PASS サイコパス"},{"id":78,"name":"冴えない彼女の育てかた"},{"id":38,"name":"THE KING OF FIGHTERS"},{"id":83,"name":"Summer Pockets"},{"id":172,"name":"GA文庫"},{"id":26,"name":"Charlotte"},{"id":37,"name":"シャイニングシリーズ"},{"id":12,"name":"灼眼のシャナ"},{"id":86,"name":"STEINS;GATE"},{"id":84,"name":"少女☆歌劇 レヴュースタァライト"},{"id":154,"name":"勝利の女神：NIKKE"},{"id":94,"name":"ジョジョの奇妙な冒険"},{"id":65,"name":"進撃の巨人"},{"id":101,"name":"新サクラ大戦"},{"id":55,"name":"翠星のガルガンティア"},{"id":66,"name":"スクールガールストライカーズ"},{"id":9,"name":"涼宮ハルヒの憂鬱"},{"id":75,"name":"STAR WARS"},{"id":174,"name":"ステラソラ"},{"id":130,"name":"SPY×FAMILY"},{"id":91,"name":"「青春ブタ野郎」シリーズ"},{"id":3,"name":"ゼロの使い魔"},{"id":18,"name":"戦姫絶唱シンフォギア"},{"id":39,"name":"戦国BASARA"},{"id":147,"name":"葬送のフリーレン"},{"id":52,"name":"ソードアート・オンライン"},{"id":85,"name":"ソードアート・オンライン オルタナティブ ガンゲイル・オンライン"},{"id":7,"name":"宇宙をかける少女／舞-HiME＆舞-乙HiME"},{"id":119,"name":"ゾンビランドサガ リベンジ"},{"id":80,"name":"ダーリン・イン・ザ・フランキス"},{"id":1,"name":"ダ・カーポ＆Dal Segno"},{"id":118,"name":"ダンジョンに出会いを求めるのは間違っているだろうか"},{"id":155,"name":"ダンダダン"},{"id":44,"name":"探偵オペラ　ミルキィホームズ"},{"id":73,"name":"チェインクロニクル ～ヘクセイタスの閃～"},{"id":129,"name":"チェンソーマン"},{"id":175,"name":"超かぐや姫！"},{"id":63,"name":"超爆裂異次元メンコバトル ギガントシューター つかさ"},{"id":117,"name":"D_CIDE TRAUMEREI"},{"id":124,"name":"D4DJ"},{"id":150,"name":"Disney"},{"id":134,"name":"Disney100"},{"id":165,"name":"『テイルズ オブ』シリーズ"},{"id":103,"name":"デート・ア・ライブ"},{"id":64,"name":"テラフォーマーズ"},{"id":56,"name":"TVアニメ「デビルサバイバー2」"},{"id":139,"name":"電撃文庫"},{"id":77,"name":"天元突破グレンラガン"},{"id":96,"name":"転生したらスライムだった件"},{"id":10,"name":"とある魔術の禁書目録／とある科学の超電磁砲"},{"id":123,"name":"東京リベンジャーズ"},{"id":168,"name":"東方Project"},{"id":16,"name":"DOG DAYS"},{"id":25,"name":"To LOVEる"},{"id":23,"name":"ニセコイ"},{"id":15,"name":"日常"},{"id":82,"name":"ノーゲーム・ノーライフ"},{"id":166,"name":"VIRTUAL GIRL @ WORLD’S END"},{"id":135,"name":"パズル＆ドラゴンズ"},{"id":53,"name":"初音ミク -Project DIVA-"},{"id":31,"name":"BanG Dream!"},{"id":125,"name":"PIXAR"},{"id":19,"name":"ビジュアルアーツ"},{"id":76,"name":"ひなろじ ～from Luck ＆ Logic～"},{"id":33,"name":"ViVid Strike!"},{"id":20,"name":"ビビッドレッド・オペレーション"},{"id":8,"name":"Phantom -Requiem for the Phantom-"},{"id":42,"name":"FAIRY TAIL"},{"id":36,"name":"Fate"},{"id":79,"name":"Fate/Apocrypha"},{"id":98,"name":"Fate/Grand Order（アニメ）"},{"id":93,"name":"富士見ファンタジア文庫"},{"id":67,"name":"ぷよぷよ"},{"id":170,"name":"ブラウンダスト2"},{"id":46,"name":"ブラック★ロックシューター"},{"id":57,"name":"プリズマ☆イリヤ"},{"id":148,"name":"ブルーアーカイブ"},{"id":121,"name":"プロジェクトセカイ カラフルステージ！ feat. 初音ミク"},{"id":126,"name":"ヘブンバーンズレッド"},{"id":34,"name":"ペルソナ"},{"id":141,"name":"ぼっち・ざ・ろっく！"},{"id":115,"name":"ホロライブプロダクション"},{"id":120,"name":"MARVEL"},{"id":35,"name":"魔界戦記ディスガイア"},{"id":47,"name":"マクロスシリーズ"},{"id":161,"name":"負けヒロインが多すぎる！"},{"id":173,"name":"魔法少女ノ魔女裁判"},{"id":17,"name":"魔法少女まどか☆マギカ"},{"id":4,"name":"魔法少女リリカルなのは"},{"id":149,"name":"ミラー・ウォリアーズ"},{"id":112,"name":"無職転生 ～異世界行ったら本気だす～"},{"id":43,"name":"MELTY BLOOD／空の境界"},{"id":49,"name":"〈物語〉シリーズ"},{"id":87,"name":"ゆらぎ荘の幽奈さん"},{"id":151,"name":"ゆるキャン△"},{"id":5,"name":"らき☆すた"},{"id":21,"name":"ラブライブ！"},{"id":114,"name":"ラブライブ！スーパースター!!"},{"id":144,"name":"ラブライブ！スクールアイドルフェスティバル2"},{"id":107,"name":"ラブライブ！虹ヶ咲学園スクールアイドル同好会"},{"id":29,"name":"ラブライブ！サンシャイン!!"},{"id":159,"name":"ラブライブ！蓮ノ空女学院スクールアイドルクラブ"},{"id":143,"name":"リアセカイ"},{"id":133,"name":"リコリス・リコイル"},{"id":72,"name":"Re:ゼロから始める異世界生活"},{"id":2,"name":"リトルバスターズ！"},{"id":13,"name":"Rewrite"},{"id":152,"name":"るろうに剣心 －明治剣客浪漫譚－"},{"id":60,"name":"ログ・ホライズン"},{"id":100,"name":"ロストディケイド"},{"id":14,"name":"ロボティクス・ノーツ"},{"id":116,"name":"ワールドトリガー"}];
+const pool = [
+  121, 105, 159, 110, 157, 133, 148, 136, 115, 156, 126, 72, 141, 127, 144, 161
+].map((id, index) => ({
+  ...titleMaster.find(title => title.id === id),
+  base: [21, 15, 28, 23, 31, 26, 22, 27, 31, 35, 16, 12, 24, 21, 15, 18][index],
+  cx: ["4扉4門", "8宝", "4宝4扉", "8扉", "8スタンバイ", "4扉4門", "8門", "4宝4門"][index % 8]
+}));
+const names = [
+  "凪", "夕凪のカード職人", "レイ", "桜色のしおり屋さん",
+  "うみ", "波打ち際のクジラ", "ミナト", "月夜に光る銀の羅針盤",
+  "キリ", "白波のデッキ工房", "あお", "流れ星を待つ読書家",
+  "トワ", "朝焼けのカード番人", "スズ", "海辺の小さな灯台守"
+];
+const scenarios = ["ラウンド中", "組み合わせ", "事後下書き", "事後発表", "終盤・CX"];
+const statusLabels = {done:"確定", wait:"承諾待ち", live:"未報告", bye:"不戦勝・了解待ち", draft:"公開前"};
+const $ = selector => document.querySelector(selector);
+const fmt = tenths => (tenths / 10).toFixed(1);
+const pct = fraction => `${Math.round(fraction * 100)}%`;
+const escapeHtml = text => String(text).replace(/[&<>"']/g, character => (
+  {"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[character]
+));
+const button = (action, label, options = {}) => `<button type="button" class="control${options.primary ? " primary" : ""}" data-action="${action}"${options.disabled ? " disabled" : ""}${options.current ? ' aria-current="true"' : ""}>${label}</button>`;
+const ellipsis = (text, kind) => `<button type="button" class="ellipsis body-value" data-kind="${kind}" title="${escapeHtml(text)}" tabindex="-1">${escapeHtml(text)}</button>`;
+let count, sample, phase, round, roster, matches, histories, excluded, postRows, costDraws, matchDraws, modeNote;
+let seconds, timerTarget, timerStartValue, noticeTimeout;
+
+function parseRoute() {
+  const query = new URLSearchParams(location.search);
+  const state = Number(query.get("state"));
+  return {state: state >= 1 && state <= 5 && Number.isInteger(state) ? state : 1, players: query.get("players") === "16" ? 16 : 8};
+}
+
+function makeRoster() {
+  const take = count === 8 ? 12 : pool.length;
+  return names.slice(0, count).map((name, index) => ({
+    id: index,
+    name,
+    decks: [0, 3, 7, 10].map(offset => pool[(index + offset) % take]),
+    revealed: [],
+    spent: new Set(),
+    opponents: [],
+    wins: 0, losses: 0, draws: 0
+  }));
+}
+
+function available(player) {
+  return player.decks.filter(deck => !player.spent.has(deck.id)).sort((a, b) =>
+    Number(player.revealed.includes(a)) - Number(player.revealed.includes(b))
+  );
+}
+
+function winRate(player) {
+  return player.wins / (player.wins + player.losses + player.draws || 1);
+}
+
+function omw(player) {
+  return player.opponents.reduce((sum, opponent) => sum + winRate(opponent), 0) / (player.opponents.length || 1);
+}
+
+function total(player) {
+  return player.decks.reduce((sum, deck) => sum + deck.base, 0);
+}
+
+function standings() {
+  return [...roster].sort((a, b) => b.wins - a.wins || winRate(b) - winRate(a)
+    || total(a) - total(b) || omw(b) - omw(a) || a.name.localeCompare(b.name, "ja"));
+}
+
+function useDeck(player, deck, spend, publish = true) {
+  if (publish && !player.revealed.includes(deck)) player.revealed.push(deck);
+  if (spend) player.spent.add(deck.id);
+}
+
+function finishMatch(match, byeDeck) {
+  const {a, b, winner} = match;
+  match.status = "done";
+  if (!b) {
+    a.wins++;
+    // 不戦勝で消費したデッキは対戦での使用実績に含めない。
+    useDeck(a, byeDeck, true, false);
+    return;
+  }
+  if (winner === null) {
+    a.draws++;
+    b.draws++;
+  } else {
+    (winner === 0 ? a : b).wins++;
+    (winner === 0 ? b : a).losses++;
+  }
+  a.opponents.push(b);
+  b.opponents.push(a);
+  useDeck(a, match.da, winner === 0);
+  useDeck(b, match.db, winner === 1);
+  histories.add(pairKey(a, b));
+}
+
+function pairKey(a, b) { return a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`; }
+
+function makeMatch(a, b, status, i) {
+  return {a, b, status, da: available(a)[0], db: b ? available(b)[0] : null, winner: (round + i) % 2};
+}
+
+function seedRound(number) {
+  const rotation = roster.slice(1);
+  for (let i = 1; i < number; i++) rotation.push(rotation.shift());
+  const paired = [roster[0], ...rotation];
+  return Array.from({length: count / 2}, (_, index) => {
+    const a = paired[index];
+    const b = paired[count - 1 - index];
+    const match = makeMatch(a, b, "done", index);
+    if (number >= 3 && a.id === count - 1) match.da = available(a).find(deck => a.revealed.includes(deck)) || match.da;
+    if (number >= 3 && b.id === count - 1) match.db = available(b).find(deck => b.revealed.includes(deck)) || match.db;
+    if (number >= 4 && a.wins === 3 && b.wins === 3) match.winner = null;
+    else if (number === 4 && a.wins === 3) match.winner = 1;
+    else if (number === 4 && b.wins === 3) match.winner = 0;
+    else match.winner = index % 4 === 1 ? Number(number % 2 === 0) : Number((a.id + number) % 3 === 0);
+    return match;
+  });
+}
+
+function seedCurrent(hasBye) {
+  const ordered = [...roster];
+  let byePlayer = null;
+  if (hasBye) {
+    excluded = ordered.pop();
+    byePlayer = ordered.pop();
+  }
+  const fixtures = [];
+  while (ordered.length > 1) {
+    const a = ordered.shift();
+    let index = ordered.findIndex(b => !histories.has(pairKey(a, b)));
+    if (index < 0) index = 0;
+    const [b] = ordered.splice(index, 1);
+    fixtures.push(makeMatch(a, b, "live", fixtures.length));
+  }
+  fixtures.forEach((match, index) => {
+    if (index < fixtures.length - 2 || index === 0) finishMatch(match);
+    else if (index === fixtures.length - 2) match.status = "wait";
+  });
+  if (byePlayer) fixtures.push(makeMatch(byePlayer, null, "bye", fixtures.length));
+  return fixtures;
+}
+
+function resetScenario(state, players, updateUrl = true) {
+  count = players;
+  sample = state;
+  round = state === 5 || state === 3 || state === 4 ? 5 : 3;
+  roster = makeRoster();
+  histories = new Set();
+  excluded = null;
+  matchDraws = costDraws = 0;
+  modeNote = "";
+  postRows = [];
+  matches = [];
+  const completedRounds = state === 3 || state === 4 ? 5 : round - 1;
+  for (let i = 1; i <= completedRounds; i++) seedRound(i).forEach(match => finishMatch(match));
+  seconds = timerStartValue = 35 * 60;
+  timerTarget = 0;
+  if (state === 3 || state === 4) {
+    phase = state === 3 ? "post-draft" : "post-result";
+    drawCosts(true);
+  } else if (state === 2) {
+    phase = "matching";
+    drawMatches(true);
+  } else {
+    phase = "running";
+    matches = seedCurrent(state === 1);
+    timerTarget = Date.now() + seconds * 1000;
+  }
+  if (updateUrl) history.replaceState(null, "", `?state=${sample}&players=${count}`);
+  render();
+}
+
+function drawMatches(initial = false) {
+  const candidates = standings().filter(player => available(player).length);
+  if (!candidates.length) {
+    showNotice("対戦可能な参加者がいません。");
+    return;
+  }
+  matchDraws++;
+  if (!initial && candidates.length > 2) {
+    for (let i = 0; i < candidates.length - 1; i += 2) {
+      const j = Math.min(i + 1 + Math.floor(Math.random() * 3), candidates.length - 1);
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+  }
+  const result = [];
+  let repeat = false;
+  while (candidates.length > 1) {
+    const a = candidates.shift();
+    let index = candidates.findIndex(b => !histories.has(pairKey(a, b)));
+    if (index < 0) { index = 0; repeat = true; }
+    const [b] = candidates.splice(index, 1);
+    result.push(makeMatch(a, b, "draft", result.length));
+  }
+  if (candidates.length) result.push(makeMatch(candidates[0], null, "draft", result.length));
+  matches = result;
+  modeNote = repeat ? "再戦を含む組み合わせ" : "";
+  excluded = null;
+}
+
+function drawCosts(initial = false) {
+  const brought = new Set(roster.flatMap(player => player.decks.map(deck => deck.id)));
+  costDraws++;
+  postRows = titleMaster.map((title, index) => {
+    const deck = pool.find(item => item.id === title.id);
+    const delta = initial ? (index * 7 + 3) % 11 - 5 : Math.floor(Math.random() * 11) - 5;
+    const base = deck?.base ?? index % 19 + 11;
+    return {...title, base, delta, cx: deck?.cx ?? "", final: Math.max(0, base + delta), brought: brought.has(title.id)};
+  });
+}
+
+function postCost(deck) { return postRows.find(row => row.id === deck.id).final; }
+function postTotal(player) { return player.decks.reduce((sum, deck) => sum + postCost(deck), 0); }
+function progress() {
+  const counts = {done:0, wait:0, live:0, bye:0, draft:0};
+  for (const match of matches) counts[match.status]++;
+  return counts;
+}
+
+function header() {
+  const {done, wait, live, bye} = progress();
+  let middle, right;
+  if (phase.startsWith("post")) {
+    const published = phase === "post-result";
+    middle = `<div class="phase-label"><span class="kicker">大会終了</span><strong>事後コスト${published ? "発表" : "の下書き"}</strong></div>`;
+    const brought = postRows.filter(row => row.brought).length;
+    right = `<div class="summary-title"><strong>${published ? "確定・発表済み" : "主催者のみ・未公開"}</strong><span class="num">${brought} タイトル</span></div>
+       <p>基本コストを ±0.5 の範囲で抽選${costDraws ? ` ／ 抽選 ${costDraws} 回目` : ""}</p>`;
+  } else if (phase === "matching") {
+    middle = `<div class="phase-label"><span class="kicker">第 ${round} ラウンド</span><strong>マッチング下書き</strong></div>`;
+    right = `<div class="summary-title"><strong>主催者のみ・未公開</strong><span class="num">${matches.length} 卓</span></div>
+      <p>${matches.length ? `抽選 ${matchDraws} 回目${modeNote ? ` ／ ${modeNote}` : ""}` : "組み合わせを抽選してください"}</p>`;
+  } else {
+    middle = `<div class="phase-label"><span class="kicker">${phase === "last-closed" ? "最終ラウンド終了" : round >= 5 ? "最終ラウンド" : "ラウンド中"}</span>
+      <strong>Round ${String(round).padStart(2, "0")}</strong></div>
+      <input id="timer" class="timer${seconds === 0 ? " expired" : ""}" type="text" inputmode="numeric" maxlength="5" aria-label="残り時間（分:秒）" value="${clock()}" ${timerTarget || phase === "last-closed" ? "readonly" : ""}>`;
+    right = `<div class="summary-title"><strong>卓の進捗</strong><span class="num body-value">${done} / ${matches.length} 卓確定</span></div>
+      <div class="segments" aria-hidden="true">${matches.map(match => `<span class="${match.status}"></span>`).join("")}</div>
+      <p class="body-value">承諾待ち ${wait}　／　未報告 ${live}　／　了解待ち ${bye}</p>`;
+  }
+  return `<div class="identity"><div class="mark" aria-hidden="true">WS</div><div>
+    <div class="kicker">しま2026版ピラミッド</div><h1>しまWS大会</h1>
+    <p class="body-value">${count} 人参加 ・ デッキ登録 4 個</p></div></div>
+    <div class="phase">${middle}</div><div class="summary">${right}</div>`;
+}
+
+function renderSide(player, match, left) {
+  const won = (left ? 0 : 1) === match.winner;
+  const outcome = match.winner === null ? "分" : won ? "勝" : "負";
+  const deck = left ? match.da : match.db;
+  const show = match.status === "done" && Boolean(match.b);
+  return `<div class="side"><div class="side-name body-value">${ellipsis(player.name, "参加者名")}
+    ${show ? `<span class="body-value ${won ? "win" : "loss"}">${outcome}</span>` : ""}</div>
+    ${show ? `<div class="side-deck">${ellipsis(deck.name, "使用デッキ名")}</div>` : ""}
+    ${match.status === "draft" ? `<div class="side-record num body-value">${player.wins}–${player.losses}–${player.draws}</div>` : ""}</div>`;
+}
+
+function renderMatch(match, index) {
+  const {a, b, status} = match;
+  const label = !b && status === "done" ? "不戦勝・確定" : statusLabels[status];
+  const note = status === "wait" ? "報告済み" : !b
+    ? ({done:"本人了解済み", draft:"不戦勝候補", bye:"本人の操作待ち"})[status] : "";
+  return `<article class="match-row ${status}${index % 2 ? " alternate" : ""}" aria-label="第 ${index + 1} 卓">
+    <div class="table-number body-value"><strong>${String(index + 1).padStart(2, "0")}</strong><span>卓</span></div>
+    <div class="match-info"><div class="match-top"><span class="status body-value">${label}</span>
+    <span class="match-note body-value">${note}</span></div>
+    <div class="sides${b ? "" : " no-pair"}">
+      ${renderSide(a, match, true)}${b ? `<span class="vs" aria-label="対">vs</span>${renderSide(b, match, false)}` : ""}
+    </div></div></article>`;
+}
+
+function matchPanel() {
+  const matching = phase === "matching";
+  const detail = excluded ? "1 人はこのラウンドに不参加" : matching ? "決定すると参加者に公開" : "確定後に使用デッキを表示";
+  const content = matches.length ? matches.map(renderMatch).join("") : '<div class="empty-state"><strong>組み合わせは未抽選</strong><p>下の進行操作から「抽選」を選んでください。</p></div>';
+  return `<section class="panel match-board" aria-labelledby="match-heading">
+    <div class="panel-head"><h2 id="match-heading">${matching ? "組み合わせ候補" : "対戦卓"} <span class="num">${matches.length}</span></h2><p>${detail}</p></div>
+    <div class="match-list" style="--rows:${matches.length || 1}">${content}</div></section>`;
+}
+
+function renderDeck(player, deck, post, showCx) {
+  if (!deck) return '<div class="deck-slot secret"><span class="deck-back" aria-hidden="true"></span><span class="body-value">非公開</span></div>';
+  const cost = post ? postCost(deck) : deck.base;
+  return `<div class="deck-slot ${player.spent.has(deck.id) && !post ? "spent" : ""}">
+    ${ellipsis(deck.name, "デッキ名")}${showCx ? `<span class="cx body-value">${deck.cx}</span>` : ""}
+    <span class="cost body-value">${fmt(cost)}</span></div>`;
+}
+
+function rankRow(player, index, post, hasTotals) {
+  const cells = post
+    ? `<span class="rank-stat muted body-value">${fmt(total(player))}</span><span class="rank-stat body-value">${hasTotals ? fmt(postTotal(player)) : "—"}</span>`
+    : `<span class="rank-stat emph body-value">${player.wins}–${player.losses}–${player.draws}</span>
+      <span class="rank-stat body-value">${pct(winRate(player))}</span>
+      <span class="rank-stat body-value">${fmt(total(player))}</span>
+      <span class="rank-stat muted body-value">${pct(omw(player))}</span>`;
+  return `<article class="rank-row ${index === 0 && (!post || hasTotals) ? "leader" : ""}">
+    <div class="rank-top"><span class="rank-number body-value">${post && !hasTotals ? "—" : String(index + 1).padStart(2, "0")}</span>
+      <div class="rank-name">${ellipsis(player.name, "参加者名")}</div>${cells}</div>
+    <div class="deck-grid">${Array.from({length: 4}, (_, i) => renderDeck(player, player.revealed[i], post && hasTotals, sample === 5 && !post)).join("")}</div>
+    </article>`;
+}
+
+function rankPanel() {
+  const post = phase.startsWith("post");
+  const hasTotals = postRows.length > 0;
+  const order = post && hasTotals
+    ? [...roster].sort((a, b) => postTotal(b) - postTotal(a) || a.name.localeCompare(b.name, "ja"))
+    : standings();
+  const legend = post ? "事後合計の高い順 ・ 個人欄は公開済みデッキのみ"
+    : "勝数 → 勝率 → 登録コスト低 → OMW%　／　取消線は使用済み";
+  const labels = post ? ["順位", "参加者 ／ 公開済みデッキ", "登録合計", "事後合計"]
+    : ["順位", "参加者 ／ 登録デッキ", "勝–負–分", "勝率", "コスト", "OMW%"];
+  const columns = Array.from({length: count / 8}, (_, col) => `<div class="rank-col">
+    <div class="rank-head">${labels.map(label => `<span>${label}</span>`).join("")}</div>
+    ${order.slice(col * 8, col * 8 + 8).map((player, index) => rankRow(player, col * 8 + index, post, hasTotals)).join("")}
+    </div>`).join("");
+  const heading = post ? (phase === "post-draft" ? "事後コスト順位・下書き" : "事後コスト順位") : "勝敗ランキング";
+  return `<section class="panel${post ? " post-ranks" : ""}" aria-labelledby="rank-heading">
+    <div class="panel-head"><h2 id="rank-heading">${heading}</h2><p>${legend}</p></div>
+    <div class="rank-grid" style="--columns:${count / 8}">${columns}</div></section>`;
+}
+
+function titlePanel() {
+  const rows = postRows.filter(row => row.brought).sort((a, b) => a.name.localeCompare(b.name, "ja"));
+  const grid = rows.length ? `<div class="post-list" style="--titles:${rows.length}">
+    <div class="post-head"><span>タイトル</span><span>CX 構成</span><span>基本</span><span>増減</span><span>事後</span></div>
+    ${rows.map(row => `<div class="post-line">${ellipsis(row.name, "タイトル名")}<span class="cx body-value">${row.cx}</span>
+      <span class="num body-value">${fmt(row.base)}</span>
+      <span class="num body-value ${row.delta > 0 ? "delta-positive" : row.delta < 0 ? "delta-negative" : ""}">${row.delta > 0 ? "+" : ""}${fmt(row.delta)}</span>
+      <span class="cost body-value">${fmt(row.final)}</span></div>`).join("")}</div>`
+    : '<div class="empty-state"><strong>事後コストは未抽選</strong><p>下の進行操作から「抽選」を選んでください。</p></div>';
+  return `<section class="panel post-board" aria-labelledby="post-heading">
+    <div class="panel-head"><h2 id="post-heading">持ち込みタイトル</h2><p>タイトルごとの個別抽選</p></div>${grid}</section>`;
+}
+
+function footer() {
+  let actions;
+  if (phase === "running") {
+    actions = button("timer-toggle", timerTarget ? "タイマー停止" : "タイマー開始")
+      + button("timer-reset", "リセット", {disabled: Boolean(timerTarget)})
+      + button("round-end", "ラウンド終了", {primary: true, disabled: matches.some(match => match.status !== "done")})
+      + button("participant", "参加者操作のデモ", {disabled: matches.every(match => match.status === "done")});
+  } else if (phase === "matching") {
+    actions = button("draw-matches", matches.length ? "再抽選" : "抽選")
+      + button("publish-match", "決定・公開", {primary:true, disabled:!matches.length})
+      + button("end-event", "大会終了");
+  } else if (phase === "last-closed") {
+    actions = button("end-event", "大会終了", {primary:true});
+  } else if (phase === "post-draft") {
+    actions = button("draw-costs", postRows.length ? "再抽選" : "抽選")
+      + button("publish-cost", "確定して発表", {primary:true, disabled:!postRows.length})
+      + button("csv", "全行 CSV", {disabled:!postRows.length});
+  } else {
+    actions = button("csv", "全行 CSV", {primary:true});
+  }
+  return `<nav class="dock-group" aria-label="表示例">
+    <span class="dock-label">表示例</span>
+    <span class="scenario-nav">${scenarios.map((name, index) => button(`state-${index + 1}`, name, {current: index + 1 === sample})).join("")}</span>
+    <span class="scenario-nav">${[8, 16].map(size => button(`size-${size}`, `${size} 人`, {current: size === count})).join("")}</span>
+    </nav><p class="detail-hint">… の項目は選択で全文</p><div class="dock-group"><span class="dock-label">進行操作</span>${actions}
+    <a href="#progress-correction" class="control" data-action="correction">大会進行修正 <span class="arrow" aria-hidden="true">↗</span></a></div>`;
+}
+
+function markEllipses() {
+  document.querySelectorAll("button.ellipsis").forEach(node => {
+    const clipped = node.scrollWidth > node.clientWidth;
+    node.dataset.cut = String(clipped);
+    node.tabIndex = clipped ? 0 : -1;
+    if (clipped) node.setAttribute("aria-label", `${node.dataset.kind}の全文を表示：${node.textContent}`);
+    else node.removeAttribute("aria-label");
+  });
+}
+
+function render() {
+  $("#board").dataset.players = count;
+  $("#board").dataset.phase = phase;
+  $("#masthead").innerHTML = header();
+  $("#content").innerHTML = (phase.startsWith("post") ? titlePanel() : matchPanel()) + rankPanel();
+  $("#dock").innerHTML = footer();
+  markEllipses();
+}
+window.addEventListener("resize", markEllipses);
+
+function clock() { return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`; }
+function readTime() {
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec($("#timer").value.trim());
+  return match ? Number(match[1]) * 60 + Number(match[2]) : 0;
+}
+function updateClock() {
+  if (!timerTarget) return;
+  seconds = Math.max(0, Math.ceil((timerTarget - Date.now()) / 1000));
+  const field = $("#timer");
+  if (field) field.value = clock();
+  if (seconds === 0) {
+    timerTarget = 0;
+    render();
+  }
+}
+setInterval(updateClock, 200);
+
+function showNotice(message) {
+  const box = $("#notice");
+  clearTimeout(noticeTimeout);
+  box.textContent = message;
+  box.hidden = false;
+  noticeTimeout = setTimeout(() => { box.hidden = true; }, 3500);
+}
+
+function openDetail(title, body) {
+  $("#detail-title").textContent = title;
+  $("#detail-body").innerHTML = body;
+  if (!$("#detail").open) $("#detail").showModal();
+}
+
+function participantDemo() {
+  const choices = matches.flatMap((match, index) => {
+    if (match.status === "done") return [];
+    const prefix = `${index + 1} 卓　${escapeHtml(match.a.name)}`;
+    return button(`participant-${index}`, `${prefix} ／ ${statusLabels[match.status]}`);
+  }).join("");
+  openDetail("参加者操作のデモ", `<p>参加者端末からの報告・承諾・了解を再現します。</p><div class="actions">${choices}</div>`);
+}
+
+function participantMatch(index) {
+  const match = matches[index];
+  const {a, b, status} = match;
+  const label = status === "live" ? "結果を報告する" : "相手の報告を承諾する";
+  if (!b) {
+    const choices = available(a).map((deck, i) => button(`bye-${index}-${i}`, `${escapeHtml(deck.name)}で了解`)).join("");
+    openDetail(`${a.name}の参加者画面（デモ）`, `<p>使用済みにするデッキを選ぶか、ランダムに選んで了解します。</p>
+      <div class="actions">${button(`bye-${index}-random`, "ランダムで選んで了解", {primary:true})}</div>
+      <div class="actions">${choices}</div>`);
+    return;
+  }
+  openDetail(`${(status === "live" ? a : b).name}の参加者画面（デモ）`, `<p>${index + 1} 卓の${label}操作です。</p>
+    <div class="actions">${button(`submit-${index}`, label, {primary:true})}</div>`);
+}
+
+function proceedMatch(index, deckIndex) {
+  const match = matches[index];
+  if (match.status === "live") match.status = "wait";
+  else if (match.status === "wait") finishMatch(match);
+  else if (match.status === "bye") {
+    const options = available(match.a);
+    const deck = deckIndex === "random" ? options[Math.floor(Math.random() * options.length)] : options[Number(deckIndex)];
+    if (deck) finishMatch(match, deck);
+  }
+  $("#detail").close();
+  render();
+  showNotice(`第 ${index + 1} 卓　${statusLabels[match.status]}`);
+}
+
+function exportCsv() {
+  const quote = value => `"${String(value).replaceAll('"', '""')}"`;
+  const rows = [["タイトル", "CX", "基本", "増減", "事後"], ...postRows.map(row => [row.name, row.cx, fmt(row.base), fmt(row.delta), fmt(row.final)])];
+  const url = URL.createObjectURL(new Blob(["\uFEFF", rows.map(row => row.map(quote).join(",")).join("\r\n")], {type:"text/csv;charset=utf-8"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "しまWS-事後コスト.csv";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const actions = {
+  "timer-toggle"() {
+    if (timerTarget) { updateClock(); timerTarget = 0; }
+    else {
+      const value = readTime();
+      if (!value) { showNotice("1 秒以上の時間を分:秒の形式で入力してください。"); return; }
+      seconds = timerStartValue = value;
+      timerTarget = Date.now() + value * 1000;
+    }
+    render();
+  },
+  "timer-reset"() { seconds = timerStartValue; render(); },
+  "round-end"() {
+    if (matches.some(match => match.status !== "done")) return;
+    timerTarget = 0;
+    const closedRound = round;
+    if (round >= 5) phase = "last-closed";
+    else {
+      matches = [];
+      matchDraws = 0;
+      round++;
+      phase = "matching";
+    }
+    render();
+    showNotice(`第 ${closedRound} ラウンドを終了しました。`);
+  },
+  "draw-matches"() { drawMatches(); render(); },
+  "publish-match"() {
+    if (!matches.length) return;
+    matches.forEach(match => { match.status = match.b ? "live" : "bye"; });
+    phase = "running";
+    timerTarget = 0;
+    seconds = timerStartValue = 35 * 60;
+    render();
+  },
+  "end-event"() {
+    openDetail("大会を終了する", '<p>勝敗順位を確定し、事後コストの抽選に進みます。</p>'
+      + `<div class="actions">${button("end-event-confirm", "大会終了を確定", {primary:true})}</div>`);
+  },
+  "end-event-confirm"() {
+    $("#detail").close();
+    phase = "post-draft";
+    postRows = [];
+    costDraws = 0;
+    render();
+  },
+  "draw-costs"() { drawCosts(); render(); },
+  "publish-cost"() {
+    if (!postRows.length) return;
+    openDetail("事後コストを確定して発表", `<p>抽選 ${costDraws} 回目の値を発表します。確定後の再抽選はできません。</p>
+      <div class="actions">${button("publish-cost-confirm", "発表を確定", {primary:true})}</div>`);
+  },
+  "publish-cost-confirm"() {
+    $("#detail").close();
+    phase = "post-result";
+    render();
+  },
+  "csv": exportCsv,
+  "participant": participantDemo
+};
+
+function correctionTab() {
+  openDetail("大会進行修正", '<p>組み合わせの手直し、承諾の代行、確定した結果の修正を扱うタブです。</p>'
+    + '<p>このモックでは進行修正の導線を確認できます。</p>');
+}
+window.addEventListener("hashchange", () => {
+  if (location.hash === "#progress-correction") correctionTab();
+});
+$("#detail").addEventListener("close", () => {
+  if (location.hash === "#progress-correction") history.replaceState(null, "", location.pathname + location.search);
+});
+document.addEventListener("click", event => {
+  const control = event.target.closest("[data-action], button.ellipsis");
+  if (!control) return;
+  if (control.dataset.cut === "true") {
+    openDetail(control.dataset.kind, `<p class="full-text">${escapeHtml(control.textContent)}</p>`);
+    return;
+  }
+  const action = control.dataset.action;
+  if (!action) return;
+  const [key, number, deckIndex] = action.split("-");
+  if (key === "state") resetScenario(Number(number), count);
+  else if (key === "size") resetScenario(sample, Number(number));
+  else if (key === "participant" && number) participantMatch(Number(number));
+  else if (key === "submit" || key === "bye") proceedMatch(Number(number), deckIndex);
+  else if (action === "correction" && location.hash === "#progress-correction") correctionTab();
+  else actions[action]?.();
+});
+const route = parseRoute();
+resetScenario(route.state, route.players, false);
+if (location.hash === "#progress-correction") correctionTab();
+</script>
+</body>
+</html>
