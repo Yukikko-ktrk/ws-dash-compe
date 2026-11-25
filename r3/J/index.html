@@ -348,6 +348,7 @@ const qs=new URLSearchParams(location.search);
 let N=qs.get("players")==="16"?16:8;
 let ST=STATES.includes(qs.get("state"))?qs.get("state"):"before";
 const SEED=parseInt(qs.get("seed")||"0",10)||0;
+const STOP=parseInt(qs.get("stop")||"0",10)||0;    /* 撮影用: この卓数がめくれたところで演出を止める */
 const REDUCED=qs.get("motion")==="0"||(qs.get("motion")!=="1"&&matchMedia("(prefers-reduced-motion: reduce)").matches);
 if(REDUCED)document.body.classList.add("still");
 const $=s=>document.querySelector(s);
@@ -506,7 +507,7 @@ function draw(){
     const at=t;
     later(at,()=>{frameEls[ci].classList.remove("ghost");frameEls[ci].classList.add("hot");flipUp(cards[ci].ids[0])});
     if(!cards[ci].bye)later(at+240,()=>flipUp(cards[ci].ids[1]));
-    later(at+620,()=>{setFrame(frameEls[ci],"draft");frameEls[ci].classList.add("hit");revealed++;ui()});
+    later(at+620,()=>{setFrame(frameEls[ci],"draft");frameEls[ci].classList.add("hit");revealed++;ui();if(STOP&&revealed===STOP)cancelAnim()});
     t+=REV;
   });
   later(t+150,()=>{phase="drafted";board.dataset.phase="drafted";ui()});
@@ -657,7 +658,7 @@ if(qs.get("hide")==="1")toggleOrg();
 load();
 
 /* ===== 見切れの自己検査（check.mjs から呼ぶ）。loose=演出の途中（札が動いている間）は枠内判定を省く ===== */
-window.__phase=()=>phase;
+window.__phase=()=>phase;window.__revealed=()=>revealed;
 window.__check=function(loose){
   const out={bad:[],ell:[],small:[],n:0},stage=$("#stage"),SR=stage.getBoundingClientRect(),sc=SR.width/1920;
   const name=e=>e.tagName.toLowerCase()+(e.id?"#"+e.id:"")+(e.className&&typeof e.className==="string"?"."+e.className.trim().split(/\s+/).join("."):"");
