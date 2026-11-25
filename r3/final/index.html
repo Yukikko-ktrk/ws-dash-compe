@@ -148,7 +148,10 @@ body.inround #round{display:grid;animation:fadein .35s both}
 .rec .w{color:var(--ok)} .rec .l{color:var(--danger)} .rec .o{color:var(--sub);font-weight:400}
 .dk{display:flex;align-items:center;gap:8px;min-width:0;min-height:0;padding:0 8px 0 3px;border-radius:7px;border:1px solid var(--edge2);
   background:#141925;font-size:var(--fdk);line-height:1.3}
-.dk .b{flex:none;width:var(--bw);height:calc(var(--fdk) + 3px);line-height:calc(var(--fdk) + 3px);text-align:center;border-radius:5px;
+/* コストの数字は、字の高さ（数字の上端〜下端）で上下中央にそろえる。行の中央＝タイトル名の取り消し線の高さ */
+.dk .b i{display:block;font-style:normal;line-height:1;text-box:trim-both cap alphabetic}
+@supports not (text-box:trim-both cap alphabetic){.dk .b i{padding-top:.12em}}
+.dk .b{flex:none;width:var(--bw);height:calc(var(--fdk) + 3px);display:flex;align-items:center;justify-content:center;border-radius:5px;
   font-family:var(--num);font-variant-numeric:tabular-nums;font-size:var(--fdk);font-weight:700;white-space:nowrap}
 .dk .t{flex:1}
 /* 8 人のときは行が高いので、タイトル名を 2 行まで折り返す */
@@ -192,9 +195,42 @@ body.inround #round{display:grid;animation:fadein .35s both}
 .legend i{font-style:normal;font-family:var(--num);font-size:14px;font-weight:700;padding:0 7px;border-radius:4px;line-height:20px}
 .legend s{color:var(--mute)}
 /* 組み合わせの状態（主催者の操作欄に 1 か所だけ） */
-.stt{font-size:14px;font-weight:700;line-height:22px;padding:0 9px;border-radius:5px;border:1px solid var(--edge2);color:var(--sub)}
-.stt.draft{color:var(--wait);border-color:var(--wait);border-style:dashed;background:var(--wait-bg)}
-.stt.pub{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+/* 再戦（過去に対戦した組み合わせ）になった卓 */
+.tb.re{border-color:var(--danger);background:linear-gradient(180deg,rgba(248,113,113,.13),var(--surface) 46px)}
+.tb.re::before,.tb.re.on::before{background:var(--danger)}
+.tb.re .vs{color:var(--danger)}
+.retag{font-size:20px;font-weight:700;line-height:26px;padding:0 12px;border-radius:6px;border:1px solid var(--danger);color:var(--danger);background:var(--danger-bg);letter-spacing:.1em}
+/* ---------- 組み合わせの修正（主催者用のパネル。会場の盤の上に重ねる） ---------- */
+#edit{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,5,9,.74);z-index:45}
+#edit.on{display:flex}
+.edbox{width:1240px;background:#161a23;border:1px solid var(--wait);border-radius:14px;padding:18px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;gap:10px}
+.ed-h{display:flex;align-items:center;gap:16px;white-space:nowrap}
+.ed-h h3{font-size:28px;font-weight:700;line-height:1.3}
+.ed-help{font-size:20px;line-height:1.5;color:var(--sub);white-space:nowrap}
+.ed-help b{color:var(--wait)}
+.ed-list{display:grid;gap:6px}
+.ed-row{display:grid;grid-template-columns:104px minmax(0,1fr) 44px minmax(0,1fr) 150px;align-items:center;column-gap:10px;padding:5px 10px;
+  border:1px solid var(--edge);border-radius:9px;background:var(--card);white-space:nowrap}
+.ed-row.chg{border-color:var(--wait)}
+.ed-row.re{border-color:var(--danger);background:var(--danger-bg)}
+.ed-no{font-size:20px;font-weight:700;color:var(--sub);line-height:1}
+.ed-no b{font-family:var(--num);font-size:26px;color:var(--ink);margin-left:5px}
+.ed-row.bye .ed-no{color:var(--ack)}
+.ed-p{height:44px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;border-radius:8px;border:1px solid var(--edge2);
+  background:#141925;font-size:22px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ed-p:hover{border-color:var(--accent)}
+.ed-p.moved{border-color:var(--wait);color:var(--wait)}
+.ed-p.sel{border-color:var(--wait);background:var(--wait-bg);box-shadow:0 0 0 2px rgba(251,191,36,.5)}
+.ed-p .rec{font-size:20px;line-height:1}
+.ed-vs{font-family:var(--num);font-size:20px;font-weight:700;color:var(--mute);text-align:center}
+.ed-none{font-size:20px;color:var(--mute);padding-left:14px}
+.ed-flag{display:flex;gap:10px;justify-content:flex-end;font-size:20px;font-weight:700}
+.ed-flag .r,.ed-sum .r{color:var(--danger)} .ed-flag .c{color:var(--wait)}
+.ed-f{display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap;margin-top:4px}
+.ed-sum{font-size:20px;color:var(--sub)}
+.ed-btns{display:flex;gap:8px}
+.ed-f .btn{height:40px;font-size:18px;padding:0 18px}
 .legend i.used{background:#242831;color:var(--sub)} .legend i.open{background:var(--accent);color:#0b1020} .legend i.secret{background:rgba(124,163,255,.14);color:var(--accent)}
 .f-r{display:flex;align-items:center;gap:8px;flex:none}
 
@@ -336,6 +372,7 @@ body.still .tile.pop .dk,body.still .tb.hit,body.still.inround #round{animation:
   </main>
 
   <div id="pop"><div class="popbox" id="popbox"></div></div>
+  <div id="edit"><div class="edbox box" id="edbox"></div></div>
   <div id="toast"></div>
 </div>
 <script>
@@ -350,13 +387,16 @@ const POOL=["アイドルマスター シャイニーカラーズ","痛いのは
   "転生したらスライムだった件","東方Project","ブルーアーカイブ","プロジェクトセカイ カラフルステージ！ feat. 初音ミク",
   "ヘブンバーンズレッド","ぼっち・ざ・ろっく！","ホロライブプロダクション","ラブライブ！蓮ノ空女学院スクールアイドルクラブ"];
 const COST=[3.5,2,3,2.5,3,2.5,3.5,1.5,2,2,2,2,2,3,1.5,2.5,2.5,2,1,2.5,1.5,2.5,4,3.5];
-const OFF=[0,7,13,20], ROUNDS=4, DONE=2;           /* 2 ラウンド終了 → ROUND 3 の抽選 */
-const STATES=["before","drawing","drafted","published","round"];
-const SLAB={before:"抽選前",drawing:"演出",drafted:"下書き",published:"公開",round:"R中"};
+const OFF=[0,7,13,20], ROUNDS=4;
+let DONE=2;                                        /* 終了したラウンド数。はじめは 2 ラウンド終了 → ROUND 3 の抽選 */
+/* 流れ: ラウンド中 →（ラウンド終了）→ 抽選前 → 抽選（演出）→ 組み合わせ決定 →（START）→ ラウンド中 */
+const STATES=["before","drawing","decided","round"];
+const SLAB={before:"抽選前",drawing:"演出",decided:"決定",round:"R中"};
 
 const qs=new URLSearchParams(location.search);
 let N=qs.get("players")==="16"?16:8;
-let ST=STATES.includes(qs.get("state"))?qs.get("state"):"before";
+const ST0=qs.get("state");
+let ST=(ST0==="drafted"||ST0==="published")?"decided":STATES.includes(ST0)?ST0:"before";   /* 旧 drafted／published は decided に寄せる */
 const SEED=parseInt(qs.get("seed")||"0",10)||0;
 const STOP=parseInt(qs.get("stop")||"0",10)||0;    /* 撮影用: この卓数がめくれたところで演出を止める */
 const REDUCED=qs.get("motion")==="0"||(qs.get("motion")!=="1"&&matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -413,6 +453,8 @@ function preset(n){
   C=calc();
 }
 const cur=()=>T.rounds[DONE]||null;
+/* 終了したラウンドですでに対戦した 2 人か（再戦の判定） */
+const metBefore=(a,b)=>T.rounds.slice(0,DONE).some(R=>R.matches.some(m=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)));
 const activeIds=()=>T.players.filter(p=>!isDropped(p,DONE)).map(p=>p.id);
 const droppedPs=()=>T.players.filter(p=>isDropped(p,DONE));
 function newDraft(){
@@ -445,7 +487,7 @@ const setPos=(el,p)=>{el.style.transform=`translate(${p.x}px,${p.y}px)`};
 function dkHtml(d,ds,j){
   /* 札の左の数字はデッキのコスト。状態は色で分ける（取り消し線＝使用済／青＝使用可／斜線＝未公開）。未公開はコストも伏せる */
   const sec=ds.st==="secret";
-  return`<span class="dk ${ds.st}" style="--i:${j}"><span class="b">${sec?"？":d.base.toFixed(1)}</span><span class="t ell">${sec?"未公開":esc(d.title)}</span></span>`;
+  return`<span class="dk ${ds.st}" style="--i:${j}"><span class="b"><i>${sec?"?":d.base.toFixed(1)}</i></span><span class="t ell">${sec?"未公開":esc(d.title)}</span></span>`;
 }
 const recHtml=x=>`<span class="rec num" title="勝-負-分"><b class="w">${x.w}</b>-<b class="l">${x.l}</b>-<b class="o">${x.d}</b></span>`;
 function buildTiles(){
@@ -470,9 +512,9 @@ function buildTiles(){
 /* 卓の枠。cls: ghost＝まだめくっていない／on＝組み合わせが出た。下書きか公開済みかは卓には出さない（主催者の操作欄に 1 か所だけ） */
 function buildFrames(cls){
   const cards=cardList();
-  $("#frames").innerHTML=cards.map((c,ci)=>{const p=G.cardPos(ci),vx=G.PX+G.tw;
-    return`<div class="tb box ${cls}${c.bye?" bye":""}" style="left:${p.x}px;top:${p.y}px;width:${G.cw}px;height:${G.ch}px">
-      <div class="hd" style="height:${G.HD}px">${c.bye?`<span class="no">不戦勝</span>`:`<span class="no">卓<b>${c.i+1}</b></span>`}</div>
+  $("#frames").innerHTML=cards.map((c,ci)=>{const p=G.cardPos(ci),vx=G.PX+G.tw,re=cls==="on"&&!c.bye&&metBefore(c.ids[0],c.ids[1]);
+    return`<div class="tb box ${cls}${c.bye?" bye":""}${re?" re":""}" style="left:${p.x}px;top:${p.y}px;width:${G.cw}px;height:${G.ch}px">
+      <div class="hd" style="height:${G.HD}px">${c.bye?`<span class="no">不戦勝</span>`:`<span class="no">卓<b>${c.i+1}</b></span>`}${re?`<span class="retag">再戦</span>`:""}</div>
       <span class="vs" style="left:${vx}px;top:${G.top}px;width:${G.VSW}px;height:${G.th}px">${c.bye?"－":"VS"}</span>
       ${c.bye?`<div class="byeinfo box" style="left:${vx+G.VSW}px;top:${G.top}px;width:${G.tw}px;height:${G.th}px"><h4>対戦相手なし</h4><p>1 勝として数えます</p><p>本人の「了解」で確定します</p><p>使用済みにするデッキは本人が選びます</p></div>`:""}
     </div>`}).join("");
@@ -488,7 +530,7 @@ function cancelAnim(){timers.forEach(clearTimeout);timers=[]}
 let revealed=0;
 /* 演出なしで、いまの段階の絵をそのまま出す */
 function show(){
-  cancelAnim();board.classList.add("noanim");board.dataset.phase=phase==="round"?"published":phase;
+  cancelAnim();board.classList.add("noanim");board.dataset.phase=phase==="round"?"decided":phase;
   const act=activeIds();
   act.forEach(id=>{const t=tiles[id];t.classList.remove("down","pop","pre");t.style.zIndex="";t.querySelector(".flip").style.transitionDelay=""});
   if(phase==="before"){$("#frames").innerHTML="";frameEls=[];act.forEach((id,i)=>setPos(tiles[id],G.pre(i)))}
@@ -501,7 +543,7 @@ function show(){
 function draw(){
   cancelAnim();
   const seed=newDraft();
-  if(REDUCED){phase="drafted";show();toast("組み合わせを抽選しました");return}
+  if(REDUCED){phase="decided";show();toast(`ROUND ${DONE+1} の組み合わせが決定しました`);return}
   phase="drawing";revealed=0;board.dataset.phase="drawing";
   const cards=buildFrames("ghost"),act=activeIds(),rnd=rng(seed^0x9e3779b9);
   window.__t0=performance.now();
@@ -525,7 +567,7 @@ function draw(){
     later(at+620,()=>{setFrame(frameEls[ci],"on");frameEls[ci].classList.add("hit");revealed++;ui();if(STOP&&revealed===STOP)cancelAnim()});
     t+=REV;
   });
-  later(t+150,()=>{phase="drafted";board.dataset.phase="drafted";ui()});
+  later(t+150,()=>{phase="decided";board.dataset.phase="decided";ui()});
 }
 /* 札をめくる。表が見えはじめる頃（半回転）にデッキ 4 個を順に出す */
 function flipUp(id){const t=tiles[id];t.style.zIndex="";t.classList.add("pre");t.classList.remove("down");
@@ -537,26 +579,22 @@ function ui(){
   $("#chipN").textContent=`参加 ${T.n} 名`+(dp.length?`（棄権 ${dp.length}）`:"");
   $("#chipR").textContent=phase==="round"?`ROUND ${DONE+1} / ${ROUNDS}`:`ROUND ${DONE+1} マッチング`;
   $("#hR").innerHTML=`ROUND ${DONE+1}<small> / ${ROUNDS}</small>`;
-  const stepNo={before:0,drawing:0,drafted:1,published:3,round:4}[phase];
-  $("#steps").innerHTML=["抽選","主催者の確認","組み合わせ決定","ラウンド START"].map((s,i)=>
+  const stepNo={before:0,drawing:0,decided:2,round:3}[phase];
+  $("#steps").innerHTML=["抽選","組み合わせ決定","ラウンド START"].map((s,i)=>
     `${i?'<span class="ar">▶</span>':""}<span class="st${i<stepNo?" done":i===stepNo?" on":""}"><b>${i<stepNo?"✓":i+1}</b>${s}</span>`).join("");
   const m=$("#msg");
-  m.className="msg "+({drawing:"draw",drafted:"draft",published:"pub"}[phase]||"");
+  m.className="msg "+({drawing:"draw",decided:"pub"}[phase]||"");
   m.innerHTML=phase==="before"?`<b>抽選前</b>　｜　${cards} 卓ぶんの組み合わせを、これから抽選します`:
     phase==="drawing"?`<b>抽選中…</b>　決定 <b class="num">${revealed} / ${cards}</b>`:
-    phase==="drafted"?`<b>抽選結果</b>　｜　主催者が確認しています。決定までお待ちください`:
     `<b>組み合わせ決定！</b>　自分の卓へ移動してください　｜　START でラウンド開始`;
   $("#footL").innerHTML=(dp.length?`<span class="drop"><span class="tag out">途中棄権・抽選の対象外</span>${dp.map(p=>`<span class="nm">${esc(p.name)}</span>`).join("")}</span><i class="sep"></i>`:"")+
-    `<span class="legend"><span><i class="used">2.0</i><s>勝って使用済み</s></span><span><i class="open">2.0</i>公開済み・まだ使える</span><span><i class="secret">？</i>未公開（伏せています）</span><span>数字＝デッキのコスト</span><span>成績＝勝-負-分</span></span>`;
+    `<span class="legend"><span><i class="used">2.0</i><s>勝って使用済み</s></span><span><i class="open">2.0</i>公開済み・まだ使える</span><span><i class="secret">?</i>未公開（伏せています）</span><span>数字＝デッキのコスト</span><span>成績＝勝-負-分</span></span>`;
   if(armed)disarm();
-  /* 組み合わせの状態は、ここ（主催者の操作欄）に 1 か所だけ出す */
-  const stt=phase==="before"?`<span class="stt" id="stt">抽選前</span>`:phase==="drawing"?`<span class="stt" id="stt">抽選中</span>`:
-    phase==="drafted"?`<span class="stt draft" id="stt">下書き・参加者の端末には未公開</span>`:`<span class="stt pub" id="stt">参加者の端末に公開済み</span>`;
-  $("#footR").innerHTML=`<span class="who">主催者</span>`+stt+(
+  /* 下書きの段階はない。抽選が終わるとそのまま決定で、直すときは「組み合わせを修正」（主催者用のパネル）を使う */
+  $("#footR").innerHTML=`<span class="who">主催者</span>`+(
     phase==="before"?`<button class="btn pri" data-act="draw">抽選する</button>`:
     phase==="drawing"?`<button class="btn" data-act="skip">演出を飛ばす</button>`:
-    phase==="drafted"?`<button class="btn" data-act="draw">再抽選</button><button class="btn pri" data-act="publish" data-arm="1">決定して公開</button>`:
-    `<button class="btn pri" data-act="start">ラウンド START</button>`);
+    `<button class="btn" data-act="edit">組み合わせを修正</button><button class="btn pri" data-act="start">ラウンド START</button>`);
   document.body.classList.toggle("inround",phase==="round");
   document.querySelectorAll("#segS button").forEach(b=>b.classList.toggle("on",b.dataset.v===phase));
   document.querySelectorAll("#segN button").forEach(b=>b.classList.toggle("on",+b.dataset.v===N));
@@ -595,7 +633,7 @@ function renderRound(){
     <div class="tgrid ${cmp?"cmp":"big"}" style="grid-template-rows:repeat(${k},minmax(0,1fr))">
       ${R.matches.map((m,i)=>`<div class="tc box playing" data-pop="t:${i}"><div class="sd"><span class="no">卓<b>${i+1}</b></span><span class="pill playing">対戦中</span></div><div class="bd">${row(P[m.a])}${row(P[m.b])}</div></div>`).join("")}
       ${R.bye?`<div class="tc box ack" data-pop="p:${R.bye.p}"><div class="sd"><span class="no">不戦勝</span><span class="pill ack">了解待ち</span></div><div class="bd"><span class="pn"><i class="dot"></i><span class="nm ell">${esc(P[R.bye.p].name)}</span></span><span class="it ack">不戦勝</span><span class="tnote ell">本人の了解で確定（使用済みにするデッキを選択）</span></div></div>`:""}</div>
-    <div class="strip org"><span class="who">主催者</span><button class="btn" disabled>ラウンド終了</button><span class="hint">全卓の確定後に押せます（残り ${k} 卓）</span></div></div>`;
+    <div class="strip org"><span class="who">主催者</span><button class="btn" data-act="endround" data-arm="1">ラウンド終了</button><span class="hint">${DONE+1<ROUNDS?"押すと次のラウンドの抽選前へ":"最終ラウンドです"}</span></div></div>`;
   let rank=0;
   $("#rRight").innerHTML=`<div class="ph"><h2>順位表<small>ROUND ${DONE} 終了時点　｜　並び: 勝ち数 → 勝率 → 合計コスト(低) → OMW%　｜　簡易表示（本番は I 案の形）</small></h2></div>
     <div class="rh"><span>順位</span><span>参加者</span><span>勝-負-分</span><span>登録デッキ 1</span><span>2</span><span>3</span><span>4</span></div>
@@ -625,16 +663,73 @@ function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("on");clea
 function act(a){
   if(a==="close")return closePop();
   if(a==="draw")return draw();
-  if(a==="skip"){phase="drafted";show();return}
-  if(a==="publish"){setStatus("playing");phase="published";show();
-    if(!REDUCED)frameEls.forEach((f,i)=>{f.style.animationDelay=(i*45)+"ms";f.classList.add("hit")});
-    toast(`ROUND ${DONE+1} の組み合わせが決定しました`);return}
+  if(a==="skip"){phase="decided";show();return}
   if(a==="start"){phase="round";tmSet(2100,2100,true);renderRound();ui();return}
+  if(a==="endround")return endRound();
+  if(a==="edit")return openEdit();
+  if(a==="ed-close")return closeEdit();
+  if(a==="ed-reset"){ED.slots=ED.base.map(x=>x.slice());ED.sel=null;return renderEdit()}
+  if(a==="ed-apply")return applyEdit();
 }
+/* ラウンド終了: いまのラウンドを確定して、次のラウンドの抽選前へ（モックでは未報告の卓を仮の結果で確定する） */
+function endRound(){
+  if(DONE+1>=ROUNDS){toast("最終ラウンドです（モックの通しはここまで）");return}
+  setStatus("done");DONE++;C=calc();
+  phase="before";document.body.classList.remove("inround");   /* 盤の寸法を測るので、先にマッチング画面へ戻す */
+  buildTiles();tmSet(2100,2100,false);show();
+  toast(`ROUND ${DONE} を終了しました。ROUND ${DONE+1} の抽選前です`);
+}
+
+/* ===== 組み合わせの修正（主催者用のパネル） ===== */
+let ED=null;   /* 作業用の並び。slots[卓] = [左, 右]（最後が不戦勝なら [本人]）。適用するまで会場の盤は変えない */
+const curSlots=()=>cardList().map(c=>c.ids.slice());
+function openEdit(){if(phase!=="decided")return;ED={slots:curSlots(),base:curSlots(),sel:null};renderEdit();$("#edit").classList.add("on")}
+function closeEdit(){$("#edit").classList.remove("on");ED=null}
+function renderEdit(){
+  const cards=cardList(),P=T.players;let nre=0,nch=0;
+  const btn=(id,ci,s)=>`<button class="ed-p${ED.sel===id?" sel":""}${ED.base[ci][s]!==id?" moved":""}" data-ed="${id}"><span>${esc(P[id].name)}</span>${recHtml(C.s[id])}</button>`;
+  const rows=ED.slots.map((ids,ci)=>{const bye=cards[ci].bye,re=!bye&&metBefore(ids[0],ids[1]),ch=ids.some((id,s)=>ED.base[ci][s]!==id);
+    if(re)nre++;if(ch)nch++;
+    return`<div class="ed-row${bye?" bye":""}${ch?" chg":""}${re?" re":""}"><span class="ed-no">${bye?"不戦勝":`卓<b>${ci+1}</b>`}</span>${btn(ids[0],ci,0)}<span class="ed-vs">${bye?"":"VS"}</span>`+
+      (bye?`<span class="ed-none">対戦相手なし</span>`:btn(ids[1],ci,1))+`<span class="ed-flag">${re?`<span class="r">再戦</span>`:""}${ch?`<span class="c">変更</span>`:""}</span></div>`}).join("");
+  const hasBye=cards.some(c=>c.bye);
+  $("#edbox").innerHTML=`<div class="ed-h"><h3>ROUND ${DONE+1}　組み合わせを修正</h3><span class="tag">主催者用・「適用」を押すまで会場の盤は変わりません</span></div>
+    <p class="ed-help">${ED.sel===null?`入れ替える 2 人を順に押します。${hasBye?"不戦勝の人と入れ替えると、不戦勝の人が替わります。":""}`:
+      `<b>${esc(P[ED.sel].name)}</b> と入れ替える人を押してください（同じ人をもう一度押すと選び直せます）`}</p>
+    <div class="ed-list">${rows}</div>
+    <div class="ed-f"><span class="ed-sum">変更 <b class="num">${nch}</b> 卓　｜　${nre?`<b class="r">再戦が ${nre} 卓あります（このまま適用もできます）</b>`:"再戦なし"}</span>
+      <span class="ed-btns"><button class="btn" data-act="ed-reset"${nch?"":" disabled"}>元に戻す</button><button class="btn" data-act="ed-close">やめる（Esc）</button><button class="btn pri" data-act="ed-apply"${nch?"":" disabled"}>この組み合わせを適用</button></span></div>`;
+}
+function edPick(id){
+  if(ED.sel===null)ED.sel=id;
+  else if(ED.sel===id)ED.sel=null;
+  else{const at=v=>{for(let c=0;c<ED.slots.length;c++){const s=ED.slots[c].indexOf(v);if(s>=0)return[c,s]}};
+    const[c1,s1]=at(ED.sel),[c2,s2]=at(id);ED.slots[c1][s1]=id;ED.slots[c2][s2]=ED.sel;ED.sel=null}
+  renderEdit();
+}
+/* 適用: 会場の盤にすぐ反映する（札は新しい席へ動き、変わった卓だけ軽く光る） */
+function applyEdit(){
+  const R=cur(),cards=cardList(),changed=[];
+  ED.slots.forEach((ids,ci)=>{if(ids.some((id,s)=>ED.base[ci][s]!==id))changed.push(ci);
+    if(cards[ci].bye)R.bye.p=ids[0];else{R.matches[ci].a=ids[0];R.matches[ci].b=ids[1]}});
+  closeEdit();
+  const cs=buildFrames("on");cs.forEach((c,ci)=>c.ids.forEach((id,s)=>setPos(tiles[id],G.slot(ci,s))));
+  if(!REDUCED)changed.forEach(ci=>frameEls[ci].classList.add("hit"));
+  ui();toast(`組み合わせを修正しました（${changed.length} 卓）`);
+}
+/* サンプル用: 入れ替えると再戦が 1 卓だけできる 2 人を探す（README と撮影で使う） */
+window.__rematchHint=()=>{const cs=cardList(),P=T.players,lab=c=>c.bye?"不戦勝":"卓 "+(c.i+1);let alt=null;
+  for(let xi=0;xi<cs.length;xi++)for(let yi=xi+1;yi<cs.length;yi++)for(let i=cs[xi].ids.length-1;i>=0;i--)for(let j=cs[yi].ids.length-1;j>=0;j--){
+    const sl=cs.map(c=>c.ids.slice()),a=sl[xi][i],b=sl[yi][j];sl[xi][i]=b;sl[yi][j]=a;      /* a と b を入れ替えた並び */
+    const re=sl.filter(s=>s.length===2&&metBefore(s[0],s[1]));if(!re.length)continue;
+    const h={a,b,names:[P[a].name,P[b].name],tables:[lab(cs[xi]),lab(cs[yi])],count:re.length,rematch:re.map(s=>P[s[0]].name+" × "+P[s[1]].name)};
+    if(re.length===1)return h;alt=alt||h}
+  return alt};
 function setStatus(s){const R=cur();R.matches.forEach(m=>m.status=s);if(R.bye)R.bye.status=s==="playing"?"ack":s}
 let armed=null;
 function disarm(){if(!armed)return;clearTimeout(armed._t);armed.textContent=armed.dataset.label;armed.classList.remove("armed");armed=null}
 document.addEventListener("click",e=>{
+  const d=e.target.closest("[data-ed]");if(d&&ED)return edPick(+d.dataset.ed);
   const b=e.target.closest("[data-act]");
   if(b){if(b.disabled)return;
     if(b.dataset.arm&&armed!==b){if(armed)disarm();armed=b;b.dataset.label=b.textContent;b.textContent="もう一度押して確定";b.classList.add("armed");b._t=setTimeout(disarm,3500);return}
@@ -647,7 +742,7 @@ document.addEventListener("click",e=>{
   const p=e.target.closest("[data-pop]");if(p)openPop(p.dataset.pop);
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Escape")closePop();
+  if(e.key==="Escape"){closePop();if(ED)closeEdit()}
   if(e.target.id==="tm"){if(e.key==="Enter"){e.target.blur();tmToggle()}return}
   if(e.key==="h"||e.key==="H")toggleOrg();
 });
@@ -656,9 +751,11 @@ $("#bHide").onclick=toggleOrg;
 $("#bFix").onclick=e=>{e.preventDefault();toast("「大会進行修正」タブを開きます（モックでは移動しません）")};
 
 function load(){
-  cancelAnim();closePop();drawNo=0;preset(N);buildTiles();
+  cancelAnim();closePop();if(ED)closeEdit();drawNo=0;DONE=2;
+  document.body.classList.remove("inround");                   /* 盤の寸法を測るので、先にマッチング画面を出す */
+  preset(N);buildTiles();
   phase=ST==="drawing"?"before":ST;
-  if(phase!=="before"){newDraft();if(phase!=="drafted")setStatus("playing")}
+  if(phase!=="before")newDraft();
   tmSet(2100,2100,phase==="round");
   if(phase==="round")renderRound();
   show();
@@ -692,7 +789,8 @@ window.__check=function(loose){
     if(loose&&inTile&&!e.classList.contains("ell"))return;
     const isEll=e.classList.contains("ell");
     if(ow>1||(isEll&&oh>1)){ if(isEll){ if(e.title===e.textContent&&e.closest("[data-pop]"))out.ell.push(txt(e));else out.bad.push("ellipsis without full text: "+name(e)) } else out.bad.push(`overflow-x ${ow}px: ${name(e)} "${txt(e)}"`)}
-    if(oh>1&&!isEll)out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`);
+    /* コストの数字（.dk .b i）は text-box で字の高さに切りそろえた箱なので、行の余白ぶん scrollHeight が大きく出る。外側の札（.dk .b）で見る */
+    if(oh>1&&!isEll&&!e.matches(".dk .b i"))out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`);
     if(loose&&(inTile||e.classList.contains("tile")))return;
     const r=e.getBoundingClientRect(),box=e.parentElement.closest(".box,.panel,.top,#stage"),br=box.getBoundingClientRect(),t=0.6;
     if(r.width&&r.height&&(r.left<br.left-t||r.right>br.right+t||r.top<br.top-t||r.bottom>br.bottom+t))out.bad.push(`outside ${name(box)}: ${name(e)} "${txt(e)}"`);
@@ -703,7 +801,7 @@ window.__check=function(loose){
     for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i][1],b=rs[j][1];
       if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1)out.bad.push(`overlap: ${name(rs[i][0])} "${txt(rs[i][0])}" × ${name(rs[j][0])} "${txt(rs[j][0])}"`)}
   }
-  stage.querySelectorAll(".tile .nm,.tile .rec,.dk,.dk .t,.dk .b,.hd .no,.tb .vs,.pill,.byeinfo h4,.byeinfo p,#note li,.drop,.drop .nm,.msg,.steps .st,#pre span,.tc .nm,.tc .no,.tc .it,.rr>span,.rr .nm,.cnt").forEach(e=>{
+  stage.querySelectorAll(".tile .nm,.tile .rec,.dk,.dk .t,.dk .b,.dk .b i,.hd .no,.retag,.tb .vs,.pill,.byeinfo h4,.ed-p,.ed-p .rec,.ed-no,.ed-vs,.ed-none,.ed-flag,.ed-help,.ed-sum,.byeinfo p,#note li,.drop,.drop .nm,.msg,.steps .st,#pre span,.tc .nm,.tc .no,.tc .it,.rr>span,.rr .nm,.cnt").forEach(e=>{
     if(!e.offsetParent)return;const f=parseFloat(getComputedStyle(e).fontSize);if(f<20)out.small.push(name(e)+" "+f+"px")});
   return out;
 };
