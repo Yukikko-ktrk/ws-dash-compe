@@ -259,7 +259,49 @@ body.inround #round{display:grid;animation:fadein .35s both}
 .strip .hint{flex:1;text-align:right}
 .cnts{display:flex;gap:14px;font-size:20px;font-weight:700}
 .cnt b{font-family:var(--num);font-size:22px;margin-left:5px}
-.c-playing{color:var(--accent)} .c-ack{color:var(--ack)}
+.c-playing{color:var(--accent)} .c-ack{color:var(--ack)} .c-done{color:var(--ok)}
+.bar i.done{background:var(--ok)}
+.tc.done{border-left-color:var(--ok)}
+.tc.hit{animation:land .8s ease-out}
+.it.win{color:var(--ok)} .it.lose{color:var(--danger)} .it.draw{color:var(--sub)}
+/* ---------- 結果の修正（主催者用のパネル。#edit の枠を共用） ---------- */
+.rs-row{display:grid;gap:8px}
+.rs-b{height:66px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:9px;border:1px solid var(--edge2);background:#141925;
+  cursor:pointer;white-space:nowrap}
+.rs-b b{font-size:22px;line-height:1.2}
+.rs-b span{font-size:20px;line-height:1.2;color:var(--sub)}
+.rs-b:hover{border-color:var(--accent)}
+.rs-b.sel{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 2px rgba(124,163,255,.5)}
+.rs-b.sel span{color:var(--ink)}
+.rs-cols{display:grid;gap:14px}
+.rs-col{min-width:0;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--edge);border-radius:10px;background:var(--card)}
+.rs-nm{display:flex;align-items:center;gap:12px;white-space:nowrap;height:36px}
+.rs-nm .nm{font-size:24px;font-weight:700}
+.rs-nm .rec{font-size:22px;line-height:1}
+.rs-out{margin-left:auto;font-size:20px;font-weight:700;line-height:28px;padding:0 12px;border-radius:6px;border:1px solid var(--edge2);color:var(--mute)}
+.rs-out.win{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.rs-out.lose{color:var(--danger);border-color:#7a3a3d;background:var(--danger-bg)}
+.rs-out.draw{color:var(--sub)}
+.rs-cap{font-size:20px;line-height:1.4;color:var(--sub);white-space:nowrap}
+.rd{height:54px;min-width:0;display:flex;align-items:center;gap:10px;padding:0 10px 0 6px;border-radius:8px;border:1px solid var(--edge2);background:#141925;cursor:pointer;text-align:left}
+.rd .b{flex:none;width:52px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:5px;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;
+  background:rgba(124,163,255,.14);color:var(--accent)}
+.rd .b i{display:block;font-style:normal;line-height:1;text-box:trim-both cap alphabetic}
+.rd .rt{flex:1;min-width:0;font-size:20px;line-height:1.15;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-all}
+.rd .rn{flex:none;font-size:20px;font-weight:700;white-space:nowrap;color:var(--mute)}
+.rd:hover:not(:disabled){border-color:var(--accent)}
+.rd.secret{border-style:dashed;background:repeating-linear-gradient(135deg,#12151d 0 8px,#161a24 8px 16px)}
+.rd.secret .rt{color:var(--mute)}
+.rd.used{cursor:not-allowed;border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.025)}
+.rd.used .b{background:#242831;color:var(--sub)}
+.rd.used .rt{color:var(--mute);text-decoration:line-through;text-decoration-thickness:2px}
+.rd.off{opacity:.45;cursor:not-allowed}
+.rd.sel{border-style:solid;border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 2px rgba(124,163,255,.5)}
+.rd.sel .b{background:var(--accent);color:#0b1020}
+.rd.sel .rt{color:var(--ink)}
+.rd.sel .rn{color:var(--accent)}
+.rd.sel.win .rn{color:var(--ok)}
+.ed-sum .w{color:var(--wait)}
 .bar{flex:none;display:flex;gap:4px;height:6px;margin:6px 0 8px}
 .bar i{flex:1;border-radius:3px;background:var(--edge)}
 .bar i.playing{background:var(--accent)} .bar i.ack{background:var(--ack)}
@@ -279,7 +321,7 @@ body.inround #round{display:grid;animation:fadein .35s both}
 .it{font-size:20px;line-height:26px;white-space:nowrap;color:var(--sub);min-width:0}
 .it.ack{color:var(--ack)} .it.mute{color:var(--mute)}
 .tnote{grid-column:1/-1;font-size:17px;line-height:26px;color:var(--ack);white-space:nowrap}
-.tgrid.cmp .bd{grid-template-columns:260px minmax(0,1fr);gap:3px 8px}
+.tgrid.cmp .bd{grid-template-columns:212px minmax(0,1fr);gap:3px 8px}   /* 名前は全角 10 文字まで。残りを結果と使用デッキに回す */
 .tgrid.cmp .pn .nm{font-size:20px;line-height:26px}
 .tgrid.big .bd{grid-template-columns:minmax(0,1fr);row-gap:4px}
 .tgrid.big .pn .nm{font-size:24px;line-height:32px}
@@ -391,7 +433,7 @@ const OFF=[0,7,13,20], ROUNDS=4;
 let DONE=2;                                        /* 終了したラウンド数。はじめは 2 ラウンド終了 → ROUND 3 の抽選 */
 /* 流れ: ラウンド中 →（ラウンド終了）→ 抽選前 → 抽選（演出）→ 組み合わせ決定 →（START）→ ラウンド中 */
 const STATES=["before","drawing","decided","round"];
-const SLAB={before:"抽選前",drawing:"演出",decided:"決定",round:"R中"};
+const SLAB={before:"抽選前",drawing:"抽選中",decided:"組み合わせ決定",round:"ラウンド中"};   /* モック用の切替（本番では消える） */
 
 const qs=new URLSearchParams(location.search);
 let N=qs.get("players")==="16"?16:8;
@@ -416,13 +458,15 @@ const isDropped=(p,ri)=>p.dropAfter>0&&ri>=p.dropAfter;
 function calc(){
   const s=T.players.map(p=>({p,w:0,l:0,d:0,m:0,bye:0,opp:[],deck:p.decks.map(()=>({st:"secret",r:0})),
     cost:p.decks.reduce((a,d)=>a+d.base,0),dropped:isDropped(p,DONE)}));
+  /* ピラミッド: 勝ったデッキは使用済み。負け・引き分けのデッキは公開されるが消費しない（まだ使える）。一度使用済みになったデッキは戻らない */
+  const use=(X,di,win,r)=>{if(win)X.deck[di]={st:"used",r};else if(X.deck[di].st!=="used")X.deck[di]={st:"open",r}};
   T.rounds.forEach((R,ri)=>{
-    R.matches.forEach(m=>{ if(m.status!=="done")return;
+    R.matches.forEach(m=>{ if(m.status!=="done"||!m.res)return;
       const A=s[m.a],B=s[m.b];A.m++;B.m++;A.opp.push(m.b);B.opp.push(m.a);
       if(m.res==="a"){A.w++;B.l++}else if(m.res==="b"){B.w++;A.l++}else{A.d++;B.d++}
-      /* ピラミッド: 勝ったデッキは使用済み、負けたデッキは公開済みで使用可 */
-      A.deck[ri]={st:m.res==="a"?"used":"open",r:ri+1};B.deck[ri]={st:m.res==="b"?"used":"open",r:ri+1};});
-    if(R.bye&&R.bye.status==="done"){const A=s[R.bye.p];A.w++;A.m++;A.bye++;A.deck[ri]={st:"used",r:ri+1}}
+      /* 使用デッキ（da／db）は登録デッキの番号。サンプルの終了済みラウンドは「ラウンド番号と同じ番号のデッキ」を使ったことにしている */
+      use(A,m.da??ri,m.res==="a",ri+1);use(B,m.db??ri,m.res==="b",ri+1);});
+    if(R.bye&&R.bye.status==="done"){const A=s[R.bye.p];A.w++;A.m++;A.bye++;use(A,R.bye.d??ri,true,ri+1)}
   });
   s.forEach(x=>x.rate=x.m?x.w/x.m:0);
   s.forEach(x=>x.omw=x.opp.length?x.opp.reduce((a,o)=>a+s[o].rate,0)/x.opp.length:0);
@@ -624,23 +668,30 @@ function tmToggle(){
 setInterval(tmDraw,250);
 function renderRound(){
   const R=cur(),P=T.players,cmp=T.n>8,k=R.matches.length+(R.bye?1:0);
-  const row=p=>`<span class="pn"><i class="dot"></i><span class="nm ell">${esc(p.name)}</span></span><span class="it mute">未報告</span>`;
+  const fin=m=>m.status==="done"&&!!m.res,nd=R.matches.filter(fin).length,byeDone=!!R.bye&&R.bye.status==="done",ndAll=nd+(byeDone?1:0);
+  const dkTxt=d=>`${d.base.toFixed(1)} ${esc(d.title)}`;
+  /* 卓の 1 人ぶん: 名前と、確定した結果（勝ち／負け／引分＋使用デッキ）。未確定なら「未報告」 */
+  const row=(m,s)=>{const p=P[s?m.b:m.a],nm=`<span class="pn"><i class="dot"></i><span class="nm ell">${esc(p.name)}</span></span>`;
+    if(!fin(m))return nm+`<span class="it mute">未報告</span>`;
+    const o=m.res==="d"?"draw":m.res==="ab"[s]?"win":"lose";
+    return nm+`<span class="it ${o} ell">${{win:"勝ち",lose:"負け",draw:"引分"}[o]}　${dkTxt(p.decks[s?m.db:m.da])}</span>`};
   $("#rLeft").innerHTML=`<div class="timer box"><div class="tm-main"><div class="tm-lab">ROUND ${DONE+1} / ${ROUNDS}　残り時間<span class="tm-state" id="tmState"></span></div>
       <input id="tm" class="num" inputmode="numeric" maxlength="6" aria-label="残り時間（分:秒）。停止中は直接編集できます" spellcheck="false"></div>
     <div class="tm-ctl org"><button class="btn pri" id="tmGo">STOP</button><button class="btn" id="tmReset">RESET</button><span class="tm-hint">停止中は数字を<br>直接編集できます</span></div></div>
-  <div class="panel box" style="flex:1"><div class="ph"><h2>対戦卓<small>ROUND ${DONE+1}</small></h2><div class="cnts"><span class="cnt c-playing">対戦中<b>${R.matches.length}</b></span>${R.bye?`<span class="cnt c-ack">了解待ち<b>1</b></span>`:""}</div></div>
-    <div class="bar">${R.matches.map(()=>`<i class="playing"></i>`).join("")}${R.bye?`<i class="ack"></i>`:""}</div>
+  <div class="panel box" style="flex:1"><div class="ph"><h2>対戦卓<small>ROUND ${DONE+1}</small></h2><div class="cnts"><span class="cnt c-playing">対戦中<b>${R.matches.length-nd}</b></span><span class="cnt c-done">確定<b>${ndAll}</b></span>${R.bye&&!byeDone?`<span class="cnt c-ack">了解待ち<b>1</b></span>`:""}</div></div>
+    <div class="bar">${R.matches.map(m=>`<i class="${fin(m)?"done":"playing"}"></i>`).join("")}${R.bye?`<i class="${byeDone?"done":"ack"}"></i>`:""}</div>
     <div class="tgrid ${cmp?"cmp":"big"}" style="grid-template-rows:repeat(${k},minmax(0,1fr))">
-      ${R.matches.map((m,i)=>`<div class="tc box playing" data-pop="t:${i}"><div class="sd"><span class="no">卓<b>${i+1}</b></span><span class="pill playing">対戦中</span></div><div class="bd">${row(P[m.a])}${row(P[m.b])}</div></div>`).join("")}
-      ${R.bye?`<div class="tc box ack" data-pop="p:${R.bye.p}"><div class="sd"><span class="no">不戦勝</span><span class="pill ack">了解待ち</span></div><div class="bd"><span class="pn"><i class="dot"></i><span class="nm ell">${esc(P[R.bye.p].name)}</span></span><span class="it ack">不戦勝</span><span class="tnote ell">本人の了解で確定（使用済みにするデッキを選択）</span></div></div>`:""}</div>
-    <div class="strip org"><span class="who">主催者</span><button class="btn" data-act="endround" data-arm="1">ラウンド終了</button><span class="hint">${DONE+1<ROUNDS?"押すと次のラウンドの抽選前へ":"最終ラウンドです"}</span></div></div>`;
+      ${R.matches.map((m,i)=>`<div class="tc box ${fin(m)?"done":"playing"}" data-res="${i}" title="押すと結果を修正（主催者）"><div class="sd"><span class="no">卓<b>${i+1}</b></span><span class="pill ${fin(m)?"pub":"playing"}">${fin(m)?"確定":"対戦中"}</span></div><div class="bd">${row(m,0)}${row(m,1)}</div></div>`).join("")}
+      ${R.bye?`<div class="tc box ${byeDone?"done":"ack"}" data-res="bye" title="押すと結果を修正（主催者）"><div class="sd"><span class="no">不戦勝</span><span class="pill ${byeDone?"pub":"ack"}">${byeDone?"確定":"了解待ち"}</span></div><div class="bd"><span class="pn"><i class="dot"></i><span class="nm ell">${esc(P[R.bye.p].name)}</span></span>`+
+        (byeDone?`<span class="it win ell">不戦勝　${dkTxt(P[R.bye.p].decks[R.bye.d])}</span>`:`<span class="it ack">不戦勝</span><span class="tnote ell">本人の了解で確定（使用済みにするデッキを選択）</span>`)+`</div></div>`:""}</div>
+    <div class="strip org"><span class="who">主催者</span><button class="btn" data-act="endround" data-arm="1">ラウンド終了</button><span class="hint">卓を押すと結果を修正できます</span></div></div>`;
   let rank=0;
-  $("#rRight").innerHTML=`<div class="ph"><h2>順位表<small>ROUND ${DONE} 終了時点　｜　並び: 勝ち数 → 勝率 → 合計コスト(低) → OMW%　｜　簡易表示（本番は I 案の形）</small></h2></div>
+  $("#rRight").innerHTML=`<div class="ph"><h2>順位表<small>${ndAll?`ROUND ${DONE+1} の確定 ${ndAll} 卓まで反映`:`ROUND ${DONE} 終了時点`}　｜並び: 勝ち数 → 勝率 → 合計コスト(低) → OMW%　｜　簡易表示（本番は I 案の形）</small></h2></div>
     <div class="rh"><span>順位</span><span>参加者</span><span>勝-負-分</span><span>登録デッキ 1</span><span>2</span><span>3</span><span>4</span></div>
     <div class="rt" style="grid-template-rows:repeat(${C.order.length},minmax(0,66px))">${C.order.map(x=>{const r=x.dropped?0:++rank;
       return`<div class="rr${x.dropped?" dropped":""}" data-pop="p:${x.p.id}"><span class="rk">${r||"–"}</span><span class="nmw"><span class="nm ell">${esc(x.p.name)}</span>${x.dropped?`<span class="tag">棄権</span>`:""}</span>${recHtml(x)}`+
         x.p.decks.map((d,j)=>`<span class="dc ${x.deck[j].st} ell">${x.deck[j].st==="secret"?"未公開":esc(d.title)}</span>`).join("")+`</div>`}).join("")}</div>`;
-  tmDraw();
+  tmDraw();marks();
 }
 
 /* ===== 全文表示 ===== */
@@ -664,7 +715,10 @@ function act(a){
   if(a==="close")return closePop();
   if(a==="draw")return draw();
   if(a==="skip"){phase="decided";show();return}
-  if(a==="start"){phase="round";tmSet(2100,2100,true);renderRound();ui();return}
+  if(a==="start"){phase="round";startRound();tmSet(2100,2100,true);renderRound();ui();return}
+  if(a==="rs-close")return closeEdit();
+  if(a==="rs-reset"){RE.res=RE.base.res;RE.d=RE.base.d.slice();return renderRes()}
+  if(a==="rs-apply")return applyRes();
   if(a==="endround")return endRound();
   if(a==="edit")return openEdit();
   if(a==="ed-close")return closeEdit();
@@ -674,7 +728,11 @@ function act(a){
 /* ラウンド終了: いまのラウンドを確定して、次のラウンドの抽選前へ（モックでは未報告の卓を仮の結果で確定する） */
 function endRound(){
   if(DONE+1>=ROUNDS){toast("最終ラウンドです（モックの通しはここまで）");return}
-  setStatus("done");DONE++;C=calc();
+  /* 未報告の卓は、モック用の仮の勝敗と「まだ使えるデッキの先頭」で確定する。主催者が確定した卓はそのまま */
+  const R=cur(),free=id=>C.s[id].deck.findIndex(d=>d.st!=="used");
+  R.matches.forEach(m=>{if(m.status==="done"&&m.res)return;m.res=m.sim||"a";m.da=free(m.a);m.db=free(m.b);m.status="done"});
+  if(R.bye&&R.bye.status!=="done"){R.bye.d=free(R.bye.p);R.bye.status="done"}
+  DONE++;C=calc();
   phase="before";document.body.classList.remove("inround");   /* 盤の寸法を測るので、先にマッチング画面へ戻す */
   buildTiles();tmSet(2100,2100,false);show();
   toast(`ROUND ${DONE} を終了しました。ROUND ${DONE+1} の抽選前です`);
@@ -684,7 +742,54 @@ function endRound(){
 let ED=null;   /* 作業用の並び。slots[卓] = [左, 右]（最後が不戦勝なら [本人]）。適用するまで会場の盤は変えない */
 const curSlots=()=>cardList().map(c=>c.ids.slice());
 function openEdit(){if(phase!=="decided")return;ED={slots:curSlots(),base:curSlots(),sel:null};renderEdit();$("#edit").classList.add("on")}
-function closeEdit(){$("#edit").classList.remove("on");ED=null}
+function closeEdit(){$("#edit").classList.remove("on");ED=null;RE=null}
+
+/* ===== 結果の修正（主催者用のパネル。ラウンド中に対戦卓を押すと開く） ===== */
+/* ラウンド開始: 全卓を「未報告」にする。抽選のときに作った仮の勝敗は sim に取っておく（ラウンド終了で未報告の卓に使う） */
+function startRound(){const R=cur();R.matches.forEach(m=>{m.sim=m.res;m.res=null;m.da=m.db=null;m.status="playing"});if(R.bye){R.bye.status="ack";R.bye.d=null}}
+let RE=null;   /* 作業用。key=卓の番号か "bye"、res="a"|"b"|"d"|null（不戦勝は "ok"|null）、d=[左の使用デッキ, 右の使用デッキ]。適用するまで盤は変えない */
+function openRes(key){
+  if(phase!=="round"||ED||RE)return;
+  const R=cur(),bye=key==="bye",o=bye?R.bye:R.matches[+key],fin=o.status==="done";
+  /* デッキを選べるかどうかは「この卓の結果を入れる前」の状態で決める */
+  const keep=o.status;o.status="x";const s=calc().s;o.status=keep;
+  const res=bye?(fin?"ok":null):(fin?o.res:null),d=bye?[fin?o.d:null,null]:[fin?o.da:null,fin?o.db:null];
+  RE={key,bye,ids:bye?[o.p]:[o.a,o.b],s,res,d,base:{res,d:d.slice()}};
+  renderRes();$("#edit").classList.add("on");
+}
+function renderRes(){
+  const P=T.players,{ids,bye}=RE,ch=RE.res!==RE.base.res||RE.d.some((v,i)=>v!==RE.base.d[i]),need=!!RE.res&&ids.some((_,s)=>RE.d[s]==null);
+  const out=s=>!RE.res?"none":bye?"win":RE.res==="d"?"draw":RE.res==="ab"[s]?"win":"lose",OL={none:bye?"了解待ち":"未報告",win:bye?"不戦勝":"勝ち",lose:"負け",draw:"引き分け"};
+  const rb=(v,t,sub)=>`<button class="rs-b${(RE.res||"n")===v?" sel":""}" data-rs="${v}"><b>${t}</b>${sub?`<span>${sub}</span>`:""}</button>`;
+  const col=s=>{const id=ids[s],x=RE.s[id],o=out(s);
+    return`<div class="rs-col"><div class="rs-nm"><span class="nm">${esc(P[id].name)}</span>${recHtml(x)}<span class="rs-out ${o}">${OL[o]}</span></div>
+      <p class="rs-cap">使用デッキ${RE.res?"（1 個選ぶ）":""}</p>`+
+      P[id].decks.map((d,j)=>{const st=x.deck[j].st,sel=RE.d[s]===j,used=st==="used",off=!used&&!RE.res,show=st!=="secret"||sel;
+        /* 未公開のデッキは、選んだものだけタイトル名を出す（適用すると公開されるため）。選んでいない未公開は伏せたまま */
+        const note=used?"使用済み":sel?(o==="win"?"→ 使用済みになる":st==="secret"?"→ 公開される・まだ使える":"→ まだ使える"):"";
+        return`<button class="rd ${st}${sel?" sel "+o:""}${off?" off":""}" data-rd="${s}:${j}"${used||off?" disabled":""}><span class="b"><i>${show?d.base.toFixed(1):"?"}</i></span><span class="rt">${show?esc(d.title):`未公開のデッキ（${j+1} 番目）`}</span>${note?`<span class="rn">${note}</span>`:""}</button>`}).join("")+`</div>`};
+  const sum=!ch?"変更なし":need?`<b class="w">使用デッキを${bye?"":" 2 人ぶん"}選んでください</b>`:
+    !RE.res?(bye?"了解待ちに戻します":"未報告に戻します（使用デッキの記録も消えます）"):"適用すると、卓の状態・成績・デッキの表示に反映します";
+  $("#edbox").innerHTML=`<div class="ed-h"><h3>ROUND ${DONE+1}　${bye?"不戦勝":"卓 "+(+RE.key+1)}　結果の修正</h3><span class="tag">主催者用・「適用」を押すまで盤は変わりません</span></div>
+    <p class="ed-help">${bye?"不戦勝は 1 勝として数えます。使用済みにするデッキを選んで確定します。":"勝敗と、2 人が使ったデッキを選びます。勝ったデッキは使用済みになります。負け・引き分けのデッキは公開されますが、まだ使えます。"}</p>
+    <div class="rs-row" style="grid-template-columns:repeat(${bye?2:4},minmax(0,1fr))">`+
+      (bye?rb("ok","了解済みにする","不戦勝を確定")+rb("n","了解待ちに戻す",""):
+        rb("a","左の勝ち",esc(P[ids[0]].name))+rb("b","右の勝ち",esc(P[ids[1]].name))+rb("d","引き分け","")+rb("n","未報告に戻す",""))+`</div>
+    <div class="rs-cols" style="grid-template-columns:repeat(${ids.length},minmax(0,1fr))">${ids.map((_,s)=>col(s)).join("")}</div>
+    <div class="ed-f"><span class="ed-sum">${sum}</span>
+      <span class="ed-btns"><button class="btn" data-act="rs-reset"${ch?"":" disabled"}>元に戻す</button><button class="btn" data-act="rs-close">やめる（Esc）</button><button class="btn pri" data-act="rs-apply"${ch&&!need?"":" disabled"}>適用</button></span></div>`;
+}
+function rsPick(v){RE.res=v==="n"?null:v;if(!RE.res)RE.d=[null,null];renderRes()}
+function rdPick(s,j){RE.d[s]=RE.d[s]===j?null:j;renderRes()}
+/* 適用: 盤の卓の状態・成績・デッキの表示にすぐ反映する（変わった卓だけ軽く光る） */
+function applyRes(){
+  const R=cur(),key=RE.key;
+  if(RE.bye){R.bye.status=RE.res?"done":"ack";R.bye.d=RE.res?RE.d[0]:null}
+  else{const m=R.matches[+key];m.res=RE.res;m.da=RE.res?RE.d[0]:null;m.db=RE.res?RE.d[1]:null;m.status=RE.res?"done":"playing"}
+  closeEdit();C=calc();renderRound();
+  const tc=document.querySelector(`.tc[data-res="${key}"]`);if(tc&&!REDUCED)tc.classList.add("hit");
+  toast(`${key==="bye"?"不戦勝":"卓 "+(+key+1)} の結果を修正しました`);
+}
 function renderEdit(){
   const cards=cardList(),P=T.players;let nre=0,nch=0;
   const btn=(id,ci,s)=>`<button class="ed-p${ED.sel===id?" sel":""}${ED.base[ci][s]!==id?" moved":""}" data-ed="${id}"><span>${esc(P[id].name)}</span>${recHtml(C.s[id])}</button>`;
@@ -725,11 +830,12 @@ window.__rematchHint=()=>{const cs=cardList(),P=T.players,lab=c=>c.bye?"不戦�
     const h={a,b,names:[P[a].name,P[b].name],tables:[lab(cs[xi]),lab(cs[yi])],count:re.length,rematch:re.map(s=>P[s[0]].name+" × "+P[s[1]].name)};
     if(re.length===1)return h;alt=alt||h}
   return alt};
-function setStatus(s){const R=cur();R.matches.forEach(m=>m.status=s);if(R.bye)R.bye.status=s==="playing"?"ack":s}
 let armed=null;
 function disarm(){if(!armed)return;clearTimeout(armed._t);armed.textContent=armed.dataset.label;armed.classList.remove("armed");armed=null}
 document.addEventListener("click",e=>{
   const d=e.target.closest("[data-ed]");if(d&&ED)return edPick(+d.dataset.ed);
+  if(RE){const a=e.target.closest("[data-rs]");if(a)return rsPick(a.dataset.rs);
+    const k=e.target.closest("[data-rd]");if(k){if(!k.disabled){const[s,j]=k.dataset.rd.split(":");rdPick(+s,+j)}return}}
   const b=e.target.closest("[data-act]");
   if(b){if(b.disabled)return;
     if(b.dataset.arm&&armed!==b){if(armed)disarm();armed=b;b.dataset.label=b.textContent;b.textContent="もう一度押して確定";b.classList.add("armed");b._t=setTimeout(disarm,3500);return}
@@ -739,10 +845,11 @@ document.addEventListener("click",e=>{
   if(e.target.id==="tmReset"){if(!tm.run){tmSet(tm.base,tm.base,false);tmDraw()}return}
   if(e.target.id==="pop")return closePop();
   if(phase==="drawing")return;
+  const r=e.target.closest("[data-res]");if(r)return openRes(r.dataset.res);     /* ラウンド中の対戦卓 → 結果の修正 */
   const p=e.target.closest("[data-pop]");if(p)openPop(p.dataset.pop);
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"){closePop();if(ED)closeEdit()}
+  if(e.key==="Escape"){closePop();if(ED||RE)closeEdit()}
   if(e.target.id==="tm"){if(e.key==="Enter"){e.target.blur();tmToggle()}return}
   if(e.key==="h"||e.key==="H")toggleOrg();
 });
@@ -751,13 +858,13 @@ $("#bHide").onclick=toggleOrg;
 $("#bFix").onclick=e=>{e.preventDefault();toast("「大会進行修正」タブを開きます（モックでは移動しません）")};
 
 function load(){
-  cancelAnim();closePop();if(ED)closeEdit();drawNo=0;DONE=2;
+  cancelAnim();closePop();if(ED||RE)closeEdit();drawNo=0;DONE=2;
   document.body.classList.remove("inround");                   /* 盤の寸法を測るので、先にマッチング画面を出す */
   preset(N);buildTiles();
   phase=ST==="drawing"?"before":ST;
   if(phase!=="before")newDraft();
   tmSet(2100,2100,phase==="round");
-  if(phase==="round")renderRound();
+  if(phase==="round"){startRound();renderRound()}
   show();
   if(ST==="drawing")later(REDUCED?0:500,draw);
 }
@@ -788,9 +895,9 @@ window.__check=function(loose){
     const ow=e.scrollWidth-e.clientWidth,oh=e.scrollHeight-e.clientHeight,inTile=!!e.closest(".tile");
     if(loose&&inTile&&!e.classList.contains("ell"))return;
     const isEll=e.classList.contains("ell");
-    if(ow>1||(isEll&&oh>1)){ if(isEll){ if(e.title===e.textContent&&e.closest("[data-pop]"))out.ell.push(txt(e));else out.bad.push("ellipsis without full text: "+name(e)) } else out.bad.push(`overflow-x ${ow}px: ${name(e)} "${txt(e)}"`)}
+    if(ow>1||(isEll&&oh>1)){ if(isEll){ if(e.title===e.textContent&&e.closest("[data-pop],[data-res]"))out.ell.push(txt(e));else out.bad.push("ellipsis without full text: "+name(e)) } else out.bad.push(`overflow-x ${ow}px: ${name(e)} "${txt(e)}"`)}
     /* コストの数字（.dk .b i）は text-box で字の高さに切りそろえた箱なので、行の余白ぶん scrollHeight が大きく出る。外側の札（.dk .b）で見る */
-    if(oh>1&&!isEll&&!e.matches(".dk .b i"))out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`);
+    if(oh>1&&!isEll&&!e.matches(".dk .b i,.rd .b i"))out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`);
     if(loose&&(inTile||e.classList.contains("tile")))return;
     const r=e.getBoundingClientRect(),box=e.parentElement.closest(".box,.panel,.top,#stage"),br=box.getBoundingClientRect(),t=0.6;
     if(r.width&&r.height&&(r.left<br.left-t||r.right>br.right+t||r.top<br.top-t||r.bottom>br.bottom+t))out.bad.push(`outside ${name(box)}: ${name(e)} "${txt(e)}"`);
@@ -801,7 +908,7 @@ window.__check=function(loose){
     for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i][1],b=rs[j][1];
       if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1)out.bad.push(`overlap: ${name(rs[i][0])} "${txt(rs[i][0])}" × ${name(rs[j][0])} "${txt(rs[j][0])}"`)}
   }
-  stage.querySelectorAll(".tile .nm,.tile .rec,.dk,.dk .t,.dk .b,.dk .b i,.hd .no,.retag,.tb .vs,.pill,.byeinfo h4,.ed-p,.ed-p .rec,.ed-no,.ed-vs,.ed-none,.ed-flag,.ed-help,.ed-sum,.byeinfo p,#note li,.drop,.drop .nm,.msg,.steps .st,#pre span,.tc .nm,.tc .no,.tc .it,.rr>span,.rr .nm,.cnt").forEach(e=>{
+  stage.querySelectorAll(".tile .nm,.tile .rec,.dk,.dk .t,.dk .b,.dk .b i,.hd .no,.retag,.tb .vs,.pill,.byeinfo h4,.ed-p,.ed-p .rec,.ed-no,.ed-vs,.ed-none,.ed-flag,.ed-help,.ed-sum,.rs-b b,.rs-b span,.rs-nm .nm,.rs-nm .rec,.rs-out,.rs-cap,.rd .b,.rd .rt,.rd .rn,.byeinfo p,#note li,.drop,.drop .nm,.msg,.steps .st,#pre span,.tc .nm,.tc .no,.tc .it,.rr>span,.rr .nm,.cnt").forEach(e=>{
     if(!e.offsetParent)return;const f=parseFloat(getComputedStyle(e).fontSize);if(f<20)out.small.push(name(e)+" "+f+"px")});
   return out;
 };
