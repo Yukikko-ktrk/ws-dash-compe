@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>しまWS大会ダッシュボード — マッチング抽選（第3回コンペ L 案）</title>
+<style>
+:root{
+  --jp:"BIZ UDPGothic","Yu Gothic UI","Meiryo","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --num:"Bahnschrift","DIN Alternate","Consolas",monospace;
+  --bg:#0b0d11; --surface:#13161d; --card:#1a1e27; --card2:#20252f; --edge:#2b3241; --edge2:#3d4659;
+  --ink:#f1f3f6; --sub:#b4bac6; --mute:#7f8797;
+  --accent:#7ca3ff; --accent-bg:#1b2540;
+  --ok:#5eead4; --ok-bg:#0f2b26;
+  --wait:#fbbf24; --wait-bg:#33280f;
+  --ack:#c9a6ff; --ack-bg:#2a2140;
+  --danger:#f87171; --danger-bg:#38181a;
+  --gold:#f5b02e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#05070a;color:var(--ink);font-family:var(--jp)}
+button,input{font-family:inherit;color:inherit}
+/* 1920x1080 の固定ステージを画面に合わせて等倍率で縮小する（1280x720 でも同じ配置） */
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
+  padding:12px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  background:radial-gradient(1200px 500px at 50% -80px,#1a2030 0%,var(--bg) 70%)}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ell.cut{cursor:help}
+
+/* ---------- ヘッダー（H 案と同じ） ---------- */
+.top{flex:none;height:50px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 14px;background:var(--surface);border:1px solid var(--edge);border-radius:12px}
+.top-l,.top-r{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:700;letter-spacing:.04em}
+.brand i{width:5px;height:22px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.tname{font-size:20px;font-weight:700}
+.chip{font-size:15px;font-weight:700;padding:3px 10px;border-radius:7px;border:1px solid var(--edge);background:var(--card);color:var(--sub)}
+.chip.rule{border-color:#3b5598;background:var(--accent-bg);color:var(--accent)}
+.chip.round{border-color:#1f6b5f;background:var(--ok-bg);color:var(--ok)}
+.chip.draw{border-color:#6b5a1f;background:var(--wait-bg);color:var(--wait)}
+.seg{display:flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--edge);border-radius:8px;background:#0a0c10}
+.seg span{font-size:12px;color:var(--mute);padding:0 6px}
+.seg button{border:0;background:transparent;color:var(--mute);font-size:13px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer}
+.seg button.on{background:#27304a;color:#fff}
+.lnk{font-size:14px;font-weight:700;color:var(--sub);text-decoration:none;padding:5px 11px;border:1px solid var(--edge);border-radius:7px;background:var(--card);cursor:pointer}
+.lnk:hover{color:#fff;border-color:var(--accent)}
+
+/* ---------- 主催者ボタン（控えめ） ---------- */
+.btn{font-size:15px;font-weight:700;height:34px;padding:0 14px;border-radius:7px;border:1px solid var(--edge2);background:transparent;
+  color:var(--sub);cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){color:#fff;border-color:var(--accent)}
+.btn.pri{color:var(--accent);border-color:#3b5598;background:var(--accent-bg)}
+.btn.go{color:var(--ok);border-color:#1f6b5f;background:var(--ok-bg)}
+.btn.armed{color:#1a1205;background:var(--wait);border-color:var(--wait)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+body.hideorg .org{visibility:hidden}
+
+/* ---------- 抽選の帯（上部） ---------- */
+.band{flex:none;height:96px;position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:24px;align-items:center;
+  padding:0 20px;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(180deg,#191e2a,#11141a)}
+.band::before{content:"";position:absolute;left:20px;right:20px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.bt{display:flex;flex-direction:column;gap:6px;min-width:0;white-space:nowrap}
+.bt h1{display:flex;align-items:center;gap:14px;font-size:32px;line-height:40px;font-weight:700;letter-spacing:.03em}
+.bt h1 .num{font-size:36px}
+.bt h1 small{font-size:22px;color:var(--sub);font-weight:700}
+.bt p{font-size:20px;line-height:26px;color:var(--sub)}
+.badge{font-size:20px;line-height:28px;font-weight:700;padding:0 12px;border-radius:7px;border:1px solid}
+.badge.s-before{color:var(--sub);border-color:var(--edge2);border-style:dashed}
+.badge.s-drawing{color:var(--accent);border-color:var(--accent);background:var(--accent-bg);animation:blink 1s ease-in-out infinite}
+.badge.s-drafted{color:var(--wait);border-color:var(--wait);border-style:dashed;background:var(--wait-bg)}
+.badge.s-published{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+@keyframes blink{50%{opacity:.55}}
+.steps{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;white-space:nowrap}
+.step{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 6px;border-radius:20px;border:1px solid var(--edge);
+  font-size:20px;font-weight:700;color:var(--mute)}
+.step b{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--num);font-size:17px;background:var(--edge);color:var(--sub)}
+.step.done{color:var(--ok);border-color:#1f6b5f}
+.step.done b{background:var(--ok-bg);color:var(--ok)}
+.step.cur{color:#fff;border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 18px rgba(124,163,255,.3)}
+.step.cur b{background:var(--accent);color:#0b1020}
+.steps .sep{font-size:18px;color:var(--edge2)}
+.bc{display:flex;flex-direction:column;align-items:flex-end;gap:8px;white-space:nowrap}
+.cn{font-size:20px;line-height:26px;color:var(--sub)}
+.cn b{font-family:var(--num);font-size:24px;color:var(--ink);margin:0 3px}
+.cn .x{color:var(--mute)}
+.legend{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--sub)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:28px;height:15px;border-radius:4px;border:1px solid var(--edge2)}
+.legend i.used{border-color:rgba(255,255,255,.14);background:linear-gradient(transparent 6px,var(--mute) 6px 8px,transparent 8px)}
+.legend i.open{border-color:#4a66ad;background:rgba(124,163,255,.12)}
+.legend i.secret{border-style:dashed;border-color:#4b566e;background:repeating-linear-gradient(135deg,#12151d 0 4px,#1b2030 4px 8px)}
+
+/* ---------- 骨組み ---------- */
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px}
+.board{min-height:0;min-width:0;display:grid;gap:10px}
+.board.p16{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr))}
+.board.p8{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.board.t16{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr))}
+.board.t8{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(0,1fr))}
+.panel{background:var(--surface);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;
+  display:flex;flex-direction:column;min-height:0;min-width:0}
+.ph{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;height:34px;white-space:nowrap}
+.ph h2{font-size:22px;font-weight:700;letter-spacing:.03em;display:flex;align-items:baseline;gap:10px}
+.ph h2 small{font-size:15px;font-weight:400;color:var(--sub)}
+
+/* ---------- デッキ札（H 案の札） ---------- */
+.dk{display:flex;align-items:center;gap:6px;min-width:0;height:28px;padding:0 8px 0 3px;border-radius:7px;
+  border:1px solid var(--edge2);background:#141925;font-size:20px;line-height:24px}
+.dk .c{flex:none;width:42px;height:22px;line-height:22px;text-align:center;border-radius:5px;background:var(--edge);color:var(--accent);
+  font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700}
+.dk .t{flex:0 1 auto}
+.dk.open{border-color:#4a66ad;background:rgba(124,163,255,.08)}
+.dk.used{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.025);color:var(--mute)}
+.dk.used .t{text-decoration:line-through;text-decoration-thickness:2px}
+.dk.used .c{background:#242831;color:var(--mute)}
+.dk.secret{border-style:dashed;border-color:#394256;color:var(--mute);
+  background:repeating-linear-gradient(135deg,#12151d 0 8px,#161a24 8px 16px)}
+.dk.secret .c{background:rgba(124,163,255,.14);color:var(--accent)}
+.dk.blank{border-style:dashed;border-color:#2b3241;background:transparent}
+.dk.nocost{padding-left:8px}
+.dks{display:grid;grid-template-rows:repeat(4,28px);row-gap:4px;min-width:0}
+
+/* 成績 */
+.rec{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;line-height:26px;white-space:nowrap}
+.rec .w{color:var(--ok)} .rec .l{color:var(--danger)} .rec .d{color:var(--sub);font-weight:400}
+.rec.q{color:var(--edge2)}
+.rem{font-size:20px;line-height:26px;color:var(--sub);white-space:nowrap}
+.rem b{font-family:var(--num);color:var(--ink);margin:0 2px}
+
+/* ---------- 抽選前: 参加者の札 ---------- */
+.pt{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px 12px 8px 14px;
+  background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--edge2);border-radius:10px;cursor:pointer}
+.pt:hover{background:var(--card2)}
+.pt.g2{border-left-color:var(--ok)} .pt.g1{border-left-color:var(--accent)} .pt.g0{border-left-color:var(--edge2)}
+.pt .hd{display:flex;align-items:center;gap:10px;height:32px;min-width:0}
+.pt .nm{flex:1;font-size:24px;font-weight:700;line-height:32px}
+.pt .sub{font-size:20px;line-height:24px;color:var(--sub);white-space:nowrap}
+.pt .sub .grp{display:inline-block;font-size:17px;font-weight:700;padding:0 7px;border-radius:5px;border:1px solid var(--edge2);margin-right:6px;line-height:22px}
+.pt.g2 .grp{color:var(--ok);border-color:#1f6b5f} .pt.g1 .grp{color:var(--accent);border-color:#3b5598}
+.pt.drop{opacity:.5;border-style:dashed;border-left-style:solid;border-left-color:var(--mute)}
+.pt.drop .sub{color:var(--danger)}
+.board.p8 .pt{gap:12px;padding:16px 18px 16px 20px}
+.board.p8 .pt .hd{height:auto;flex-direction:column;align-items:flex-start;gap:4px}
+.board.p8 .pt .nm{flex:none;width:100%;font-size:30px;line-height:40px}
+.board.p8 .pt .rec{font-size:28px;line-height:34px}
+.board.p8 .pt .dks{grid-template-rows:repeat(4,40px);row-gap:8px}
+.board.p8 .pt .dk{height:40px;font-size:22px}
+.board.p8 .pt .dk .c{height:28px;line-height:28px;width:48px;font-size:22px}
+
+/* ---------- 対戦卓（抽選の札） ---------- */
+.mc{position:relative;overflow:hidden;min-width:0;min-height:0;display:grid;grid-template-columns:72px minmax(0,1fr) 34px minmax(0,1fr);
+  column-gap:10px;align-items:center;padding:8px 12px;background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--edge2);
+  border-radius:10px;cursor:pointer;transition:box-shadow .25s,border-color .25s}
+.mc:hover{background:var(--card2)}
+.mc.draft{border-style:dashed;border-left-style:solid;border-left-color:var(--wait)}
+.mc.pub{border-left-color:var(--ok)}
+.mc.spin{border-left-color:var(--accent)}
+.mc.bye{border-left-color:var(--ack);background:linear-gradient(90deg,rgba(201,166,255,.10),var(--card) 55%)}
+.mc.focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 30px rgba(124,163,255,.35)}
+.mc.bye.focus{border-color:var(--ack);box-shadow:0 0 0 1px var(--ack),0 0 30px rgba(201,166,255,.4)}
+.sd{display:flex;flex-direction:column;gap:8px;min-width:0;align-items:stretch}
+.no{font-size:20px;font-weight:700;color:var(--sub);line-height:28px;white-space:nowrap}
+.no b{font-family:var(--num);font-size:30px;color:var(--ink);margin-left:4px}
+.pill{font-size:20px;font-weight:700;line-height:26px;height:28px;text-align:center;border-radius:6px;border:1px solid;white-space:nowrap}
+.pill.draft{color:var(--wait);border-color:var(--wait);border-style:dashed;background:var(--wait-bg)}
+.pill.pub{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.pill.spin{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+.pill.playing{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+.pill.ack{color:var(--ack);border-color:var(--ack);background:var(--ack-bg)}
+.vs{font-family:var(--num);font-size:20px;font-weight:700;color:var(--mute);text-align:center;letter-spacing:.05em}
+.ps{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nmrow{height:30px;display:flex;align-items:center;min-width:0}
+.ps .nm{font-size:24px;font-weight:700;line-height:30px}
+.info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.recrow{display:flex;align-items:center;gap:12px;height:28px;min-width:0}
+/* リール（スロット風に名前が回る窓） */
+.reel-win{position:relative;width:100%;height:30px;overflow:hidden;border-radius:6px;
+  background:linear-gradient(180deg,rgba(124,163,255,.10),rgba(124,163,255,.02) 40%,rgba(124,163,255,.02) 60%,rgba(124,163,255,.10))}
+.reel-win::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:6px;box-shadow:inset 0 6px 6px -4px #0b0d11,inset 0 -6px 6px -4px #0b0d11}
+.reel{will-change:transform}
+.reel span{display:block;height:30px;line-height:30px;font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;color:#dfe6ff}
+.reel-win.fast .reel{filter:blur(.7px)}
+.reel-win.fast .reel span{color:#9fb6ff}
+.ps.landed .nm{color:#fff;animation:pop .45s ease-out}
+.mc.bye .ps.landed .nm{color:var(--ack)}
+@keyframes pop{0%{transform:scale(1.18);text-shadow:0 0 18px var(--accent)}100%{transform:scale(1);text-shadow:none}}
+.info.wait .dk{animation:shim 1.4s ease-in-out infinite}
+@keyframes shim{50%{border-color:#3d4659;background:rgba(124,163,255,.05)}}
+.info.flip{animation:flip .42s cubic-bezier(.2,.8,.3,1.2) both;transform-origin:50% 0}
+@keyframes flip{0%{transform:perspective(600px) rotateX(-85deg);opacity:0}100%{transform:none;opacity:1}}
+.mc.enter{animation:enter .35s ease-out both;animation-delay:var(--d,0ms)}
+@keyframes enter{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+.mc.pubfx::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 35%,rgba(94,234,212,.22) 50%,transparent 65%);background-size:300% 100%;
+  animation:sweep 1s ease-out both;animation-delay:var(--d,0ms)}
+@keyframes sweep{0%{background-position:100% 0}100%{background-position:0 0}}
+.byemsg{display:flex;flex-direction:column;gap:4px;min-width:0}
+.byemsg b{font-size:24px;line-height:30px;color:var(--ack)}
+.byemsg span{font-size:20px;line-height:26px;color:var(--sub)}
+.byemsg span.wt{color:var(--edge2)}
+/* 8 人: 卓は 1 列 4 段。名前を大きく */
+.board.t8 .mc{grid-template-columns:96px minmax(0,1fr) 44px minmax(0,1fr);column-gap:14px;padding:8px 16px}
+.board.t8 .no b{font-size:36px}
+.board.t8 .nmrow,.board.t8 .reel-win,.board.t8 .reel span{height:36px;line-height:36px}
+.board.t8 .ps .nm,.board.t8 .reel span{font-size:30px;line-height:36px}
+.board.t8 .vs{font-size:24px}
+.board.t8 .info{gap:5px}
+
+/* ---------- 右: 名前から卓を探す ---------- */
+.side .flist{flex:1;min-height:0;display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.fr{flex:1 1 0;min-height:0;max-height:62px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;
+  padding:0 8px 0 12px;border-radius:8px;background:var(--card);border:1px solid var(--edge);cursor:pointer}
+.fr:hover{background:var(--card2)}
+.fr .nm{font-size:22px;font-weight:700;line-height:28px}
+.fr.drop{opacity:.55;border-style:dashed}
+.fr.ping{animation:ping .7s ease-out}
+@keyframes ping{0%{background:rgba(124,163,255,.35);border-color:var(--accent)}100%{background:var(--card)}}
+.tb{display:inline-flex;align-items:center;justify-content:center;min-width:84px;height:30px;line-height:24px;padding:0 8px;text-align:center;border-radius:6px;border:1px solid;font-size:20px;font-weight:700;white-space:nowrap}
+.tb b{font-family:var(--num);font-size:22px;line-height:24px;margin-left:3px}
+.tb.t{color:var(--ink);border-color:#3b5598;background:var(--accent-bg)}
+.tb.y{color:var(--ack);border-color:var(--ack);background:var(--ack-bg)}
+.tb.x{color:var(--mute);border-color:var(--edge2);border-style:dashed}
+.tb.q{color:var(--edge2);border-color:var(--edge);border-style:dashed}
+.tb.g{color:var(--sub);border-color:var(--edge2)}
+.side.big .fr .nm{font-size:22px;line-height:28px}
+.rules{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:8px;counter-reset:r}
+.rules li{position:relative;padding:10px 12px 10px 46px;border-radius:9px;background:var(--card);border:1px solid var(--edge);font-size:20px;line-height:28px;color:var(--sub)}
+.rules li::before{counter-increment:r;content:counter(r);position:absolute;left:12px;top:12px;width:24px;height:24px;border-radius:50%;
+  background:var(--edge);color:var(--ink);font-family:var(--num);font-size:16px;font-weight:700;display:grid;place-items:center}
+.rules li b{color:var(--ink)}
+.sumbox{margin-top:auto;padding:14px 14px;border-radius:10px;border:1px solid #3b5598;background:var(--accent-bg);font-size:20px;line-height:30px;color:var(--sub)}
+.sumbox b{font-family:var(--num);font-size:28px;color:var(--ink);margin:0 3px}
+.strip{flex:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:6px}
+.strip .hint{font-size:14px;line-height:18px;color:var(--mute)}
+.strip .row{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.strip .who{font-size:12px;color:var(--mute);letter-spacing:.08em}
+
+/* ---------- ラウンド中（H 案の簡易版） ---------- */
+.main.round{grid-template-columns:584px minmax(0,1fr)}
+.left{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.timer{flex:none;height:150px;border-radius:12px;border:1px solid var(--edge);position:relative;
+  background:linear-gradient(180deg,#191e2a,#11141a);padding:8px 14px;display:grid;
+  grid-template-columns:minmax(0,1fr) 104px;column-gap:10px;align-items:center}
+.timer::before{content:"";position:absolute;left:20px;right:20px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.tm-main{display:flex;flex-direction:column;min-width:0}
+.tm-lab{display:flex;align-items:center;gap:10px;height:24px;font-size:15px;font-weight:700;color:var(--sub);letter-spacing:.1em}
+.tm-state{font-size:13px;letter-spacing:.04em;padding:1px 8px;border-radius:5px;border:1px solid var(--ok);color:var(--ok);background:var(--ok-bg)}
+.tm-state.stop{border-color:var(--wait);color:var(--wait);background:var(--wait-bg)}
+#tm{display:block;width:100%;height:108px;border:1px dashed transparent;border-radius:10px;background:transparent;outline:0;
+  font-family:var(--num);font-variant-numeric:tabular-nums;font-size:108px;font-weight:700;line-height:106px;letter-spacing:.04em;
+  text-align:center;color:#fff;text-shadow:0 0 26px rgba(124,163,255,.45)}
+#tm:not([readonly]):focus{border-color:var(--accent);background:#0c0e13}
+#tm.warn{color:var(--wait)} #tm.up{color:var(--danger)}
+.tm-ctl{display:flex;flex-direction:column;gap:6px}
+.tm-hint{font-size:12px;color:var(--mute);line-height:1.35}
+.cnts{display:flex;gap:14px;font-size:20px;font-weight:700}
+.cnt b{font-family:var(--num);font-size:22px;margin-left:5px}
+.c-playing{color:var(--accent)} .c-ack{color:var(--ack)}
+.bar{flex:none;display:flex;gap:4px;height:6px;margin:6px 0 8px}
+.bar i{flex:1;border-radius:3px;background:var(--accent)} .bar i.ack{background:var(--ack)}
+.tgrid{flex:1;min-height:0;display:grid;gap:6px}
+.tc{min-height:0;min-width:0;display:grid;grid-template-columns:98px minmax(0,1fr);column-gap:10px;align-items:center;
+  padding:0 10px;background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--accent);border-radius:9px;cursor:pointer}
+.tc.ack{border-left-color:var(--ack);background:linear-gradient(90deg,rgba(201,166,255,.09),var(--card) 60%)}
+.tc .sd{gap:4px}
+.tc .no b{font-size:24px}
+.bd{display:grid;min-width:0;align-items:center}
+.pn{display:flex;align-items:center;gap:5px;min-width:0;font-weight:700}
+.pn .dot{flex:none;width:8px;height:8px;border-radius:50%;border:1px solid var(--edge2)}
+.it{font-size:20px;line-height:26px;white-space:nowrap;color:var(--sub);min-width:0}
+.it.mute{color:var(--mute)} .it.ack{color:var(--ack)}
+.tnote{grid-column:1/-1;font-size:17px;line-height:26px;color:var(--ack);white-space:nowrap}
+.tgrid.cmp .bd{grid-template-columns:214px minmax(0,1fr);gap:3px 8px}
+.tgrid.cmp .pn .nm{font-size:20px;line-height:26px}
+.tgrid.big .bd{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px}
+.tgrid.big .pn .nm{font-size:26px;line-height:34px}
+.tgrid.big .no b{font-size:30px}
+.tstrip{flex:none;height:40px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.tstrip .btn{height:30px}
+.tstrip .who{font-size:12px;color:var(--mute);letter-spacing:.08em}
+.tstrip .hint{flex:1;font-size:14px;color:var(--mute);text-align:right}
+/* 順位表（I 案の形・H 案の色。勝率・OMW 列は外す） */
+.stab{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:4px}
+.sh,.sr{display:grid;grid-template-columns:44px 262px 84px 60px repeat(4,minmax(0,1fr));column-gap:8px;align-items:center;padding:0 10px}
+.sh{flex:none;height:26px;font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.06em;white-space:nowrap}
+.sh span:nth-child(3),.sh span:nth-child(4){text-align:right}
+.sr{flex:1 1 0;min-height:0;max-height:96px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
+.sr:hover{background:var(--card)}
+.sr .rk{font-family:var(--num);font-size:22px;font-weight:700;color:var(--sub)}
+.sr.r1 .rk{color:var(--gold)}
+.sr .nm{font-size:22px;font-weight:700;line-height:28px;display:block}
+.sr .rec{text-align:right}
+.sr .cs{font-family:var(--num);font-size:22px;font-weight:700;color:var(--accent);text-align:right}
+.sr .tag{font-size:14px;font-weight:700;padding:1px 7px;border-radius:5px;border:1px solid var(--edge2);color:var(--sub);margin-left:8px;vertical-align:3px}
+.sr.drop{opacity:.55}
+.sr .nmc{display:flex;align-items:center;min-width:0}
+.stab.big .sr .nm{font-size:24px;line-height:32px}
+.stab.big .dk{height:34px}
+
+/* ---------- 全文表示（クリックで開く） ---------- */
+#pop{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,5,9,.62);z-index:20}
+#pop.on{display:flex}
+.popbox{width:980px;max-height:900px;background:#161a23;border:1px solid var(--accent);border-radius:14px;padding:22px 26px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.popbox h3{font-size:30px;font-weight:700;line-height:1.35;margin-bottom:6px;word-break:break-all}
+.popbox .ps2{font-size:20px;line-height:1.5;color:var(--sub);margin-bottom:12px}
+.popbox ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.popbox li{display:grid;grid-template-columns:150px 64px minmax(0,1fr);gap:12px;align-items:baseline;font-size:24px;line-height:1.4;
+  padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--edge);word-break:break-all}
+.popbox li .k{font-size:18px;color:var(--sub)} .popbox li .v{font-family:var(--num);color:var(--accent);font-weight:700}
+.popbox .cl{margin-top:16px;text-align:right}
+#toast{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);padding:9px 22px;border-radius:30px;background:#11141c;border:1px solid var(--accent);
+  font-size:17px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap;z-index:30}
+#toast.on{opacity:1}
+
+/* 演出を止める（OS の「視差効果を減らす」、?motion=0、静止コマの撮影） */
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.still *,.still *::before,.still *::after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header class="top">
+    <div class="top-l">
+      <div class="brand"><i></i>しまWS</div>
+      <div class="tname">第3回 しま交流CS</div>
+      <span class="chip rule">しま2026版ピラミッド</span>
+      <span class="chip">スイス式・登録 4 デッキ</span>
+      <span class="chip" id="chipN"></span>
+      <span class="chip" id="chipR"></span>
+    </div>
+    <div class="top-r">
+      <div class="seg org" id="segS"><span>モック状態</span></div>
+      <div class="seg org" id="segN"><span>人数</span></div>
+      <a class="lnk org" href="#progress-fix" id="bFix" title="組み合わせの手直し・報告修正などの例外対応">大会進行修正 ↗</a>
+      <button class="lnk" id="bHide" title="主催者ボタンを隠す／出す（H キー）">操作を隠す</button>
+    </div>
+  </header>
+  <section class="band" id="band"></section>
+  <main class="main" id="main"></main>
+  <div id="pop"><div class="popbox" id="popbox"></div></div>
+  <div id="toast"></div>
+</div>
+<script>
+"use strict";
+/* ===== サンプルデータ（タイトルは titles.js の実在名、表示名は架空） ===== */
+const NAMES=[["アリス","ありす"],["しまうま大好きクラブ","しまうまだいすきくらぶ"],["ボブ","ぼぶ"],["深夜のカレーうどん部","しんやのかれーうどんぶ"],
+  ["チャーリー","ちゃーりー"],["ねこ","ねこ"],["みかんの皮むき名人","みかんのかわむきめいじん"],["ヨル","よる"],
+  ["ダイヤ","だいや"],["赤いきつねと緑の人","あかいきつねとみどりのひと"],["エレン","えれん"],["ゆき","ゆき"],
+  ["帰ってきたサブロウ","かえってきたさぶろう"],["フラン","ふらん"],["ヴァイス初心者です。","ゔぁいすしょしんしゃです"],["ハチロウ","はちろう"]];
+const POOL=[["アイドルマスター シャイニーカラーズ",3.5],["痛いのは嫌なので防御力に極振りしたいと思います。",2.0],["ウマ娘 プリティーダービー",3.0],
+  ["オーバーロード",2.5],["【推しの子】",3.0],["かぐや様は告らせたい～天才たちの恋愛頭脳戦～",2.5],["学園アイドルマスター",3.5],
+  ["ガールズバンドクライ",1.5],["五等分の花嫁",2.0],["勝利の女神：NIKKE",2.0],["進撃の巨人",2.0],["SPY×FAMILY",2.0],
+  ["葬送のフリーレン",2.0],["ソードアート・オンライン",3.0],["ダンジョンに出会いを求めるのは間違っているだろうか",1.5],["チェンソーマン",2.5],
+  ["転生したらスライムだった件",2.5],["東方Project",2.0],["ブルーアーカイブ",1.0],["プロジェクトセカイ カラフルステージ！ feat. 初音ミク",2.5],
+  ["ヘブンバーンズレッド",1.5],["ぼっち・ざ・ろっく！",2.5],["ホロライブプロダクション",4.0],["ラブライブ！蓮ノ空女学院スクールアイドルクラブ",3.5]];
+const OFF=[0,7,13,20], ROUNDS=4, CUR=3; /* ROUND 3 の組み合わせを抽選する場面 */
+
+const qs=new URLSearchParams(location.search);
+const STATES=["before","drawing","drafted","published","round"];
+const SLAB={before:"抽選前",drawing:"演出",drafted:"下書き",published:"公開",round:"ラウンド中"};
+let N=qs.get("players")==="16"?16:8;
+let ST=STATES.includes(qs.get("state"))?qs.get("state"):"before";
+const FRAME=qs.has("frame")?Math.max(0,parseInt(qs.get("frame"),10)||0):null;
+let T=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const reduced=()=>qs.get("motion")==="0"||matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== 大会の進行（モック内の簡易シミュレーション） ===== */
+function newT(n){
+  const r=rng(n*131+7);
+  const players=NAMES.slice(0,n).map(([name,yomi],i)=>({id:i,name,yomi,dropAfter:i===n-1?1:0,
+    decks:OFF.map(o=>{const t=POOL[(i*5+o)%POOL.length];return{title:t[0],base:t[1]}})}));
+  return{n,players,rounds:[],phase:"before",draft:null,drawNo:0,r};
+}
+const out=(p,ri)=>p.dropAfter>0&&ri>=p.dropAfter;   /* ri ラウンド目（0 始まり）に出ない */
+function calc(T){
+  const s=T.players.map(p=>({p,w:0,l:0,d:0,m:0,bye:0,opp:[],deck:p.decks.map(()=>"secret"),
+    cost:p.decks.reduce((a,d)=>a+d.base,0),dropped:out(p,T.rounds.length)}));
+  T.rounds.forEach(R=>{
+    R.matches.forEach(m=>{ if(m.status!=="done")return;
+      const A=s[m.a],B=s[m.b];A.m++;B.m++;A.opp.push(m.b);B.opp.push(m.a);
+      if(m.res==="a"){A.w++;B.l++}else if(m.res==="b"){B.w++;A.l++}else{A.d++;B.d++}
+      const mark=(X,k,win)=>{if(win)X.deck[k]="used";else if(X.deck[k]==="secret")X.deck[k]="open"};
+      mark(A,m.da,m.res==="a");mark(B,m.db,m.res==="b");});
+    if(R.bye&&R.bye.status==="done"){const A=s[R.bye.p];A.w++;A.m++;A.bye++;A.deck[R.bye.dk]="used"}
+  });
+  s.forEach(x=>{x.rate=x.m?x.w/x.m:0;x.left=x.deck.filter(v=>v!=="used").length});
+  s.forEach(x=>x.omw=x.opp.length?x.opp.reduce((a,o)=>a+s[o].rate,0)/x.opp.length:0);
+  /* 並び: 勝ち数 → 勝率 → 登録デッキの合計コストが低い → OMW%。棄権者は最下段 */
+  const order=[...s].sort((x,y)=>(x.dropped-y.dropped)||(y.w-x.w)||(y.rate-x.rate)||(x.cost-y.cost)||(y.omw-x.omw)||(x.p.id-y.p.id));
+  return{s,order};
+}
+/* 組み合わせの抽選: 同じ勝ち数を優先・再戦なし・不戦勝は不戦勝のない人のうち勝ち数が少ない人から・棄権者は対象外 */
+function pairRound(T,seed){
+  const ri=T.rounds.length,rnd=rng(seed),st=calc(T);
+  let act=st.s.filter(x=>!out(x.p,ri)).map(x=>({id:x.p.id,w:x.w,bye:x.bye,k:rnd()}));
+  act.sort((x,y)=>(y.w-x.w)||(x.k-y.k));
+  let bye=null;
+  if(act.length%2){
+    const c=act.filter(x=>!x.bye),mw=Math.min(...c.map(x=>x.w)),pool=c.filter(x=>x.w===mw);
+    const pick=(pool.length?pool:act)[Math.floor(rnd()*(pool.length||act.length))];
+    bye=pick.id;act=act.filter(x=>x!==pick);
+  }
+  const played=(a,b)=>T.rounds.some(R=>R.matches.some(m=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)));
+  const solve=l=>{if(!l.length)return[];const a=l[0];for(let k=1;k<l.length;k++){if(played(a,l[k]))continue;
+    const rest=solve(l.filter((_,i)=>i!==0&&i!==k));if(rest)return[[a,l[k]],...rest]}return null};
+  const ids=act.map(x=>x.id);
+  const pairs=solve(ids)||ids.reduce((r,x,i)=>(i%2?r[r.length-1].push(x):r.push([x]),r),[]);
+  return{matches:pairs.map(([a,b])=>({a,b})),bye};
+}
+/* 過去ラウンドの結果を作る（デッキは使っていないもの、時々公開済みのものを再使用） */
+function simulate(T,D){
+  const ri=T.rounds.length,st=calc(T),r=T.r;
+  const pick=id=>{const dk=st.s[id].deck,open=[0,1,2,3].filter(k=>dk[k]==="open"),sec=[0,1,2,3].filter(k=>dk[k]==="secret");
+    if(open.length&&(r()<.4||!sec.length))return open[Math.floor(r()*open.length)];return sec[Math.floor(r()*sec.length)]};
+  const matches=D.matches.map(({a,b})=>{const x=r();let res=x<0.06?"d":x<0.53?"a":"b";
+    if(T.players[a].dropAfter===ri+1)res="b"; if(T.players[b].dropAfter===ri+1)res="a";
+    return{a,b,res,status:"done",da:pick(a),db:pick(b)}});
+  let bye=null;
+  if(D.bye!==null){const dk=st.s[D.bye].deck,c=[0,1,2,3].filter(k=>dk[k]!=="used");bye={p:D.bye,status:"done",dk:c[Math.floor(r()*c.length)]}}
+  T.rounds.push({matches,bye});
+}
+function build(n){
+  const t=newT(n);
+  for(let r=0;r<CUR-1;r++)simulate(t,pairRound(t,n*1000+r*17+3));
+  return t;
+}
+
+/* ===== タイマー（ラウンド中の画面・H 案と同じ） ===== */
+const tm={base:2100,left:2100,run:false,end:0};
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function tmSet(base,left,run){tm.base=base;tm.left=left;tm.run=run;tm.end=Date.now()+left*1000}
+function tmDraw(){
+  const el=$("#tm");if(!el)return;
+  if(tm.run){tm.left=Math.max(0,Math.ceil((tm.end-Date.now())/1000));if(tm.left===0)tm.run=false}
+  if(document.activeElement!==el||tm.run)el.value=fmt(tm.left);
+  el.readOnly=tm.run;el.className=tm.left===0?"up":tm.left<=300?"warn":"";
+  const s=$("#tmState");s.textContent=tm.run?"進行中":tm.left===0?"時間切れ":"停止中";s.className="tm-state"+(tm.run?"":" stop");
+  $("#tmGo").textContent=tm.run?"STOP":"START";$("#tmReset").disabled=tm.run;
+}
+function tmToggle(){
+  if(tm.run){tm.run=false;tmDraw();return}
+  const m=/^\s*(\d{1,3})\s*[:：]\s*(\d{1,2})\s*$/.exec($("#tm").value);
+  if(!m){toast("時間は 分:秒 で入力してください");$("#tm").value=fmt(tm.left);return}
+  const v=Math.min(999*60,(+m[1])*60+(+m[2]));if(v<=0){toast("1 秒以上を入力してください");return}
+  if(v!==tm.left||tm.left===tm.base)tm.base=v; tmSet(tm.base,v,true);tmDraw();
+}
+setInterval(tmDraw,250);
+
+/* ===== 部品 ===== */
+const SL={used:"勝って使用済み",open:"公開済み・使用可",secret:"未公開"};
+function chip(d,st,o){
+  o=o||{};
+  if(st==="secret")return`<span class="dk secret${o.nocost?" nocost":""}">${o.nocost?"":`<span class="c">?</span>`}<span class="t">未公開</span></span>`;
+  return`<span class="dk ${st}${o.nocost?" nocost":""}" title="${SL[st]}">${o.nocost?"":`<span class="c">${d.base.toFixed(1)}</span>`}<span class="t ell">${esc(d.title)}</span></span>`;
+}
+const rec=x=>`<span class="rec"><span class="w">${x.w}</span>-<span class="l">${x.l}</span>-<span class="d">${x.d}</span></span>`;
+const rem=x=>`<span class="rem">残り<b>${x.left}</b>デッキ${x.bye?`・不戦勝<b>${x.bye}</b>回`:""}</span>`;
+const deckList=x=>`<div class="dks">${x.p.decks.map((d,j)=>chip(d,x.deck[j])).join("")}</div>`;
+const infoHtml=x=>`<div class="recrow">${rec(x)}${rem(x)}</div>${deckList(x)}`;
+const infoPh=()=>`<div class="recrow"><span class="rec q">?-?-?</span><span class="rem" style="color:var(--edge2)">抽選中…</span></div><div class="dks">${'<span class="dk blank"></span>'.repeat(4)}</div>`;
+
+/* 抽選後の卓の一覧（drawing のときはリールを入れる） */
+function seatHtml(x,slot){
+  if(slot!==undefined)return`<div class="ps" data-pop="p:${x.p.id}" data-slot="${slot}"><div class="nmrow"><div class="reel-win"><div class="reel"></div></div></div><div class="info wait">${infoPh()}</div></div>`;
+  return`<div class="ps" data-pop="p:${x.p.id}"><div class="nmrow"><span class="nm ell">${esc(x.p.name)}</span></div><div class="info">${infoHtml(x)}</div></div>`;
+}
+function tablesHtml(C,mode){
+  const D=T.draft,drawing=mode==="drawing";let slot=0;
+  const pill=mode==="drafted"?`<span class="pill draft">下書き</span>`:mode==="published"?`<span class="pill pub">公開</span>`:`<span class="pill spin">抽選</span>`;
+  const cls=mode==="drafted"?"draft":mode==="published"?"pub":"spin";
+  const cards=D.matches.map((m,i)=>`<div class="mc box ${cls}${drawing?" enter":""}${mode==="published"&&PUBFX?" pubfx":""}" id="mc${i}" data-pop="m:${i}" style="--d:${i*70}ms">
+      <div class="sd"><span class="no">卓<b>${i+1}</b></span>${pill}</div>
+      ${seatHtml(C.s[m.a],drawing?slot++:undefined)}<span class="vs">VS</span>${seatHtml(C.s[m.b],drawing?slot++:undefined)}</div>`);
+  if(D.bye!==null){const x=C.s[D.bye],i=D.matches.length;
+    cards.push(`<div class="mc box bye ${cls}${drawing?" enter":""}${mode==="published"&&PUBFX?" pubfx":""}" id="mcb" data-pop="b" style="--d:${i*70}ms">
+      <div class="sd"><span class="no">不戦勝</span>${pill}</div>${seatHtml(x,drawing?slot++:undefined)}<span class="vs"></span>
+      <div class="byemsg">${drawing?`<b>相手なし</b><span class="wt" id="byeNote">奇数のため 1 人が不戦勝</span>`:byeNote(mode)}</div></div>`)}
+  return`<div class="board ${T.n>8?"t16":"t8"}" id="board">${cards.join("")}</div>`;
+}
+const byeNote=mode=>`<b>相手なし（不戦勝）</b><span>${mode==="published"?"本人の「了解」で確定します":"公開後、本人の「了解」で確定"}</span><span>使用済みにするデッキは本人が選ぶか、ランダム</span>`;
+
+/* 抽選前: 抽選の対象者を成績順に並べる */
+function poolHtml(C){
+  const cards=C.order.map(x=>{
+    if(x.dropped)return`<div class="pt box drop" data-pop="p:${x.p.id}"><div class="hd"><span class="nm ell">${esc(x.p.name)}</span>${rec(x)}</div>
+      <div class="sub">ROUND ${x.p.dropAfter} の後に棄権・対象外</div>${deckList(x)}</div>`;
+    const g=Math.min(2,x.w);
+    return`<div class="pt box g${g}" data-pop="p:${x.p.id}"><div class="hd"><span class="nm ell">${esc(x.p.name)}</span>${rec(x)}</div>
+      <div class="sub"><span class="grp">${x.w}勝</span>${rem(x)}</div>${deckList(x)}</div>`}).join("");
+  return`<div class="board ${T.n>8?"p16":"p8"}" id="board">${cards}</div>`;
+}
+
+/* 右: 名前から卓を探す／抽選のしかた */
+function seatOf(id){
+  const D=T.draft;if(!D)return null;
+  if(D.bye===id)return{k:"y",h:"不戦勝"};
+  const i=D.matches.findIndex(m=>m.a===id||m.b===id);
+  return i<0?null:{k:"t",h:`卓<b>${i+1}</b>`,i};
+}
+function sideHtml(C){
+  const s=T.phase,big=T.n<=8;
+  const act=C.s.filter(x=>!x.dropped).length,drop=C.s.length-act,tabs=Math.floor(act/2),bye=act%2;
+  let strip="";
+  if(s==="before")strip=`<div class="hint">押すと卓 1 から順に名前が決まります（演出 約 ${T.n>8?6:5} 秒）</div><div class="row"><span class="who">主催者</span><button class="btn pri" data-act="draw">組み合わせを抽選</button></div>`;
+  if(s==="drawing")strip=`<div class="hint">演出中です。結果は抽選の時点で決まっています</div><div class="row"><span class="who">主催者</span><button class="btn" data-act="skip">演出を飛ばす</button></div>`;
+  if(s==="drafted")strip=`<div class="hint">公開するまで参加者には見えません（抽選 ${T.drawNo} 回目）</div><div class="row"><span class="who">主催者</span><button class="btn" data-act="redraw">再抽選</button><button class="btn pri" data-act="publish" data-arm="1">決定して公開</button></div>`;
+  if(s==="published")strip=`<div class="hint">START でラウンドの画面に移り、タイマー 35:00 が動きます</div><div class="row"><span class="who">主催者</span><button class="btn go" data-act="start">ラウンド START</button></div>`;
+  if(s==="before")return`<section class="panel side box" id="side"><div class="ph"><h2>抽選のしかた<small>ROUND ${CUR}</small></h2></div>
+    <ol class="rules"><li><b>同じ勝ち数</b>どうしを優先</li><li>前の相手とは<b>再戦しない</b></li><li>奇数のときは 1 人が<b>不戦勝</b><br>（不戦勝がまだの人のうち、勝ち数の少ない人から）</li><li><b>棄権者</b>は抽選の対象外</li></ol>
+    <div class="sumbox">対象<b>${act}</b>名 → <b>${tabs}</b>卓${bye?`＋不戦勝<b>1</b>`:""}<br>対象外<b>${drop}</b>名（棄権）</div>
+    <div class="strip org">${strip}</div></section>`;
+  const rows=[...C.s].sort((x,y)=>(x.dropped-y.dropped)||x.p.yomi.localeCompare(y.p.yomi,"ja")).map(x=>{
+    let tb;if(x.dropped)tb=`<span class="tb x">対象外</span>`;
+    else{const o=seatOf(x.p.id);tb=s==="drawing"?`<span class="tb q">…</span>`:`<span class="tb ${o.k}">${o.h}</span>`}
+    return`<div class="fr${x.dropped?" drop":""}" id="fr${x.p.id}" data-pop="p:${x.p.id}"><span class="nm ell">${esc(x.p.name)}</span>${tb}</div>`}).join("");
+  return`<section class="panel side box${big?" big":""}" id="side"><div class="ph"><h2>名前から卓を探す<small>五十音順</small></h2></div>
+    <div class="flist">${rows}</div><div class="strip org">${strip}</div></section>`;
+}
+
+/* 上部の帯 */
+function bandHtml(C){
+  const s=T.phase,act=C.s.filter(x=>!x.dropped).length,drop=C.s.length-act;
+  const badge={before:"抽選前",drawing:"抽選中",drafted:"下書き",published:"公開済み"}[s];
+  const sub={before:`ROUND ${CUR-1} までの成績で組みます`,drawing:"卓 1 から順に決まります…",
+    drafted:`抽選 ${T.drawNo} 回目・参加者にはまだ見えません・再戦なし`,published:"参加者の画面にも表示しています。着席したら開始"}[s];
+  const cur={before:1,drawing:1,drafted:2,published:4}[s];
+  const steps=[["抽選"],["確認・再抽選"],["決定して公開"],["ラウンド START"]].map(([t],i)=>
+    `<span class="step${i+1<cur?" done":i+1===cur?" cur":""}"><b>${i+1<cur?"✓":i+1}</b>${t}</span>`).join(`<span class="sep">›</span>`);
+  return`<div class="bt"><h1>ROUND <span class="num">${CUR}</span><small>/ ${ROUNDS}</small>組み合わせ<span class="badge s-${s}">${badge}</span></h1><p>${sub}</p></div>
+    <div class="steps">${steps}</div>
+    <div class="bc"><div class="cn">対象<b>${act}</b>名 → <b>${Math.floor(act/2)}</b>卓${act%2?` ＋ 不戦勝<b>1</b>`:""}<span class="x">　｜　対象外<b>${drop}</b>（棄権）</span></div>
+      <div class="legend"><span>成績は 勝-負-分</span><span><i class="used"></i>使用済み</span><span><i class="open"></i>使用可</span><span><i class="secret"></i>未公開</span></div></div>`;
+}
+
+/* ===== ラウンド中（H 案の簡易版） ===== */
+function roundLeft(T,C){
+  const ri=T.rounds.length-1,R=T.rounds[ri],cmp=T.n>8;
+  const n=R.matches.length+(R.bye?1:0);
+  const cards=R.matches.map((m,i)=>`<div class="tc box" data-pop="m:${i}"><div class="sd"><span class="no">卓<b>${i+1}</b></span><span class="pill playing">対戦中</span></div>
+      <div class="bd"><span class="pn"><i class="dot"></i><span class="nm ell">${esc(T.players[m.a].name)}</span></span><span class="it mute">未報告</span>
+      <span class="pn"><i class="dot"></i><span class="nm ell">${esc(T.players[m.b].name)}</span></span><span class="it mute">未報告</span></div></div>`).join("")+
+    (R.bye?`<div class="tc box ack" data-pop="b"><div class="sd"><span class="no">不戦勝</span><span class="pill ack">了解待ち</span></div>
+      <div class="bd"><span class="pn"><i class="dot"></i><span class="nm ell">${esc(T.players[R.bye.p].name)}</span></span><span class="it ack">不戦勝</span>
+      <span class="tnote ell">本人の了解で確定（使用済みにするデッキを選択）</span></div></div>`:"");
+  return`<section class="left"><div class="timer box"><div class="tm-main"><div class="tm-lab">ROUND ${ri+1} / ${ROUNDS}　残り時間<span class="tm-state" id="tmState"></span></div>
+      <input id="tm" class="num" inputmode="numeric" maxlength="6" aria-label="残り時間（分:秒）" spellcheck="false"></div>
+    <div class="tm-ctl org"><button class="btn pri" id="tmGo">START</button><button class="btn" id="tmReset">RESET</button><span class="tm-hint">停止中は数字を<br>直接編集できます</span></div></div>
+  <div class="panel box" style="flex:1"><div class="ph"><h2>対戦卓<small>ROUND ${ri+1}</small></h2><div class="cnts"><span class="cnt c-playing">対戦中<b>${R.matches.length}</b></span>${R.bye?`<span class="cnt c-ack">了解待ち<b>1</b></span>`:""}</div></div>
+    <div class="bar">${R.matches.map(()=>"<i></i>").join("")}${R.bye?`<i class="ack"></i>`:""}</div>
+    <div class="tgrid ${cmp?"cmp":"big"}" style="grid-template-rows:repeat(${n},minmax(0,1fr))">${cards}</div>
+    <div class="tstrip org"><span class="who">主催者</span><button class="btn" disabled>ラウンド終了</button><span class="hint">全卓の確定後に押せます（残り ${n} 卓）</span></div></div></section>`;
+}
+function roundRight(T,C){
+  let rank=0;
+  const rows=C.order.map(x=>{const r=x.dropped?0:++rank;
+    return`<div class="sr${r===1?" r1":""}${x.dropped?" drop":""}" data-pop="p:${x.p.id}"><span class="rk">${r||"–"}</span>
+      <span class="nmc"><span class="nm ell">${esc(x.p.name)}</span>${x.dropped?`<span class="tag">棄権</span>`:""}</span>${rec(x)}<span class="cs">${x.cost.toFixed(1)}</span>
+      ${x.p.decks.map((d,j)=>chip(d,x.deck[j],{nocost:true})).join("")}</div>`}).join("");
+  return`<section class="panel box"><div class="ph"><h2>順位表<small>ROUND ${CUR-1} 終了時点　｜　並び: 勝ち数 → 勝率 → 合計コスト(低) → OMW%</small></h2>
+    <div class="legend"><span><i class="used"></i>勝って使用済み</span><span><i class="open"></i>公開済み・使用可</span><span><i class="secret"></i>未公開</span></div></div>
+    <div class="stab${T.n<=8?" big":""}"><div class="sh"><span>順位</span><span>参加者</span><span>勝-負-分</span><span>コスト</span><span>デッキ 1</span><span>デッキ 2</span><span>デッキ 3</span><span>デッキ 4</span></div>${rows}</div></section>`;
+}
+
+/* ===== 描画 ===== */
+let VIEW={},PUBFX=false;
+function render(){
+  stopDraw();
+  const C=calc(T);VIEW={C};
+  const s=T.phase;
+  $("#band").style.display=s==="round"?"none":"";
+  const main=$("#main");main.className="main"+(s==="round"?" round":"");
+  if(s==="round"){main.innerHTML=roundLeft(T,C)+roundRight(T,C)}
+  else{$("#band").innerHTML=bandHtml(C);main.innerHTML=(s==="before"?poolHtml(C):tablesHtml(C,s))+sideHtml(C)}
+  $("#chipN").textContent=`参加 ${T.n} 名`;
+  const cr=$("#chipR");cr.textContent=s==="round"?`ROUND ${CUR} / ${ROUNDS}`:`ROUND ${CUR} 組み合わせ`;cr.className="chip "+(s==="round"?"round":"draw");
+  document.querySelectorAll("#segS button").forEach(b=>b.classList.toggle("on",b.dataset.v===ST));
+  document.querySelectorAll("#segN button").forEach(b=>b.classList.toggle("on",+b.dataset.v===N));
+  markEll(document);
+  tmDraw();
+  PUBFX=false;
+}
+function markEll(root){root.querySelectorAll(".ell").forEach(e=>{e.title=e.textContent;e.classList.toggle("cut",e.scrollWidth>e.clientWidth)})}
+
+/* ===== 抽選の演出（スロット風のリール） =====
+   すべての名前の窓が一斉に回り、卓 1 の左 → 右 → 卓 2 … → 不戦勝 の順に減速して止まる。
+   止まった瞬間に、その人の成績とデッキの札がめくれて出る。位置は経過時間だけで決まる関数なので、
+   ?state=drawing&frame=ミリ秒 で任意の瞬間を静止させて撮影できる。 */
+let DR=null;
+const V=0.02;            /* 回転の速さ（名前/ミリ秒 = 毎秒 20 名） */
+const DEC=650;           /* 減速にかける時間（ミリ秒） */
+const BOUNCE=420;        /* 止まった後の小さな揺れ（ミリ秒） */
+function landTimes(nm,fast){
+  const k=fast?0.75:1,first=1000*k,gap=(T.n>8?560:820)*k,pairGap=280*k,byeGap=(T.n>8?760:900)*k,out=[];
+  for(let i=0;i<nm;i++){out.push(first+i*gap,first+i*gap+pairGap)}
+  return{list:out,bye:first+(nm-1)*gap+pairGap+byeGap};
+}
+function setupReels(fast){
+  const C=VIEW.C,D=T.draft,act=C.s.filter(x=>!x.dropped).map(x=>x.p.name),r=rng((Date.now()^0x5bd1)>>>0);
+  const seats=[];D.matches.forEach((m,i)=>{seats.push({id:m.a,card:"mc"+i},{id:m.b,card:"mc"+i})});
+  if(D.bye!==null)seats.push({id:D.bye,card:"mcb",bye:true});
+  const lt=landTimes(D.matches.length,fast);
+  const slots=seats.map((st,k)=>{
+    const el=document.querySelector(`[data-slot="${k}"]`),win=el.querySelector(".reel-win"),reel=el.querySelector(".reel");
+    const fin=T.players[st.id].name,base=act.filter(n=>n!==fin);
+    const rr=FRAME!==null?rng(k*977+13):r;for(let i=base.length-1;i>0;i--){const j=Math.floor(rr()*(i+1));[base[i],base[j]]=[base[j],base[i]]}
+    const list=base.length<12?base.concat(base):base,L=list.length,tl=st.bye?lt.bye:lt.list[k];
+    const pEnd=Math.round(V*(tl-DEC/2)),at=pEnd%L;list[at]=fin;   /* 止まる位置に本人の名前を置く（前後は別人） */
+    reel.innerHTML=list.concat(list[0]).map(n=>`<span>${esc(n)}</span>`).join("");
+    return{...st,el,win,reel,L,pEnd,tl,off:pEnd-V*(tl-DEC/2),landed:false,settled:false,h:win.clientHeight};
+  });
+  DR={slots,t0:performance.now(),raf:0,end:Math.max(...slots.map(s=>s.tl))+BOUNCE+500};
+}
+/* 等速で回り、止まる DEC ミリ秒前から等減速して pEnd ちょうどで止まる（off は開始位置のずれ。0.5 名分未満） */
+function posAt(s,t){
+  if(t<=s.tl-DEC)return s.off+V*t;
+  if(t<s.tl){const tau=t-(s.tl-DEC);return s.off+V*(s.tl-DEC)+V*tau-V*tau*tau/(2*DEC)}
+  const tau=t-s.tl;return s.pEnd+(tau<BOUNCE?0.24*Math.sin(Math.PI*tau/170)*Math.exp(-tau/140):0);
+}
+function tick(t){
+  const C=VIEW.C;let focus=null;
+  DR.slots.forEach(s=>{
+    if(s.settled)return;
+    const p=posAt(s,t);
+    const m=((p%s.L)+s.L)%s.L;
+    s.reel.style.transform=`translateY(${-m*s.h}px)`;
+    s.win.classList.toggle("fast",t<s.tl-DEC*0.5);
+    if(!s.landed&&t>=s.tl){s.landed=true;land(s,C)}
+    if(!s.settled&&t>=s.tl+BOUNCE){s.settled=true;settle(s)}
+    if(!s.landed&&!focus)focus=s.card;
+  });
+  document.querySelectorAll(".mc.focus").forEach(e=>{if(e.id!==focus)e.classList.remove("focus")});
+  if(focus)document.getElementById(focus).classList.add("focus");
+}
+function land(s,C){
+  const x=C.s[s.id],info=s.el.querySelector(".info");
+  info.className="info flip";info.innerHTML=infoHtml(x);markEll(info);
+  s.el.classList.add("landed");
+  const fr=document.getElementById("fr"+s.id);
+  if(fr){const o=seatOf(s.id);fr.querySelector(".tb").outerHTML=`<span class="tb ${o.k}">${o.h}</span>`;fr.classList.remove("ping");void fr.offsetWidth;fr.classList.add("ping")}
+  if(s.bye){const b=document.getElementById("byeNote");if(b)b.parentElement.innerHTML=byeNote("drafted")}
+}
+function settle(s){
+  const x=VIEW.C.s[s.id];
+  s.el.querySelector(".nmrow").innerHTML=`<span class="nm ell">${esc(x.p.name)}</span>`;
+  markEll(s.el);
+}
+function loop(){
+  if(!DR)return;
+  const t=performance.now()-DR.t0;tick(t);
+  if(t>=DR.end){finishDraw();return}
+  DR.raf=requestAnimationFrame(loop);
+}
+function stopDraw(){if(DR){cancelAnimationFrame(DR.raf);clearTimeout(DR.to);DR=null}}
+function finishDraw(){
+  stopDraw();T.phase="drafted";render();
+  toast(`ROUND ${CUR} の組み合わせ（下書き）ができました`);
+}
+function startDraw(seed,fast){
+  T.drawNo++;T.draft=pairRound(T,seed);
+  if(reduced()){T.phase="drafted";render();toast(`抽選しました（${T.drawNo} 回目・演出なし）`);return}
+  T.phase="drawing";render();
+  setupReels(fast);
+  if(FRAME!==null&&ST==="drawing"&&T.drawNo===1){$("#stage").classList.add("still");tick(FRAME);return}
+  DR.raf=requestAnimationFrame(loop);
+  /* 画面が裏に回って requestAnimationFrame が止まっても、時間が来たら必ず下書きへ進める */
+  const d=DR;d.to=setTimeout(()=>{if(DR===d)finishDraw()},d.end+400);
+}
+
+/* ===== 状態の読み込み ===== */
+const SEED3=n=>n*1000+99;
+function load(){
+  stopDraw();$("#stage").classList.remove("still");
+  T=build(N);
+  if(ST==="drawing"){startDraw(SEED3(N),false);return}
+  if(ST!=="before"){T.drawNo=1;T.draft=pairRound(T,SEED3(N));T.phase=ST==="round"?"published":ST}
+  if(ST==="round")startRound(false);
+  else{tmSet(2100,2100,false);render()}
+}
+function startRound(live){
+  const D=T.draft;
+  T.rounds.push({matches:D.matches.map(m=>({...m,status:"playing"})),bye:D.bye===null?null:{p:D.bye,status:"ack"}});
+  T.phase="round";
+  tmSet(2100,live?2100:2100-47,true);render();
+}
+
+/* ===== 全文表示 ===== */
+function popHtml(key){
+  const [k,a]=key.split(":"),C=VIEW.C,P=T.players;
+  const dl=(d,st)=>st==="secret"?`<li><span class="k">未公開</span><span class="v">?</span><span>（確定した対戦で使うまで伏せています）</span></li>`:
+    `<li><span class="k">${SL[st]}</span><span class="v">${d.base.toFixed(1)}</span><span>${esc(d.title)}</span></li>`;
+  const who=x=>{const o=x.dropped?null:seatOf(x.p.id);
+    return`${x.w}勝 ${x.l}敗 ${x.d}分　勝率 ${Math.round(x.rate*100)}%　登録デッキ合計コスト ${x.cost.toFixed(1)}　残り ${x.left} デッキ${x.bye?`　不戦勝 ${x.bye} 回`:""}`+
+      (x.dropped?`<br>ROUND ${x.p.dropAfter} の後に棄権。抽選の対象外`:o&&T.phase!=="before"&&T.phase!=="drawing"?`<br>ROUND ${CUR}: ${o.k==="y"?"不戦勝":"卓 "+(o.i+1)}`:"")};
+  if(k==="p"){const x=C.s[+a];return`<h3>${esc(x.p.name)}</h3><div class="ps2">${who(x)}</div><ul>${x.p.decks.map((d,j)=>dl(d,x.deck[j])).join("")}</ul>`}
+  const D=T.draft;
+  if(k==="b"){const x=C.s[D.bye];return`<h3>不戦勝：${esc(x.p.name)}</h3><div class="ps2">${who(x)}<br>奇数のため 1 人が不戦勝。不戦勝がまだの人のうち、勝ち数の少ない人から選んでいます。本人の「了解」で確定し、使用済みにするデッキは本人が選ぶか、ランダムで選びます。</div>`}
+  const m=D.matches[+a],A=C.s[m.a],B=C.s[m.b];
+  const row=x=>`<li><span class="k">${x.w}勝${x.l}敗${x.d}分</span><span class="v">${x.left}</span><span>${esc(x.p.name)}　<small style="font-size:18px;color:var(--sub)">残り ${x.left} デッキ（公開済み: ${x.p.decks.filter((_,j)=>x.deck[j]!=="secret").map(d=>esc(d.title)).join("、")||"なし"}）</small></span></li>`;
+  return`<h3>ROUND ${CUR}　卓 ${+a+1}</h3><div class="ps2">${T.phase==="drafted"?"下書き（未公開）":T.phase==="published"?"公開済み":"対戦中"}　左の数字は残りデッキ数</div><ul>${row(A)}${row(B)}</ul>`;
+}
+function openPop(key){if(T.phase==="drawing")return;$("#popbox").innerHTML=popHtml(key)+`<div class="cl"><button class="btn" data-act="close">閉じる（Esc）</button></div>`;$("#pop").classList.add("on")}
+function closePop(){$("#pop").classList.remove("on")}
+let toastT=0;
+function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2600)}
+
+/* ===== 操作 ===== */
+function act(a){
+  if(a==="close")return closePop();
+  if(a==="draw")return startDraw(Date.now()%100000,false);
+  if(a==="redraw")return startDraw(Date.now()%100000,true);
+  if(a==="skip")return finishDraw();
+  if(a==="publish"){T.phase="published";PUBFX=!reduced();render();toast(`ROUND ${CUR} の組み合わせを公開しました`);return}
+  if(a==="start"){startRound(true);toast(`ROUND ${CUR} を開始しました`);return}
+}
+let armed=null;
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");
+  if(b){ if(b.disabled)return;
+    if(b.dataset.arm&&armed!==b){if(armed)disarm();armed=b;b.dataset.label=b.textContent;b.textContent="もう一度押して公開";b.classList.add("armed");b._t=setTimeout(disarm,3500);return}
+    if(armed){clearTimeout(armed._t);armed=null}
+    return act(b.dataset.act)}
+  if(e.target.id==="pop")return closePop();
+  if(e.target.id==="tmGo")return tmToggle();
+  if(e.target.id==="tmReset"&&!tm.run){tmSet(tm.base,tm.base,false);tmDraw();return}
+  const p=e.target.closest("[data-pop]");if(p)openPop(p.dataset.pop);
+});
+function disarm(){if(!armed)return;clearTimeout(armed._t);armed.textContent=armed.dataset.label;armed.classList.remove("armed");armed=null}
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")closePop();
+  if(e.target.id==="tm"){if(e.key==="Enter"){e.target.blur();tmToggle()}return}
+  if(e.key==="h"||e.key==="H")toggleOrg();
+});
+function toggleOrg(){const on=document.body.classList.toggle("hideorg");$("#bHide").textContent=on?"操作を表示":"操作を隠す"}
+$("#bHide").onclick=toggleOrg;
+$("#bFix").onclick=e=>{e.preventDefault();toast("「大会進行修正」タブを開きます（モックでは移動しません）")};
+function go(){const u=new URL(location.href);u.searchParams.set("state",ST);u.searchParams.set("players",N);u.searchParams.delete("frame");history.replaceState(null,"",u);load()}
+STATES.forEach(v=>{const b=document.createElement("button");b.textContent=SLAB[v];b.dataset.v=v;b.onclick=()=>{ST=v;go()};$("#segS").appendChild(b)});
+[8,16].forEach(v=>{const b=document.createElement("button");b.textContent=v+"人";b.dataset.v=v;b.onclick=()=>{N=v;go()};$("#segN").appendChild(b)});
+
+/* ===== 画面に合わせた縮小 ===== */
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080),st=$("#stage");
+  st.style.transform=`translate(${Math.max(0,(innerWidth-1920*s)/2)}px,${Math.max(0,(innerHeight-1080*s)/2)}px) scale(${s})`}
+addEventListener("resize",fit);fit();
+if(qs.get("hide")==="1")toggleOrg();
+load();
+
+/* ===== 見切れの自己検査（check.mjs から呼ぶ） ===== */
+window.__phase=()=>T.phase;
+window.__check=function(){
+  const out={bad:[],ell:[],small:[],n:0},stage=$("#stage"),SR=stage.getBoundingClientRect(),sc=SR.width/1920;
+  const name=e=>e.tagName.toLowerCase()+(e.id?"#"+e.id:"")+(e.className&&typeof e.className==="string"?"."+e.className.trim().split(/\s+/).join("."):"");
+  const txt=e=>(e.value||e.textContent||"").trim().replace(/\s+/g," ").slice(0,30);
+  if(document.documentElement.scrollWidth>innerWidth||document.documentElement.scrollHeight>innerHeight)out.bad.push("document scrolls");
+  if(SR.right>innerWidth+0.5||SR.bottom>innerHeight+0.5)out.bad.push("stage outside viewport");
+  stage.querySelectorAll("*").forEach(e=>{
+    const cs=getComputedStyle(e);if(cs.display==="none"||cs.display==="inline"||cs.display==="contents")return;
+    if(e.closest("#pop:not(.on)")||e.id==="toast"||e.closest("#band")&&$("#band").style.display==="none")return;
+    if(e.closest(".reel"))return; /* リールの帯は窓（.reel-win）で切り抜く設計。窓そのものは検査する */
+    out.n++;
+    const ow=e.scrollWidth-e.clientWidth,oh=e.scrollHeight-e.clientHeight;
+    if(ow>1&&!e.classList.contains("reel-win")){ if(e.classList.contains("ell")){ if(e.title===e.textContent&&e.closest("[data-pop]"))out.ell.push(txt(e));else out.bad.push("ellipsis without full text: "+name(e)) } else out.bad.push(`overflow-x ${ow}px: ${name(e)} "${txt(e)}"`)}
+    if(oh>1&&!e.classList.contains("reel-win"))out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`);
+    const r=e.getBoundingClientRect(),box=e.parentElement.closest(".box,.panel,.top,.band,#stage,.popbox"),br=box.getBoundingClientRect(),t=0.6*sc;
+    if(r.width&&r.height&&(r.left<br.left-t||r.right>br.right+t||r.top<br.top-t||r.bottom>br.bottom+t))out.bad.push(`outside ${name(box)}: ${name(e)} "${txt(e)}"`);
+  });
+  stage.querySelectorAll(".nm,.rec,.rem,.dk:not(.blank),.dk .t,.dk .c,.no,.pill,.tb,.it,.cnt,.bt p,.bt h1,.badge,.step,.cn,.byemsg b,.byemsg span,.rules li,.sumbox,.pt .sub,.sr .rk,.sr .cs").forEach(e=>{
+    if(e.closest("#pop:not(.on)")||e.closest("#band")&&$("#band").style.display==="none")return;
+    const f=parseFloat(getComputedStyle(e).fontSize);if(f<20)out.small.push(name(e)+" "+f+"px")});
+  return out;
+};
+</script>
+</body>
+</html>

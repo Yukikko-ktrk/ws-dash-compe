@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>しまWS大会ダッシュボード — 統合見本（ラウンド中・事後コスト抽選・事後コスト発表）</title>
+<style>
+/* 色合いと細部は H 案（fable）を受け継ぐ */
+:root{
+  --jp:"BIZ UDPGothic","Yu Gothic UI","Meiryo","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --num:"Bahnschrift","DIN Alternate","Consolas",monospace;
+  --bg:#0b0d11; --surface:#13161d; --card:#1a1e27; --card2:#20252f; --edge:#2b3241; --edge2:#3d4659;
+  --ink:#f1f3f6; --sub:#b4bac6; --mute:#7f8797;
+  --accent:#7ca3ff; --accent-bg:#1b2540;
+  --ok:#5eead4; --ok-bg:#0f2b26;
+  --wait:#fbbf24; --wait-bg:#33280f;
+  --ack:#c9a6ff; --ack-bg:#2a2140;
+  --danger:#f87171; --danger-bg:#38181a;
+  --gold:#f5b02e; --silver:#c3ccd8; --bronze:#d98a3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#05070a;color:var(--ink);font-family:var(--jp)}
+button,input{font-family:inherit;color:inherit}
+/* 1920x1080 の固定ステージを画面に合わせて等倍率で縮小する（1280x720 でも同じ配置） */
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
+  padding:12px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  background:radial-gradient(1200px 500px at 50% -80px,#1a2030 0%,var(--bg) 70%)}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* 複数行で収め、収まらないときだけ末尾を … にする */
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;min-width:0;overflow-wrap:anywhere}
+.cut{cursor:help}
+
+/* ---------- ヘッダー ---------- */
+.top{flex:none;height:50px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 14px;background:var(--surface);border:1px solid var(--edge);border-radius:12px}
+.top-l,.top-r{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:700;letter-spacing:.04em}
+.brand i{width:5px;height:22px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.tname{font-size:20px;font-weight:700;color:var(--ink)}
+.chip{font-size:15px;font-weight:700;padding:3px 10px;border-radius:7px;border:1px solid var(--edge);background:var(--card);color:var(--sub)}
+.chip.rule{border-color:#3b5598;background:var(--accent-bg);color:var(--accent)}
+.chip.round{border-color:#1f6b5f;background:var(--ok-bg);color:var(--ok)}
+.chip.gold{border-color:#7a5a17;background:#2b220e;color:var(--gold)}
+.seg{display:flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--edge);border-radius:8px;background:#0a0c10}
+.seg span{font-size:12px;color:var(--mute);padding:0 6px}
+.seg button{border:0;background:transparent;color:var(--mute);font-size:13px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer}
+.seg button.on{background:#27304a;color:#fff}
+.lnk{font-size:14px;font-weight:700;color:var(--sub);text-decoration:none;padding:5px 11px;border:1px solid var(--edge);border-radius:7px;background:var(--card);cursor:pointer}
+.lnk:hover{color:#fff;border-color:var(--accent)}
+
+/* ---------- 骨組み ---------- */
+.main{flex:1;min-height:0;display:grid;gap:12px}
+.main.round{grid-template-columns:584px minmax(0,1fr)}
+.main.draw{grid-template-columns:minmax(0,1fr)}
+.main.ann{grid-template-columns:minmax(0,1fr) 620px}
+.left{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;
+  display:flex;flex-direction:column;min-height:0;min-width:0}
+.ph{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;height:32px;white-space:nowrap}
+.ph h2{font-size:22px;font-weight:700;letter-spacing:.03em;display:flex;align-items:baseline;gap:10px}
+.ph h2 small{font-size:15px;font-weight:400;color:var(--sub)}
+.badge{display:inline-block;font-size:15px;font-weight:700;padding:1px 10px;border-radius:6px;border:1px dashed var(--wait);color:var(--wait);letter-spacing:0}
+.badge.fin{border:1px solid var(--gold);color:var(--gold)}
+.badge.spin{border:1px solid var(--accent);color:var(--accent)}
+.badge.pre{border:1px dashed var(--edge2);color:var(--sub)}
+
+/* ---------- タイマー（H 案） ---------- */
+.timer{flex:none;height:150px;border-radius:12px;border:1px solid var(--edge);position:relative;
+  background:linear-gradient(180deg,#191e2a,#11141a);padding:8px 14px;display:grid;
+  grid-template-columns:minmax(0,1fr) 104px;column-gap:10px;align-items:center}
+.timer::before{content:"";position:absolute;left:20px;right:20px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.tm-main{display:flex;flex-direction:column;min-width:0}
+.tm-lab{display:flex;align-items:center;gap:10px;height:24px;font-size:15px;font-weight:700;color:var(--sub);letter-spacing:.1em}
+.tm-state{font-size:13px;letter-spacing:.04em;padding:1px 8px;border-radius:5px;border:1px solid var(--ok);color:var(--ok);background:var(--ok-bg)}
+.tm-state.stop{border-color:var(--wait);color:var(--wait);background:var(--wait-bg)}
+#tm{display:block;width:100%;height:108px;border:1px dashed transparent;border-radius:10px;background:transparent;outline:0;
+  font-family:var(--num);font-variant-numeric:tabular-nums;font-size:108px;font-weight:700;line-height:106px;letter-spacing:.04em;
+  text-align:center;color:#fff;text-shadow:0 0 26px rgba(124,163,255,.45)}
+#tm:not([readonly]):hover{border-color:var(--edge2)}
+#tm:not([readonly]):focus{border-color:var(--accent);background:#0c0e13}
+#tm.warn{color:var(--wait);text-shadow:0 0 26px rgba(251,191,36,.4)}
+#tm.up{color:var(--danger);text-shadow:0 0 26px rgba(248,113,113,.55)}
+.tm-ctl{display:flex;flex-direction:column;gap:6px}
+.tm-hint{font-size:12px;color:var(--mute);line-height:1.35}
+
+/* ---------- 主催者ボタン（控えめ・H 案） ---------- */
+.btn{font-size:15px;font-weight:700;height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--edge2);background:transparent;
+  color:var(--sub);cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){color:#fff;border-color:var(--accent)}
+.btn.pri{color:var(--accent);border-color:#3b5598;background:var(--accent-bg)}
+.btn.armed{color:#1a1205;background:var(--wait);border-color:var(--wait)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.strip{flex:none;height:40px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;gap:8px;white-space:nowrap}
+.strip .who{font-size:12px;color:var(--mute);letter-spacing:.08em;flex:none}
+.strip .hint{flex:1;font-size:14px;color:var(--mute);text-align:right}
+body.hideorg .org{visibility:hidden}
+
+/* ---------- 対戦卓（H 案） ---------- */
+.cnts{display:flex;gap:14px;font-size:20px;font-weight:700}
+.cnt b{font-family:var(--num);font-size:22px;margin-left:5px}
+.c-done{color:var(--ok)} .c-pending{color:var(--wait)} .c-playing{color:var(--accent)} .c-ack{color:var(--ack)}
+.bar{flex:none;display:flex;gap:4px;height:6px;margin:6px 0 8px}
+.bar i{flex:1;border-radius:3px;background:var(--edge)}
+.bar i.done{background:var(--ok)} .bar i.pending{background:var(--wait)} .bar i.playing{background:var(--accent)} .bar i.ack{background:var(--ack)}
+.tgrid{flex:1;min-height:0;display:grid;gap:6px}
+.tc{min-height:0;min-width:0;display:grid;grid-template-columns:98px minmax(0,1fr);column-gap:10px;align-items:center;
+  padding:0 10px;background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--edge2);border-radius:9px;cursor:pointer}
+.tc:hover{background:var(--card2)}
+.tc.done{border-left-color:var(--ok)} .tc.pending{border-left-color:var(--wait)} .tc.playing{border-left-color:var(--accent)}
+.tc.ack{border-left-color:var(--ack);background:linear-gradient(90deg,rgba(201,166,255,.09),var(--card) 60%)}
+.sd{display:flex;flex-direction:column;gap:4px;min-width:0}
+.no{font-size:20px;font-weight:700;color:var(--sub);line-height:26px;white-space:nowrap}
+.no b{font-family:var(--num);font-size:24px;color:var(--ink);margin-left:4px}
+.pill{font-size:20px;font-weight:700;line-height:26px;height:28px;text-align:center;border-radius:6px;border:1px solid;white-space:nowrap}
+.pill.done{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.pill.pending{color:var(--wait);border-color:var(--wait);background:var(--wait-bg)}
+.pill.playing{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+.pill.ack{color:var(--ack);border-color:var(--ack);background:var(--ack-bg)}
+.bd{display:grid;min-width:0;align-items:center}
+.pn{display:flex;align-items:center;gap:5px;min-width:0;font-weight:700}
+.pn .dot{flex:none;width:8px;height:8px;border-radius:50%;background:transparent;border:1px solid var(--edge2)}
+.pn.win{color:var(--ok)} .pn.win .dot{background:var(--ok);border-color:var(--ok);box-shadow:0 0 8px var(--ok)}
+.pn.lose{color:var(--sub)}
+.it{font-size:20px;line-height:26px;white-space:nowrap;color:var(--sub);min-width:0}
+.it.ok{color:var(--ok)} .it.wait{color:var(--wait)} .it.ack{color:var(--ack)} .it.mute{color:var(--mute)}
+.note{grid-column:1/-1;font-size:17px;line-height:26px;color:var(--ack);white-space:nowrap}
+.tgrid.cmp .bd{grid-template-columns:214px minmax(0,1fr);gap:3px 8px}
+.tgrid.cmp .pn .nm{font-size:20px;line-height:26px}
+.tgrid.big .bd{grid-template-columns:minmax(0,1fr);row-gap:4px}
+.tgrid.big .pn .nm{font-size:24px;line-height:32px}
+.tgrid.big .pn:nth-child(3){margin-top:8px}
+.tgrid.big .no b{font-size:30px}
+.tgrid.big .sd{gap:8px}
+/* 卓の使用デッキ札 */
+.dk{display:flex;align-items:center;gap:6px;min-width:0;height:30px;padding:0 8px 0 3px;border-radius:7px;
+  border:1px solid var(--edge2);background:#141925;font-size:20px;line-height:26px}
+.dk .c{flex:none;width:42px;height:22px;line-height:22px;text-align:center;border-radius:5px;background:var(--edge);color:var(--accent);
+  font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700}
+.dk.nocost{padding-left:8px}
+.dk.open{border-color:#4a66ad;background:rgba(124,163,255,.08)}
+.dk.used{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.025);color:var(--mute)}
+.dk.used .t{text-decoration:line-through;text-decoration-thickness:2px}
+.dk.used .c{background:#242831;color:var(--mute)}
+
+/* ---------- 大会順位（I 案の形・H 案の色） ---------- */
+.legend{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--sub)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:26px;height:14px;border-radius:4px;border:1px solid var(--edge2)}
+.legend i.used{border-color:rgba(255,255,255,.14);background:linear-gradient(transparent 6px,var(--mute) 6px 8px,transparent 8px)}
+.legend i.open{border-color:#4a66ad;background:rgba(124,163,255,.12)}
+.legend i.now{border-color:var(--wait)}
+.legend i.secret{border-style:dashed;border-color:#4b566e}
+.legend b.p{color:var(--danger)} .legend b.m{color:var(--ok)}
+.rank{--rc:44px 222px 66px 50px repeat(4,minmax(0,1fr))}
+.rank.big{--rc:52px 236px 74px 56px repeat(4,minmax(0,1fr))}
+.rhead,.rr{display:grid;grid-template-columns:var(--rc);column-gap:8px;padding:0 8px}
+.rhead{flex:none;height:24px;margin-top:4px;align-items:center;font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.06em;white-space:nowrap}
+.rhead .r{text-align:right}
+.rbody{flex:1;min-height:0;display:grid;gap:3px;margin-top:2px}
+.rr{min-height:0;align-items:stretch;padding-top:3px;padding-bottom:3px;background:var(--card);border:1px solid var(--edge);border-radius:9px;cursor:pointer}
+.rr:hover{background:var(--card2);border-color:var(--edge2)}
+.rr>*{align-self:center}
+.rk{width:34px;height:30px;line-height:30px;text-align:center;border-radius:6px;background:rgba(255,255,255,.06);
+  font-family:var(--num);font-size:20px;font-weight:700}
+.big .rk{width:40px;height:36px;line-height:36px;font-size:22px}
+.r1 .rk{background:linear-gradient(135deg,#f8c44f,#d98a0b);color:#1a1002}
+.r2 .rk{background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#0f172a}
+.r3 .rk{background:linear-gradient(135deg,#e09a55,#a95d1b);color:#fff}
+.rk.drop{width:auto;height:26px;line-height:24px;padding:0 4px;font-family:var(--jp);font-size:15px;background:transparent;border:1px solid var(--edge2);color:var(--sub)}
+.rr .nm{font-size:22px;font-weight:700;line-height:28px}
+.big .rr .nm{font-size:23px;line-height:32px}
+.rr .wl,.rr .cs{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;text-align:right;white-space:nowrap}
+.big .rr .wl,.big .rr .cs{font-size:24px}
+.wl .w{color:var(--ok)} .wl .l{color:var(--danger)} .wl .o{color:var(--sub);font-weight:400}
+.rr .cs{color:var(--accent)}
+.rr.drop{opacity:.55}
+/* デッキ枠 */
+.dc{align-self:stretch;display:flex;align-items:center;gap:6px;min-width:0;min-height:0;padding:0 8px;border-radius:7px;
+  border:1px solid var(--edge2);background:#141925}
+.dc .t{font-size:20px;line-height:22px;-webkit-line-clamp:2;text-wrap:balance}
+.big .dc .t{line-height:25px;-webkit-line-clamp:4}
+.dc.open{border-color:#4a66ad;background:rgba(124,163,255,.08)}
+.dc.used{border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.025);color:var(--mute)}
+.dc.used .t{text-decoration:line-through;text-decoration-thickness:2px}
+.dc.now{border-color:var(--wait);box-shadow:inset 0 0 0 1px rgba(251,191,36,.35)}
+.dc.secret{border-style:dashed;border-color:#394256;color:var(--mute);
+  background:repeating-linear-gradient(135deg,#12151d 0 8px,#161a24 8px 16px)}
+.dc .q{flex:none;width:24px;height:22px;line-height:22px;text-align:center;border-radius:5px;background:rgba(124,163,255,.14);color:var(--accent);
+  font-family:var(--num);font-size:16px;font-weight:700}
+.dc.secret .t{font-size:20px;white-space:nowrap}
+
+/* ---------- 事後コスト抽選 ---------- */
+.dband{flex:none;height:86px;border-radius:12px;border:1px solid #3b5598;padding:0 22px;display:flex;align-items:center;gap:28px;
+  background:linear-gradient(135deg,#1a2338,#10141e)}
+.dband.fin{border-color:var(--gold)}
+.dband h1{font-size:32px;font-weight:700;letter-spacing:.03em;white-space:nowrap;display:flex;align-items:center;gap:14px}
+.dband .facts{display:flex;gap:26px;font-size:20px;color:var(--sub);white-space:nowrap}
+.dband .facts b{color:var(--ink);font-family:var(--num);font-size:24px;margin:0 3px}
+.dband .msg{flex:1;text-align:right;font-size:16px;color:var(--mute);white-space:nowrap}
+.dgrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;margin-top:4px}
+.dcolw{display:flex;flex-direction:column;min-height:0;min-width:0}
+.dcol{flex:1;min-height:0;display:grid}
+.drw,.dth{display:grid;grid-template-columns:38px minmax(0,1fr) 54px 62px 112px 78px;column-gap:12px;align-items:center;padding:0 10px}
+.dth{flex:none;height:24px;font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.06em;white-space:nowrap;text-align:right}
+.dth :nth-child(2){text-align:left} .dth .sc{text-align:center}
+.drw{min-height:0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;border-radius:6px}
+.drw:hover{background:var(--card)}
+.drw .ix{font-family:var(--num);font-size:20px;color:var(--mute);text-align:right}
+.drw .tt{font-size:22px;line-height:25px;-webkit-line-clamp:2;text-wrap:pretty;word-break:auto-phrase}
+.draw.big .drw .tt{font-size:26px;line-height:30px}
+.draw.dense .drw .tt{font-size:21px;line-height:22px}
+.drw .n{font-family:var(--num);font-size:20px;color:var(--sub);text-align:right;white-space:nowrap}
+.drw .b{font-family:var(--num);font-size:22px;color:var(--sub);text-align:right}
+.drw .f{font-family:var(--num);font-size:26px;font-weight:700;color:var(--accent);text-align:right;white-space:nowrap}
+.draw.big .drw .b{font-size:24px} .draw.big .drw .f{font-size:30px}
+.f .wait{color:var(--mute);font-weight:400}
+/* スロットの窓 */
+.sl{position:relative;height:38px;border-radius:8px;border:1px solid var(--edge2);background:#0b0e14;overflow:hidden;
+  font-family:var(--num);font-variant-numeric:tabular-nums;font-size:26px;font-weight:700;line-height:36px;text-align:center}
+.draw.big .sl{height:46px;line-height:44px;font-size:30px}
+.sl .v{display:block}
+.sl.p{border-color:rgba(248,113,113,.55);background:var(--danger-bg);color:var(--danger)}
+.sl.m{border-color:rgba(94,234,212,.5);background:var(--ok-bg);color:var(--ok)}
+.sl.z{color:var(--mute)}
+.sl.idle{color:var(--mute);font-weight:400}
+.sl.spin{border-color:var(--accent);box-shadow:0 0 12px rgba(124,163,255,.35) inset}
+.reel{display:flex;flex-direction:column;animation:roll linear infinite;will-change:transform;color:#dfe7ff;opacity:.85}
+.reel i{font-style:normal;display:block;height:36px}
+.draw.big .reel i{height:44px}
+@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+/* 確定の瞬間: 上から落ちて軽く弾む（バン） */
+.sl .v.land{animation:land .42s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes land{0%{transform:translateY(-90%) scale(1.25);opacity:.2}48%{transform:translateY(14%) scale(1.1);opacity:1}
+  68%{transform:translateY(-7%) scale(.98)}84%{transform:translateY(3%)}100%{transform:none}}
+.sl.thud{animation:thud .42s ease-out}
+@keyframes thud{0%{box-shadow:0 0 0 0 rgba(255,255,255,.55)}100%{box-shadow:0 0 0 10px rgba(255,255,255,0)}}
+.drw.hit{animation:flash .6s ease-out}
+@keyframes flash{0%{background:rgba(124,163,255,.26)}100%{background:transparent}}
+.f .pop{display:inline-block;animation:pop .38s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1)}}
+.dleg{display:flex;align-items:center;gap:14px;font-size:14px;color:var(--sub)}
+.dleg i{display:inline-block;width:22px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.dleg i.p{background:var(--danger-bg);border:1px solid rgba(248,113,113,.55)} .dleg i.m{background:var(--ok-bg);border:1px solid rgba(94,234,212,.5)}
+
+/* ---------- 事後コスト発表（F 案の配置・H 案の色） ---------- */
+.ahead,.ar{display:grid;grid-template-columns:52px 236px minmax(0,1fr) 132px;column-gap:12px;padding:0 10px}
+.ann.big .ahead,.ann.big .ar{grid-template-columns:60px 280px minmax(0,1fr) 150px}
+.ahead{flex:none;height:24px;margin-top:4px;align-items:center;font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.06em;white-space:nowrap}
+.ahead .r{text-align:right}
+.abody{flex:1;min-height:0;display:grid;gap:3px;margin-top:2px}
+.ar{min-height:0;align-items:center;background:var(--card);border:1px solid var(--edge);border-radius:9px;cursor:pointer}
+.ar:hover{background:var(--card2);border-color:var(--edge2)}
+.ar.r1{border-color:#7a5a17;background:linear-gradient(90deg,rgba(245,176,46,.13),var(--card) 55%)}
+.an{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:1px}
+.an .nm{font-size:24px;font-weight:700;line-height:28px}
+.ann.big .an .nm{font-size:28px;line-height:36px}
+.an .sub{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--mute);white-space:nowrap;line-height:19px}
+.an .sub .tag{font-size:13px;line-height:17px;font-weight:700;padding:0 6px;border-radius:5px;border:1px solid var(--gold);color:var(--gold)}
+.an .sub .tag.dp{border-color:var(--edge2);color:var(--sub)}
+.adk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:2px;min-width:0;align-self:center}
+.ann.big .adk{grid-template-columns:minmax(0,1fr);row-gap:2px}
+.ad{display:flex;align-items:center;gap:8px;min-width:0;height:24px;padding:0 8px;border-radius:6px;background:#141925;border:1px solid rgba(255,255,255,.06)}
+.ann.big .ad{height:24px}
+.ad .t{flex:1;font-size:20px;line-height:22px}
+.ann.big .ad .t{font-size:21px;line-height:23px}
+.ad .bp{flex:none;font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;line-height:22px;color:var(--mute);white-space:nowrap}
+.ad .bp b{font-weight:700}
+.p{color:var(--danger)} .m{color:var(--ok)} .z{color:var(--sub)}
+.at{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:0}
+.at .big{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:30px;font-weight:700;color:var(--gold);line-height:30px}
+.ann.big .at .big{font-size:44px;line-height:50px}
+.at .s{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:20px;color:var(--mute);white-space:nowrap;line-height:22px}
+.at .s b{font-weight:700}
+.ainfo{flex:none;display:flex;align-items:center;gap:16px;height:28px;font-size:16px;color:var(--sub);white-space:nowrap}
+.ainfo b{font-family:var(--num);color:var(--ink)}
+.th,.tr{display:grid;grid-template-columns:minmax(0,1fr) 34px 50px 62px 52px;column-gap:10px;align-items:center;padding:0 8px}
+.th{flex:none;height:24px;margin-top:2px;font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.06em;text-align:right;white-space:nowrap}
+.th :first-child{text-align:left}
+.tlist{flex:1;min-height:0;display:grid;margin-top:2px}
+.tr{min-height:0;font-size:20px;line-height:24px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.tr:hover{background:var(--card)}
+.tr span{text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr .tt{text-align:left;font-family:var(--jp)}
+.tr .n{color:var(--mute)} .tr .b{color:var(--sub)} .tr .f{color:var(--accent);font-weight:700}
+.tr .dl{justify-self:end;padding:0 5px;border-radius:4px;font-weight:700}
+.tr .dl.p{background:rgba(248,113,113,.14)} .tr .dl.m{background:rgba(94,234,212,.13)} .tr .dl.z{background:var(--edge);color:var(--mute)}
+.ann.big .tr{font-size:22px;line-height:28px}
+
+/* ---------- 全文表示（クリックで開く・H 案） ---------- */
+#pop{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,5,9,.62);z-index:20}
+#pop.on{display:flex}
+.popbox{width:980px;max-height:900px;background:#161a23;border:1px solid var(--accent);border-radius:14px;padding:22px 26px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.popbox h3{font-size:30px;font-weight:700;line-height:1.35;margin-bottom:6px;word-break:break-all}
+.popbox .ps{font-size:20px;color:var(--sub);margin-bottom:12px}
+.popbox ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.popbox li{display:grid;grid-template-columns:150px 64px minmax(0,1fr);gap:12px;align-items:baseline;font-size:24px;line-height:1.4;
+  padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--edge)}
+.popbox li .k{font-size:17px;color:var(--sub)} .popbox li .v{font-family:var(--num);color:var(--accent);font-weight:700}
+.popbox .cl{margin-top:16px;text-align:right}
+#toast{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);padding:9px 22px;border-radius:30px;background:#11141c;border:1px solid var(--accent);
+  font-size:17px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap;z-index:30}
+#toast.on{opacity:1}
+
+/* 動きを減らす設定では演出をすべて止める */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header class="top">
+    <div class="top-l">
+      <div class="brand"><i></i>しまWS</div>
+      <div class="tname">第3回 しま交流CS</div>
+      <span class="chip rule">しま2026版ピラミッド</span>
+      <span class="chip">スイス式・登録 4 デッキ</span>
+      <span class="chip" id="chipN"></span>
+      <span class="chip" id="chipR"></span>
+      <span class="chip gold" id="chipW" hidden></span>
+    </div>
+    <div class="top-r">
+      <div class="seg org" id="segS"><span>見本の画面</span></div>
+      <div class="seg org" id="segN"><span>人数</span></div>
+      <button class="lnk org" id="bDemo" title="見本用: 現在のラウンドの全卓を確定にする">デモ: 全卓確定</button>
+      <a class="lnk org" href="#progress-fix" id="bFix" title="組み合わせの手直し・報告修正・承諾代行などの例外対応">大会進行修正 ↗</a>
+      <button class="lnk" id="bHide" title="主催者ボタンを隠す／出す（H キー）">操作を隠す</button>
+    </div>
+  </header>
+  <main class="main" id="main"></main>
+  <div id="pop"><div class="popbox" id="popbox"></div></div>
+  <div id="toast"></div>
+</div>
+<script>
+"use strict";
+/* ===== サンプルデータ（タイトル名は titles.js の実在名・基本コストは見本用） ===== */
+const NAMES=["アリス","しまうま大好きクラブ","ボブ","深夜のカレーうどん部","チャーリー","ねこ","みかんの皮むき名人","ヨル",
+  "ダイヤ","赤いきつねと緑の人","エレン","ゆき","帰ってきたサブロウ","フラン","ヴァイス初心者です。","山田"];
+const POOL=[["アイドルマスター シャイニーカラーズ",3.5],["痛いのは嫌なので防御力に極振りしたいと思います。",2.0],["ウマ娘 プリティーダービー",3.0],
+  ["オーバーロード",2.5],["【推しの子】",3.0],["かぐや様は告らせたい～天才たちの恋愛頭脳戦～",2.5],["学園アイドルマスター",3.5],
+  ["ガールズバンドクライ",1.5],["五等分の花嫁",2.0],["勝利の女神：NIKKE",2.0],["進撃の巨人",2.0],["SPY×FAMILY",2.0],
+  ["葬送のフリーレン",2.0],["ソードアート・オンライン",3.0],["ダンジョンに出会いを求めるのは間違っているだろうか",1.5],["チェンソーマン",2.5],
+  ["転生したらスライムだった件",2.5],["東方Project",2.0],["ブルーアーカイブ",1.0],["プロジェクトセカイ カラフルステージ！ feat. 初音ミク",2.5],
+  ["ヘブンバーンズレッド",1.5],["ぼっち・ざ・ろっく！",2.5],["ホロライブプロダクション",4.0],["ラブライブ！蓮ノ空女学院スクールアイドルクラブ",3.5],
+  ["Re:ゼロから始める異世界生活",3.0],["とある魔術の禁書目録／とある科学の超電磁砲",2.5],["ソードアート・オンライン オルタナティブ ガンゲイル・オンライン",1.5],
+  ["ラブライブ！虹ヶ咲学園スクールアイドル同好会",3.0],["無職転生 ～異世界行ったら本気だす～",3.0],["負けヒロインが多すぎる！",1.0],
+  ["リコリス・リコイル",2.0],["ダンダダン",1.5],["怪獣８号",1.0],["Key",2.5],["東京リベンジャーズ",1.5],["ゆるキャン△",1.0],
+  ["ステラソラ",0.0]]; /* ステラソラ: コスト表に行が無い想定（基本 0.0）。増減がマイナスでも事後は 0.0（0 下限） */
+const ROUNDS=4, ALL_TITLES=168, CUR=2; /* ラウンド中の見本は ROUND 2 */
+
+const qs=new URLSearchParams(location.search);
+let N=qs.get("players")==="16"?16:8;
+let VIEW=["round","draw","announce"].includes(qs.get("state"))?qs.get("state"):"round";
+const RM=matchMedia("(prefers-reduced-motion: reduce)");
+let T=null, PS=null; /* T: 大会, PS: 事後コストの状態 */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ===== 大会の進行（見本内の簡易シミュレーション・H 案の仕組み） ===== */
+function newT(n){
+  const r=rng(n*7919+17);
+  const players=NAMES.slice(0,n).map((name,i)=>{
+    let pick;
+    for(;;){ /* 登録 4 デッキは別タイトル・合計 10.0 以下 */
+      const s=new Set();while(s.size<4)s.add(Math.floor(r()*POOL.length));
+      pick=[...s];if(pick.reduce((a,k)=>a+POOL[k][1],0)<=10)break;
+    }
+    return{id:i,name,dropAfter:i===n-1?1:0,decks:pick.map(k=>({title:POOL[k][0],base:POOL[k][1]}))};
+  });
+  return{n,players,rounds:[],phase:"running"};
+}
+const isDropped=(p,ri)=>p.dropAfter>0&&ri>=p.dropAfter;
+function calc(T){
+  const s=T.players.map(p=>({p,w:0,l:0,d:0,m:0,bye:0,opp:[],deck:p.decks.map(()=>({st:"secret",r:0})),
+    cost:p.decks.reduce((a,d)=>a+d.base,0),dropped:isDropped(p,T.rounds.length-1)}));
+  T.rounds.forEach((R,ri)=>{
+    R.matches.forEach(m=>{ if(m.status!=="done")return;
+      const A=s[m.a],B=s[m.b];A.m++;B.m++;A.opp.push(m.b);B.opp.push(m.a);
+      if(m.res==="a"){A.w++;B.l++}else if(m.res==="b"){B.w++;A.l++}else{A.d++;B.d++}
+      A.deck[ri]={st:m.res==="a"?"used":"open",r:ri+1};B.deck[ri]={st:m.res==="b"?"used":"open",r:ri+1};});
+    if(R.bye&&R.bye.status==="done"){const A=s[R.bye.p];A.w++;A.m++;A.bye++;A.deck[ri]={st:"used",r:ri+1}}
+  });
+  s.forEach(x=>x.rate=x.m?x.w/x.m:0);
+  s.forEach(x=>x.omw=x.opp.length?x.opp.reduce((a,o)=>a+s[o].rate,0)/x.opp.length:0);
+  /* 並び（改修メモ 10・11）: 棄権者は最下段 → 勝ち数 → 勝率 → 登録デッキの合計コストが低い → OMW%（勝率・OMW% は列に出さない） */
+  const order=[...s].sort((x,y)=>(x.dropped-y.dropped)||(y.w-x.w)||(y.rate-x.rate)||(x.cost-y.cost)||(y.omw-x.omw)||(x.p.id-y.p.id));
+  return{s,order};
+}
+function pairRound(T,seed){
+  const ri=T.rounds.length,rnd=rng(seed),st=calc(T);
+  let act=st.order.filter(x=>!isDropped(x.p,ri)).map(x=>({id:x.p.id,w:x.w,bye:x.bye,k:rnd()}));
+  act.sort((x,y)=>(y.w-x.w)||(x.k-y.k));
+  let bye=null;
+  if(act.length%2){for(let i=act.length-1;i>=0;i--){if(!act[i].bye){bye=act[i].id;act.splice(i,1);break}} if(bye===null)bye=act.pop().id}
+  const played=(a,b)=>T.rounds.some(R=>R.matches.some(m=>(m.a===a&&m.b===b)||(m.a===b&&m.b===a)));
+  const solve=l=>{if(!l.length)return[];const a=l[0];for(let k=1;k<l.length;k++){if(played(a,l[k]))continue;
+    const rest=solve(l.filter((_,i)=>i!==0&&i!==k));if(rest)return[[a,l[k]],...rest]}return null};
+  const ids=act.map(x=>x.id);
+  const pairs=solve(ids)||ids.reduce((r,x,i)=>(i%2?r[r.length-1].push(x):r.push([x]),r),[]);
+  const matches=pairs.map(([a,b])=>{const x=rnd();let res=x<0.05?"d":x<0.53?"a":"b";
+    if(T.players[a].dropAfter===ri+1)res="b"; if(T.players[b].dropAfter===ri+1)res="a";
+    return{a,b,res,status:"playing",reporter:x*7%1<0.5?"a":"b"}});
+  T.rounds.push({matches,bye:bye===null?null:{p:bye,status:"ack"}});
+}
+function preset(n,view){
+  const t=newT(n),cur=view==="round"?CUR:ROUNDS;
+  for(let r=1;r<=cur;r++){pairRound(t,n*1000+r*17+3);const R=t.rounds[r-1];R.matches.forEach(m=>m.status="done");if(R.bye)R.bye.status="done"}
+  if(view==="round"){
+    const R=t.rounds[cur-1],list=n===8?["done","pending","playing"]:["done","done","pending","playing","done","pending","playing"];
+    R.matches.forEach((m,i)=>m.status=list[i%list.length]);if(R.bye)R.bye.status="ack";
+  }else t.phase="ended";
+  return t;
+}
+
+/* ===== 事後コスト（タイトルごとに −0.5〜+0.5 を抽選・0 未満は 0） ===== */
+function deltas(seed){const r=rng(seed*977+11),dl={};POOL.forEach(t=>dl[t[0]]=Math.round(r()*10)-5);return dl}
+function post(T,PS){
+  const dl=PS.draws?deltas(PS.seed):null;
+  const f=d=>{const b=Math.round(d.base*10),x=dl?dl[d.title]:0;return{b,x,f:Math.max(0,b+x)}};
+  const map=new Map();T.players.forEach(p=>p.decks.forEach(d=>{const v=map.get(d.title)||{title:d.title,n:0,...f(d)};v.n++;map.set(d.title,v)}));
+  /* 抽選画面の並びは抽選で変わらないもの（基本コストが高い順 → 持ち込み人数 → 名前） */
+  const titles=[...map.values()].sort((x,y)=>(y.b-x.b)||(y.n-x.n)||x.title.localeCompare(y.title,"ja"));
+  const byPost=[...titles].sort((x,y)=>(y.f-x.f)||(y.n-x.n)||x.title.localeCompare(y.title,"ja"));
+  const rows=T.players.map(p=>{const ds=p.decks.map(f);return{p,ds,b:ds.reduce((a,d)=>a+d.b,0),f:ds.reduce((a,d)=>a+d.f,0)}});
+  rows.sort((x,y)=>(y.f-x.f)||x.p.name.localeCompare(y.p.name,"ja"));
+  return{titles,byPost,rows,drawn:!!dl};
+}
+const t1=v=>(v/10).toFixed(1), sg=v=>(v>0?"+":v<0?"−":"±")+(Math.abs(v)/10).toFixed(1), sc=v=>v>0?"p":v<0?"m":"z";
+
+/* ===== タイマー（H 案・この端末の中だけで動く） ===== */
+const tm={base:2100,left:2100,run:false,end:0};
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function tmSet(base,left,run){tm.base=base;tm.left=left;tm.run=run;tm.end=Date.now()+left*1000}
+function tmDraw(){
+  const el=$("#tm");if(!el)return;
+  if(tm.run){tm.left=Math.max(0,Math.ceil((tm.end-Date.now())/1000));if(tm.left===0)tm.run=false}
+  if(document.activeElement!==el||tm.run)el.value=fmt(tm.left);
+  el.readOnly=tm.run;el.className=tm.left===0?"up":tm.left<=300?"warn":"";
+  const s=$("#tmState");s.textContent=tm.run?"進行中":tm.left===0?"時間切れ":"停止中";s.className="tm-state"+(tm.run?"":" stop");
+  $("#tmGo").textContent=tm.run?"STOP":"START";$("#tmReset").disabled=tm.run;
+}
+function tmToggle(){
+  if(tm.run){tm.run=false;tmDraw();return}
+  const m=/^\s*(\d{1,3})\s*[:：]\s*(\d{1,2})\s*$/.exec($("#tm").value);
+  if(!m){toast("時間は 分:秒 で入力してください");$("#tm").value=fmt(tm.left);return}
+  const v=Math.min(999*60,(+m[1])*60+(+m[2]));if(v<=0){toast("1 秒以上を入力してください");return}
+  if(v!==tm.left||tm.left===tm.base)tm.base=v; tmSet(tm.base,v,true);tmDraw();
+}
+setInterval(tmDraw,250);
+
+/* ===== 1. ラウンド中 ===== */
+const LAB={done:"確定",pending:"承諾待ち",playing:"対戦中",ack:"了解待ち"};
+function tchip(d,st,cmp){
+  return`<span class="dk ${st}${cmp?" nocost":""}">${cmp?"":`<span class="c">${d.base.toFixed(1)}</span>`}<span class="t ell">${esc(d.title)}</span></span>`;
+}
+function tableCard(T,ri,m,i,cmp){
+  const P=T.players,A=P[m.a],B=P[m.b],done=m.status==="done";
+  const cls=k=>!done||m.res==="d"?"":m.res===k?" win":" lose";
+  const info=(k,p)=>{
+    if(done)return tchip(p.decks[ri],m.res===k?"used":"open",cmp);
+    if(m.status==="pending")return m.reporter===k?`<span class="it ok">報告済み ✓</span>`:`<span class="it wait">承諾待ち …</span>`;
+    return`<span class="it mute">未報告</span>`;
+  };
+  return`<div class="tc box ${m.status}" data-pop="t:${ri}:${i}"><div class="sd"><span class="no">卓<b>${i+1}</b></span><span class="pill ${m.status}">${LAB[m.status]}</span></div>
+    <div class="bd"><span class="pn${cls("a")}"><i class="dot"></i><span class="nm ell">${esc(A.name)}</span></span>${info("a",A)}
+    <span class="pn${cls("b")}"><i class="dot"></i><span class="nm ell">${esc(B.name)}</span></span>${info("b",B)}</div></div>`;
+}
+function byeCard(T,ri,bye,cmp){
+  const p=T.players[bye.p],st=bye.status;
+  const info=st==="done"?tchip(p.decks[ri],"used",cmp):`<span class="it ack">不戦勝</span>`;
+  const note=st==="done"?"不戦勝・本人が了解済み（上のデッキを使用済みに）":"本人の了解で確定（使用済みにするデッキを選択）";
+  return`<div class="tc box ${st}" data-pop="b:${ri}"><div class="sd"><span class="no">不戦勝</span><span class="pill ${st}">${LAB[st]}</span></div>
+    <div class="bd"><span class="pn${st==="done"?" win":""}"><i class="dot"></i><span class="nm ell">${esc(p.name)}</span></span>${info}
+    <span class="note ell">${note}</span></div></div>`;
+}
+function leftRound(T){
+  const ri=T.rounds.length-1,R=T.rounds[ri],cmp=T.n>8;
+  const sts=R.matches.map(m=>m.status).concat(R.bye?[R.bye.status]:[]);
+  const cn=k=>sts.filter(s=>s===k).length,all=sts.every(s=>s==="done");
+  const cnts=["done","pending","playing","ack"].filter(k=>cn(k)||k==="done").map(k=>`<span class="cnt c-${k}">${LAB[k]}<b>${cn(k)}</b></span>`).join("");
+  const strip=T.phase==="between"?`<span class="hint">ROUND ${ri+1} 終了。次はマッチングの抽選画面（別見本）へ</span>`:
+    `<button class="btn${all?" pri":""}" data-act="endround" data-arm="1"${all?"":" disabled"}>ラウンド終了</button><span class="hint">${all?"全卓が確定しました":"全卓の確定後に押せます（残り "+(sts.length-cn("done"))+" 卓）"}</span>`;
+  return`<section class="left"><div class="timer box"><div class="tm-main"><div class="tm-lab">ROUND ${ri+1} / ${ROUNDS}　残り時間<span class="tm-state" id="tmState"></span></div>
+      <input id="tm" class="num" inputmode="numeric" maxlength="6" aria-label="残り時間（分:秒）。停止中は直接編集できます" spellcheck="false"></div>
+    <div class="tm-ctl org"><button class="btn pri" id="tmGo">START</button><button class="btn" id="tmReset">RESET</button><span class="tm-hint">停止中は数字を<br>直接編集できます</span></div></div>
+  <div class="panel box" style="flex:1"><div class="ph"><h2>対戦卓<small>ROUND ${ri+1}</small></h2><div class="cnts">${cnts}</div></div>
+    <div class="bar">${sts.map(s=>`<i class="${s}"></i>`).join("")}</div>
+    <div class="tgrid ${cmp?"cmp":"big"}" style="grid-template-rows:repeat(${sts.length},minmax(0,1fr))">
+      ${R.matches.map((m,i)=>tableCard(T,ri,m,i,cmp)).join("")}${R.bye?byeCard(T,ri,R.bye,cmp):""}</div>
+    <div class="strip org"><span class="who">主催者</span>${strip}</div></div></section>`;
+}
+function deckCell(d,ds,cur){
+  if(ds.st==="secret")return`<span class="dc secret"><span class="q">?</span><span class="t">未公開</span></span>`;
+  return`<span class="dc ${ds.st}${cur&&ds.r===cur?" now":""}"><span class="t clamp">${esc(d.title)}</span></span>`;
+}
+function rightRound(T,C){
+  const ri=T.rounds.length-1,cur=T.phase==="running"?ri+1:0,big=T.n<=8;
+  let rank=0;
+  const rows=C.order.map(x=>{const r=x.dropped?0:++rank;
+    return`<div class="rr box${r&&r<=3?" r"+r:""}${x.dropped?" drop":""}" data-pop="p:${x.p.id}">
+      ${r?`<span class="rk">${r}</span>`:`<span class="rk drop">棄権</span>`}
+      <span class="nm ell">${esc(x.p.name)}</span>
+      <span class="wl"><span class="w">${x.w}</span>-<span class="l">${x.l}</span>-<span class="o">${x.d}</span></span>
+      <span class="cs">${x.cost.toFixed(1)}</span>
+      ${x.p.decks.map((d,j)=>deckCell(d,x.deck[j],cur)).join("")}</div>`}).join("");
+  return`<section class="panel rank${big?" big":""}"><div class="ph"><h2>大会順位<small>ROUND ${ri+1} ${cur?"途中経過":"終了時点"}・並び: 勝ち数 → 勝率 → 登録計（低い順）・棄権は最下段</small></h2>
+    <div class="legend"><span><i class="used"></i>勝って使用済み</span><span><i class="open"></i>公開済み・使用可</span>${cur?`<span><i class="now"></i>このラウンドで公開</span>`:""}<span><i class="secret"></i>未公開</span></div></div>
+    <div class="rhead"><span>順位</span><span>参加者</span><span class="r">勝-負-分</span><span class="r">登録計</span><span>デッキ 1</span><span>デッキ 2</span><span>デッキ 3</span><span>デッキ 4</span></div>
+    <div class="rbody" style="grid-template-rows:repeat(${C.order.length},minmax(0,1fr))">${rows}</div></section>`;
+}
+
+/* ===== 2. 事後コスト抽選 ===== */
+const STEP_LAB={before:"未抽選",spin:"抽選中…",draft:"下書き",final:"確定"};
+function drawView(T,PS,PC){
+  const big=T.n<=8,list=PC.titles,half=Math.ceil(list.length/2);
+  const cols=[list.slice(0,half),list.slice(half)];
+  const badge=PS.step==="before"?`<span class="badge pre">未抽選</span>`:PS.step==="spin"?`<span class="badge spin">抽選中…</span>`:`<span class="badge">下書き・抽選 ${PS.draws} 回目・未発表</span>`;
+  const msg=PS.step==="before"?"抽選すると全タイトルの増減が決まります。下書きは主催者だけに見えます":
+    PS.step==="spin"?"上から順に確定していきます":"内容を見て再抽選できます。「確定して発表」で参加者にも発表されます";
+  const row=(t,i)=>{
+    const show=PS.step==="draft";
+    const slot=PS.step==="before"?`<span class="sl idle">–</span>`:PS.step==="spin"?`<span class="sl spin">${reel(i)}</span>`:`<span class="sl ${sc(t.x)}"><span class="v">${sg(t.x)}</span></span>`;
+    return`<div class="drw box" data-pop="c:${i}" data-i="${i}"><span class="ix">${i+1}</span><span class="tt clamp">${esc(t.title)}</span>
+      <span class="n">×${t.n}</span><span class="b">${t1(t.b)}</span>${slot}<span class="f">${show?t1(t.f):`<span class="wait">–</span>`}</span></div>`};
+  const head=`<div class="dth"><span>#</span><span>タイトル</span><span>持込</span><span>基本</span><span class="sc">増減</span><span>事後</span></div>`;
+  let strip;
+  if(PS.step==="before")strip=`<button class="btn pri" data-act="draw">事後コストを抽選</button><button class="btn" data-act="csv">CSV 書き出し（全行）</button><span class="hint">抽選結果は下書きになります（参加者には未公開）</span>`;
+  else if(PS.step==="spin")strip=`<button class="btn" data-act="skip">演出を飛ばす</button><span class="hint">抽選中…</span>`;
+  else strip=`<button class="btn" data-act="draw">再抽選</button><button class="btn pri" data-act="fix" data-arm="1">確定して発表</button><button class="btn" data-act="csv">CSV 書き出し（全行）</button><span class="hint">確定後は再抽選できません</span>`;
+  return`<div class="dband box"><h1>事後コスト 抽選${badge}</h1>
+      <div class="facts"><span>全<b>${ROUNDS}</b>ラウンド終了</span><span>変動範囲<b>±0.5</b></span><span>持ち込まれたタイトル<b>${list.length}</b>/ 全 ${ALL_TITLES}</span></div>
+      <div class="msg">${msg}</div></div>
+    <section class="panel draw${big?" big":""}${half>=16?" dense":""}" style="flex:1"><div class="ph"><h2>持ち込まれたタイトル<small>並び: 基本コストが高い順（抽選しても並びは変わりません）　｜　事後 = 基本 + 増減（0 未満は 0）</small></h2>
+      <div class="dleg"><span><i class="p"></i>上がった</span><span><i class="m"></i>下がった</span><span>各人の持ち込みデッキは発表画面で公開</span></div></div>
+      <div class="dgrid">${cols.map((c,k)=>`<div class="dcolw">${head}<div class="dcol" style="grid-template-rows:repeat(${half},minmax(0,1fr))">${c.map((t,i)=>row(t,i+k*half)).join("")}</div></div>`).join("")}</div>
+      <div class="strip org"><span class="who">主催者</span>${strip}</div></section>`;
+}
+/* 回転中の窓: 増減の候補を縦に並べて流し続ける（2 周分並べて継ぎ目なく回す） */
+function reel(i){
+  const r=rng(i*131+PS.draws*7+1),v=[];for(let k=0;k<8;k++)v.push(Math.round(r()*10)-5);
+  const seq=v.concat(v).map(x=>`<i>${sg(x)}</i>`).join("");
+  return`<span class="reel" style="animation-duration:${(.32+r()*.14).toFixed(2)}s;animation-delay:-${r().toFixed(2)}s">${seq}</span>`;
+}
+let timers=[];
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+function startDraw(){
+  clearTimers();window.__locks=[];window.__t0=Math.round(performance.now());PS.draws++;PS.seed=(N*31+PS.draws*101+(PS.draws>2?Date.now()%9973:0));PS.step="spin";
+  if(RM.matches){PS.step="draft";render();toast(`事後コストを抽選しました（${PS.draws} 回目・未発表）`);return}
+  render();
+  const PC=post(T,PS),rows=[...document.querySelectorAll(".drw")];
+  const gap=Math.max(200,Math.min(400,Math.round(7600/rows.length))),lead=1100;
+  rows.forEach((row,k)=>timers.push(setTimeout(()=>lockRow(row,PC.titles[+row.dataset.i]),lead+k*gap)));
+  timers.push(setTimeout(()=>{PS.step="draft";render();toast(`事後コストを抽選しました（${PS.draws} 回目・未発表）`)},lead+rows.length*gap+500));
+}
+function lockRow(row,t,still){
+  const sl=row.querySelector(".sl");
+  sl.className=`sl ${sc(t.x)}${still?"":" thud"}`;sl.innerHTML=`<span class="v${still?"":" land"}">${sg(t.x)}</span>`;
+  row.querySelector(".f").innerHTML=still?t1(t.f):`<span class="pop">${t1(t.f)}</span>`;
+  if(still)return;
+  (window.__locks=window.__locks||[]).push(Math.round(performance.now()));
+  row.classList.remove("hit");void row.offsetWidth;row.classList.add("hit");
+}
+/* 撮影用（check.mjs だけが使う）: 演出の途中、k 行目が確定した瞬間で止める。k 行目だけ弾む動きを付ける */
+window.__freeze=function(k){
+  clearTimers();const PC=post(T,PS);
+  [...document.querySelectorAll(".drw")].slice(0,k).forEach((r,j)=>lockRow(r,PC.titles[+r.dataset.i],j<k-1));
+};
+
+/* ===== 3. 事後コスト発表 ===== */
+function annView(T,C,PS,PC){
+  const big=T.n<=8,rankOf=new Map();let r=0;C.order.forEach(x=>rankOf.set(x.p.id,x.dropped?0:++r));
+  const rows=PC.rows.map((x,i)=>{const dx=x.f-x.b,rk=rankOf.get(x.p.id);
+    return`<div class="ar box${i<3?" r"+(i+1):""}" data-pop="q:${x.p.id}"><span class="rk">${i+1}</span>
+      <span class="an"><span class="nm ell">${esc(x.p.name)}</span><span class="sub">${rk?`大会 ${rk} 位`:`<span class="tag dp">棄権</span>`}${i===0?`<span class="tag">事後コスト 最高</span>`:""}</span></span>
+      <span class="adk">${x.p.decks.map((d,j)=>{const v=x.ds[j];return`<span class="ad"><span class="t ell">${esc(d.title)}</span><span class="bp">${t1(v.b)}→<b class="${sc(v.x)}">${t1(v.f)}</b></span></span>`}).join("")}</span>
+      <span class="at"><span class="big">${t1(x.f)}</span><span class="s">${t1(x.b)} <b class="${sc(dx)}">${sg(dx)}</b></span></span></div>`}).join("");
+  const tl=PC.byPost.map((t,i)=>`<div class="tr" data-pop="a:${i}"><span class="tt ell">${esc(t.title)}</span><span class="n">${t.n}</span><span class="b">${t1(t.b)}</span><span class="dl ${sc(t.x)}">${sg(t.x)}</span><span class="f">${t1(t.f)}</span></div>`).join("");
+  return`<section class="panel ann${big?" big":""}"><div class="ph"><h2>事後コスト発表<small>事後合計コストが高い順（同点は名前順）・勝敗の順位とは別の表</small></h2>
+      <div class="legend"><span>デッキは 基本 → 事後</span><span><b class="p">赤</b> 上がった</span><span><b class="m">緑</b> 下がった</span><span>右端: 事後合計／基本合計と増減</span></div></div>
+    <div class="ahead"><span>順位</span><span>参加者</span><span>登録デッキ（4）· 基本 → 事後</span><span class="r">事後合計</span></div>
+    <div class="abody" style="grid-template-rows:repeat(${PC.rows.length},minmax(0,1fr))">${rows}</div></section>
+  <section class="panel ann${big?" big":""}"><div class="ph"><h2>タイトルごとの抽選結果<span class="badge fin">確定</span></h2></div>
+    <div class="ainfo"><span>範囲 <b>±0.5</b></span><span>抽選 <b>${PS.draws}</b> 回</span><span>確定 <b>${esc(PS.at)}</b></span><span>事後が高い順</span></div>
+    <div class="th"><span>持ち込まれたタイトル（${PC.byPost.length}）</span><span>人</span><span>基本</span><span>増減</span><span>事後</span></div>
+    <div class="tlist" style="grid-template-rows:repeat(${PC.byPost.length},minmax(0,1fr))">${tl}</div>
+    <div class="strip org"><span class="who">主催者</span><button class="btn" data-act="csv">CSV 書き出し（全行）</button><span class="hint">持ち込みのない ${ALL_TITLES-PC.byPost.length} タイトルは CSV のみ</span></div></section>`;
+}
+
+/* ===== 描画 ===== */
+let CUR_V={};
+function render(){
+  const C=calc(T),PC=VIEW==="round"?null:post(T,PS);CUR_V={C,PC};
+  const m=$("#main");m.className="main "+(VIEW==="round"?"round":VIEW==="draw"?"draw":"ann");
+  if(VIEW==="round")m.innerHTML=leftRound(T)+rightRound(T,C);
+  else if(VIEW==="draw")m.innerHTML=`<div class="left" style="gap:8px">${drawView(T,PS,PC)}</div>`;
+  else m.innerHTML=annView(T,C,PS,PC);
+  $("#chipN").textContent=`参加 ${T.n} 名`;
+  const cr=$("#chipR"),cw=$("#chipW");
+  if(VIEW==="round"){cr.textContent=`ROUND ${T.rounds.length} / ${ROUNDS}`;cr.className="chip round";cw.hidden=true}
+  else if(VIEW==="draw"){cr.textContent="大会終了・事後コスト";cr.className="chip round";cw.hidden=true}
+  else{cr.textContent="大会終了・事後コスト発表";cr.className="chip gold";cw.hidden=false;cw.textContent="優勝 "+C.order[0].p.name}
+  $("#bDemo").style.display=VIEW==="round"?"":"none";
+  document.querySelectorAll("#segS button").forEach(b=>b.classList.toggle("on",b.dataset.v===VIEW));
+  document.querySelectorAll("#segN button").forEach(b=>b.classList.toggle("on",+b.dataset.v===N));
+  markCut();tmDraw();
+}
+/* 省略された文字に全文の title を付ける */
+function markCut(){
+  document.querySelectorAll(".ell,.clamp").forEach(e=>{e.title=e.textContent;
+    e.classList.toggle("cut",e.scrollWidth>e.clientWidth+1||e.scrollHeight>e.clientHeight+1)});
+}
+function load(){
+  clearTimers();
+  T=preset(N,VIEW);
+  const step=qs.get("step");
+  PS={draws:0,seed:0,step:"before",at:"2026/11/25 17:42"};
+  if(VIEW==="draw"&&step==="draft"){PS.draws=2;PS.seed=N*31+2*101;PS.step="draft"}
+  if(VIEW==="announce"){PS.draws=2;PS.seed=N*31+2*101;PS.step="final"}
+  if(VIEW==="round")tmSet(2100,1307,true);else tmSet(2100,2100,false);
+  render();
+}
+
+/* ===== 全文表示 ===== */
+const SL={used:"勝って使用済み",open:"公開済み・使用可",secret:"未公開"};
+function popHtml(key){
+  const [k,a,b]=key.split(":"),{C,PC}=CUR_V,P=T.players;
+  const dl=(d,ds)=>ds.st==="secret"?`<li><span class="k">未公開</span><span class="v">?</span><span>（確定した対戦で使うまで伏せています）</span></li>`:
+    `<li><span class="k">${SL[ds.st]}${ds.r?"・R"+ds.r:""}</span><span class="v">${d.base.toFixed(1)}</span><span>${esc(d.title)}</span></li>`;
+  if(k==="p"){const x=C.s[+a];return`<h3>${esc(x.p.name)}</h3><div class="ps">${x.w}勝 ${x.l}敗 ${x.d}分　登録デッキ合計コスト ${x.cost.toFixed(1)}${x.dropped?"　（棄権）":""}</div><ul>${x.p.decks.map((d,j)=>dl(d,x.deck[j])).join("")}</ul>`}
+  if(k==="q"){const x=PC.rows.find(r=>r.p.id===+a);return`<h3>${esc(x.p.name)}</h3><div class="ps">基本合計 ${t1(x.b)} → 事後合計 ${t1(x.f)}（${sg(x.f-x.b)}）</div><ul>${x.p.decks.map((d,j)=>`<li><span class="k">基本 ${t1(x.ds[j].b)}　${sg(x.ds[j].x)}</span><span class="v">${t1(x.ds[j].f)}</span><span>${esc(d.title)}</span></li>`).join("")}</ul>`}
+  if(k==="c"||k==="a"){const t=(k==="c"?PC.titles:PC.byPost)[+a],sh=k==="a"||PS.step==="draft";
+    return`<h3>${esc(t.title)}</h3><div class="ps">持ち込み ${t.n} 人　基本 ${t1(t.b)}　増減 ${sh?sg(t.x):"–"}　事後 ${sh?t1(t.f):"–"}</div>`}
+  const ri=+a,R=T.rounds[ri];
+  if(k==="b"){const p=P[R.bye.p],st=R.bye.status;return`<h3>不戦勝：${esc(p.name)}</h3><div class="ps">ROUND ${ri+1}　${LAB[st]}　— 不戦勝は本人の「了解」で確定します。ピラミッドでは使用済みにするデッキを本人が選ぶか、ランダムで選びます。</div>${st==="done"?`<ul>${dl(p.decks[ri],{st:"used",r:ri+1})}</ul>`:""}`}
+  const m=R.matches[+b],done=m.status==="done";
+  const row=(k2,p)=>`<li><span class="k">${done?(m.res==="d"?"引き分け":m.res===k2?"勝ち":"負け"):m.status==="pending"?(m.reporter===k2?"報告済み":"承諾待ち"):"未報告"}</span><span class="v">${done?p.decks[ri].base.toFixed(1):"–"}</span><span>${esc(p.name)}${done?"　／　"+esc(p.decks[ri].title):""}</span></li>`;
+  return`<h3>ROUND ${ri+1}　卓 ${+b+1}</h3><div class="ps">${LAB[m.status]}${done?"":"　（使用デッキは確定するまで表示しません）"}</div><ul>${row("a",P[m.a])}${row("b",P[m.b])}</ul>`;
+}
+function openPop(key){$("#popbox").innerHTML=popHtml(key)+`<div class="cl"><button class="btn" data-act="close">閉じる（Esc）</button></div>`;$("#pop").classList.add("on")}
+function closePop(){$("#pop").classList.remove("on")}
+let toastT=0;
+function toast(s){const t=$("#toast");t.textContent=s;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2600)}
+
+/* ===== 操作 ===== */
+function act(a){
+  if(a==="close")return closePop();
+  if(a==="endround"){T.phase="between";toast(`ROUND ${T.rounds.length} を終了しました`)}
+  if(a==="draw")return startDraw();
+  if(a==="skip"){clearTimers();PS.step="draft";render();return toast(`事後コストを抽選しました（${PS.draws} 回目・未発表）`)}
+  if(a==="fix"){const d=new Date(),p=v=>String(v).padStart(2,"0");PS.at=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    PS.step="final";VIEW="announce";syncUrl();toast("事後コストを確定し、発表しました")}
+  if(a==="csv")return toast(`CSV（全 ${ALL_TITLES} タイトル・CX 別の全行）を書き出します — 見本ではボタンのみ`);
+  render();
+}
+let armed=null;
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");
+  if(b){ if(b.disabled)return;
+    if(b.dataset.arm&&armed!==b){if(armed)disarm();armed=b;b.dataset.label=b.textContent;b.textContent="もう一度押して確定";b.classList.add("armed");b._t=setTimeout(disarm,3500);return}
+    if(armed){clearTimeout(armed._t);armed=null}
+    return act(b.dataset.act)}
+  if(e.target.id==="pop")return closePop();
+  const p=e.target.closest("[data-pop]");if(p&&!(VIEW==="draw"&&PS.step==="spin"))openPop(p.dataset.pop);
+});
+function disarm(){if(!armed)return;clearTimeout(armed._t);armed.textContent=armed.dataset.label;armed.classList.remove("armed");armed=null}
+document.addEventListener("click",e=>{
+  if(e.target.id==="tmGo")tmToggle();
+  if(e.target.id==="tmReset"&&!tm.run){tmSet(tm.base,tm.base,false);tmDraw()}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")closePop();
+  if(e.target.id==="tm"){if(e.key==="Enter"){e.target.blur();tmToggle()}return}
+  if(e.key==="h"||e.key==="H")toggleOrg();
+});
+function toggleOrg(){const on=document.body.classList.toggle("hideorg");$("#bHide").textContent=on?"操作を表示":"操作を隠す"}
+$("#bHide").onclick=toggleOrg;
+$("#bFix").onclick=e=>{e.preventDefault();toast("「大会進行修正」タブを開きます（見本では移動しません）")};
+$("#bDemo").onclick=()=>{if(VIEW!=="round"||T.phase!=="running")return;const R=T.rounds[T.rounds.length-1];R.matches.forEach(m=>m.status="done");if(R.bye)R.bye.status="done";render()};
+function syncUrl(){const u=new URL(location.href);u.searchParams.set("state",VIEW);u.searchParams.set("players",N);u.searchParams.delete("step");history.replaceState(null,"",u)}
+function go(){syncUrl();load()}
+[["round","ラウンド中"],["draw","事後抽選"],["announce","事後発表"]].forEach(([v,l])=>{const b=document.createElement("button");b.textContent=l;b.dataset.v=v;b.onclick=()=>{VIEW=v;go()};$("#segS").appendChild(b)});
+[8,16].forEach(v=>{const b=document.createElement("button");b.textContent=v+"人";b.dataset.v=v;b.onclick=()=>{N=v;go()};$("#segN").appendChild(b)});
+
+/* ===== 画面に合わせた縮小 ===== */
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080),st=$("#stage");
+  st.style.transform=`translate(${Math.max(0,(innerWidth-1920*s)/2)}px,${Math.max(0,(innerHeight-1080*s)/2)}px) scale(${s})`}
+addEventListener("resize",()=>{fit();markCut()});fit();
+if(qs.get("hide")==="1")toggleOrg();
+load();
+
+/* ===== 見切れの自己検査（check.mjs から呼ぶ） ===== */
+window.__check=function(){
+  const out={bad:[],ell:[],small:[],n:0},stage=$("#stage"),SR=stage.getBoundingClientRect(),sc=SR.width/1920;
+  const name=e=>e.tagName.toLowerCase()+(e.id?"#"+e.id:"")+(e.className&&typeof e.className==="string"?"."+e.className.trim().split(/\s+/).join("."):"");
+  const txt=e=>(e.value||e.textContent||"").trim().replace(/\s+/g," ").slice(0,30);
+  if(document.documentElement.scrollWidth>innerWidth||document.documentElement.scrollHeight>innerHeight)out.bad.push("document scrolls");
+  if(Math.abs(SR.width-1920*sc)>1||SR.right>innerWidth+0.5||SR.bottom>innerHeight+0.5)out.bad.push("stage outside viewport");
+  stage.querySelectorAll("*").forEach(e=>{
+    const cs=getComputedStyle(e);if(cs.display==="none"||cs.display==="inline"||cs.display==="contents")return;
+    if(e.closest("#pop:not(.on)")||e.id==="toast"||e.closest("[hidden]"))return;
+    out.n++;
+    const ow=e.scrollWidth-e.clientWidth,oh=e.scrollHeight-e.clientHeight;
+    const intended=e.classList.contains("ell")||e.classList.contains("clamp");
+    const fullOk=e.title===e.textContent&&!!e.closest("[data-pop]");
+    if(ow>1){ if(e.classList.contains("ell")){ if(fullOk)out.ell.push(txt(e));else out.bad.push("ellipsis without full text: "+name(e)) } else out.bad.push(`overflow-x ${ow}px: ${name(e)} "${txt(e)}"`)}
+    if(oh>1){ if(e.classList.contains("clamp")){ if(fullOk)out.ell.push(txt(e));else out.bad.push("clamp without full text: "+name(e)) } else out.bad.push(`overflow-y ${oh}px: ${name(e)} "${txt(e)}"`)}
+    const r=e.getBoundingClientRect(),box=e.parentElement.closest(".box,.panel,.top,#stage"),br=box.getBoundingClientRect(),t=0.6;
+    if(r.width&&r.height&&(r.left<br.left-t||r.right>br.right+t||r.top<br.top-t||r.bottom>br.bottom+t))out.bad.push(`outside ${name(box)}: ${name(e)} "${txt(e)}"`);
+  });
+  /* 本文（参加者名・デッキ名・卓・報告状況・勝敗・コスト・タイトル・増減）は 1080p で 20px 以上 */
+  stage.querySelectorAll(".rr .nm,.rr .rk:not(.drop),.rr .wl,.rr .cs,.dc .t,.tc .nm,.tc .no,.tc .pill,.tc .it,.dk .t,.dk .c,.cnt,"+
+    ".drw .ix,.drw .tt,.drw .n,.drw .b,.drw .sl,.drw .f,.dband .facts,.ar .rk,.an .nm,.ad .t,.ad .bp,.at .big,.at .s,.tr>span").forEach(e=>{
+    const f=parseFloat(getComputedStyle(e).fontSize);if(f<20)out.small.push(name(e)+" "+f+"px")});
+  return out;
+};
+</script>
+</body>
+</html>

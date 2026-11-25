@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow,noarchive">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>マッチング｜しまWS大会</title>
+<style>
+:root{font-size:min(.05208333333vw,.09259259259vh);--bg:#0b0d11;--panel:#13161d;--card:#1a1e27;--line:#323948;--ink:#f1f3f6;--sub:#b4bac6;--blue:#9db7ff;--teal:#5eead4;--gold:#f6c368;--violet:#c9a6ff;--num:"Bahnschrift","Consolas",monospace}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0}body{display:grid;place-items:center;background:var(--bg);color:var(--ink);font:22rem/1.35 "Yu Gothic UI","Meiryo",sans-serif}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,[tabindex]:focus-visible{outline:3rem solid var(--gold);outline-offset:2rem}h1,h2,p{margin:0}
+main{width:1920rem;height:1080rem;padding:0 48rem;display:grid;grid-template-rows:86rem 1fr 84rem;gap:24rem;background:radial-gradient(ellipse at 0% 10%,#19223555,transparent 53%),var(--bg)}
+header,footer,.brand,.topmeta,.wordmark,.roundtag,.righthead,.legend,.flow,.footnote,#actions{display:flex;align-items:center}header,footer,.righthead{justify-content:space-between}header{border-bottom:1rem solid var(--line)}.brand{gap:18rem}.brandlogo{width:45rem;height:45rem}.wordmark{gap:23rem;font-size:27rem;font-weight:750;letter-spacing:1rem}.wordmark small{font-weight:500;font-size:19rem;color:var(--sub);border-left:1rem solid #495264;padding-left:22rem;letter-spacing:1rem}.topmeta{gap:23rem;color:var(--sub);font-size:20rem}.roundtag{gap:10rem;border:1rem solid #44577d;background:#1b2540;color:#c4d3ff;border-radius:5rem;padding:6rem 15rem;font-weight:650}.roundtag b{font:700 24rem var(--num)}
+.layout{min-height:0;display:grid;grid-template-columns:484rem 1fr;gap:25rem}.feature{position:relative;isolation:isolate;display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0;border:1rem solid #414e69;border-radius:18rem;background:radial-gradient(ellipse at 52% 45%,#33436877,transparent 67%),linear-gradient(145deg,#25324a 0%,#192234 42%,#171d2b 80%);padding:36rem 32rem 27rem}.feature:before{content:"";position:absolute;top:-1rem;left:32rem;width:64rem;height:3rem;background:#a7bdff}.phase{display:flex;align-items:center;gap:10rem;color:#bdcced;font-size:20rem;font-weight:650;letter-spacing:2rem}.phase:before{content:"";width:22rem;height:2rem;background:currentColor}.feature h1{font-size:65rem;letter-spacing:-2rem;line-height:1.22;margin:12rem 0 19rem}.statebox{display:inline-flex;align-items:center;gap:10rem;background:#202d46;border:1rem solid #526783;border-radius:40rem;padding:6rem 16rem;color:#d7e3ff;font-size:22rem;font-weight:700}.statebox i{width:9rem;height:9rem;transform:rotate(45deg);background:#afc5ff}#caption{font-size:21rem;line-height:1.6;color:#c7cfdc;margin-top:16rem}#art{align-self:center;display:grid;place-items:center;min-height:0}#art svg{width:100%;max-height:310rem;display:block}
+.statusblock{border-top:1rem solid #414b60;padding-top:20rem}.statrow,.outrow{display:flex;align-items:center;justify-content:space-between}.statrow{margin-bottom:15rem;font-size:22rem;color:#c7cfdf}.statrow strong{font:600 46rem/1 var(--num);color:var(--ink)}.statrow small{font-size:20rem;margin-left:7rem}.outrow{border-top:1rem solid #364154;padding-top:15rem;font-size:20rem;color:#bec5d2}.outrow span{font-weight:500;color:#ddd0dd}.right{min-width:0;display:grid;grid-template-rows:82rem 1fr 54rem;min-height:0}.righthead{padding:0 4rem 15rem}.righthead h2{font-size:37rem;line-height:1.25;letter-spacing:1rem}.righthead p{font-size:20rem;color:var(--sub);margin-top:3rem}.counter{text-align:right}.counter span{font-size:18rem;color:var(--sub);margin-right:12rem}.counter b{font:600 35rem var(--num);color:var(--blue)}#roster{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:12rem}.entry,.table{border:1rem solid var(--line);border-radius:10rem;background:var(--card);min-width:0;min-height:0}.entry{display:grid;grid-template-columns:58rem minmax(0,1fr) auto;align-items:center;align-content:center;column-gap:18rem;padding:0 23rem}.pid{font:500 28rem/1 var(--num);color:#adbfdf;border-right:1rem solid #40506a}.person{min-width:0;display:grid;gap:2rem}.pname{font-size:26rem;font-weight:700;letter-spacing:.4rem;line-height:1.24}.record{font-size:20rem;color:#bbc2d0;font-variant-numeric:tabular-nums}.decks{display:inline-flex;gap:6rem;align-items:center;justify-content:center;padding:6rem;background:none;border:1rem solid transparent;border-radius:5rem}.decks:hover,.decks:focus-visible{border-color:#617295;background:#273042}.mark{display:inline-grid;place-items:center;width:29rem;height:36rem;border:1rem solid #525c72;border-radius:4rem;background:#252b38;font:600 20rem/1 "Segoe UI Symbol","Yu Gothic UI",sans-serif}.mark.used{color:#c3c9d3;border-color:#61697a;background:#303642}.mark.open{color:var(--teal);background:#133531;border-color:#397c73}.mark.secret{color:#9aa5bc;background:repeating-linear-gradient(125deg,#242b39 0 5rem,#2c3444 5rem 6rem);border-color:#435069}
+.table{display:grid;grid-template-rows:auto 1fr 1fr;padding:0 19rem}.thead{display:flex;align-items:center;justify-content:space-between;min-height:42rem;border-bottom:1rem solid #3b4352}.tn{font:700 23rem/1.2 var(--num),"Yu Gothic UI",sans-serif;letter-spacing:.5rem;color:#dce5ff}.status{font-size:20rem;color:var(--sub)}.seat{min-width:0;min-height:0;display:grid;align-items:center;align-content:center;grid-template-columns:minmax(0,1fr) auto;column-gap:14rem}.seat+.seat{border-top:1rem solid #333a48}.decktitle{grid-column:1/-1;font-size:20rem;color:#bdc5d3;line-height:1.45}.entry .decktitle{grid-column:2/-1;margin-top:7rem}.seat .decktitle{margin-top:7rem}.legend{gap:25rem;justify-content:flex-end;font-size:20rem;color:#b4bdce}.legend>span{display:inline-flex;align-items:center;gap:8rem}.legend .mark{height:22rem;width:18rem;font-size:14rem}.legend .hint{margin-right:auto;color:#adb8cd}
+footer{border-top:1rem solid var(--line);gap:20rem}.flow{gap:12rem;font-size:20rem;color:#8792a8}.flow i{display:block;width:34rem;height:1rem;background:#3e495d}.flow span{display:inline-flex;align-items:center;gap:7rem}.flow b{font:500 17rem var(--num)}body[data-state=before] .flow span:nth-of-type(1),body[data-state=drawing] .flow span:nth-of-type(1),body[data-state=drafted] .flow span:nth-of-type(2),body[data-state=published] .flow span:nth-of-type(3),body[data-state=round] .flow span:nth-of-type(4){color:var(--blue);font-weight:700}.footnote,#actions{gap:12rem}.footnote>span{font-size:18rem;color:var(--sub);margin-right:6rem}.primary,.secondary,dialog button{font-size:20rem;border:1rem solid #4e6290;border-radius:6rem;background:#263550;color:#dce7ff;padding:10rem 23rem;font-weight:650}.primary{background:#a9beff;border-color:#a9beff;color:#14213d}.primary:hover{background:#c3d2ff}.secondary:hover{background:#314264}button:disabled{cursor:default;opacity:.6}
+body[data-state=published] .status,body[data-state=round] .status{color:var(--teal)}body[data-state=drafted] .status{color:var(--gold)}.sealed{background:repeating-linear-gradient(125deg,transparent 0 9rem,#52608210 9rem 10rem),linear-gradient(120deg,#1a2130,#1e283c);border-style:dashed}.backface{grid-row:2/4;align-self:center;text-align:center;color:#9aafd6;font-size:22rem}.revealing{animation:deal .48s ease-out;transform-origin:50% 0%}@keyframes deal{0%{transform:perspective(900rem) rotateX(-28deg);background:#394969}100%{transform:none}}
+body[data-players="8"] .pname{font-size:31rem}body[data-players="8"] .thead{min-height:56rem}body[data-players="8"] .table{padding:0 24rem}body[data-players="8"] .mark{width:33rem;height:42rem}body[data-players="8"] .legend .mark{width:18rem;height:22rem}body[data-players="16"] .seat .person{display:flex;align-items:center;justify-content:space-between;gap:6rem}body[data-players="16"] .seat .pname{font-size:23rem}.entry.withdrawn{border-style:dashed;background:#161922}
+dialog{width:740rem;max-width:95vw;background:#1b2130;color:var(--ink);border:1rem solid #697b9a;border-radius:15rem;padding:35rem;font-size:23rem}dialog::backdrop{background:#070b13b8}dialog h2{font-size:34rem}dialog p{margin-top:8rem;color:var(--sub)}.detaildecks{list-style:none;padding:0;margin:20rem 0}.detaildecks li{display:flex;gap:18rem;align-items:center;padding:14rem 0;border-top:1rem solid #424b60}.detaildecks span{flex-shrink:0;color:var(--blue)}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+.decktitle{appearance:none;border:0;background:none;text-align:left;padding:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.decktitle:hover{text-decoration:underline}.withdrawn .pid{color:#bba9b8}.withdrawn .pname:after{content:"棄権";display:inline-block;margin-left:10rem;vertical-align:middle;font-size:16rem;font-weight:600;color:#dac1d1;background:#3c303d;border:1rem solid #605061;border-radius:4rem;padding:2rem 6rem}.bye .status,.bye-note .record{color:var(--violet)!important}.bye-note,.bye-note .person{grid-column:1/-1}.bye-note .pname{color:#c0b6d0}.thead .status{background:#272d3a;padding:1rem 9rem;border-radius:4rem}.bye .status{background:#332940}.sealed{position:relative;isolation:isolate}.sealed:after{content:"";position:absolute;border:1rem solid #465675;inset:51rem 16rem 12rem;pointer-events:none;background:radial-gradient(ellipse at center,#54658d33,transparent 55%)}.backface span{display:inline-grid;place-items:center;width:52rem;height:52rem;font-size:39rem;background:#253149;color:#b9caff;outline:1rem solid #67799a;outline-offset:5rem;border-radius:50%}.clockface{display:none}.clockface span{font-size:23rem;color:#afbdd4}.clockface b{display:block;font:600 100rem/1.2 var(--num);font-variant-numeric:tabular-nums;color:#e9f0ff}body[data-state=round] #art,body[data-state=round] .counter,body[data-state=round] .footnote{display:none}body[data-state=round] .clockface{display:block;align-self:center;border-inline-start:3rem solid #9db7ff;padding-left:22rem}body[data-state=published] .statebox,body[data-state=round] .statebox{color:#a8efdf;background:#18382f;border-color:#3a7164}body[data-state=published] .statebox i,body[data-state=round] .statebox i{background:var(--teal)}body[data-state=drafted] .statebox{color:#faddaa;background:#382f22;border-color:#756044}body[data-state=drafted] .statebox i{background:var(--gold)}body[data-state=drawing] #art .art-fan{animation:fan 1.4s ease-in-out infinite alternate;transform-origin:center}@keyframes fan{to{transform:translateY(-4px) rotate(2deg)}}.feature h1{line-height:1.48;margin:5rem 0 13rem}.righthead h2{line-height:1.48}.righthead{padding-bottom:9rem}.pname{line-height:1.50}.backface span{font:36rem/1 "Segoe UI Symbol","Yu Gothic UI",sans-serif}.withdrawn .pname:after,.wordmark small,.counter span,.flow b,.footnote>span{font-size:20rem}.legend .mark{font-size:15rem}</style>
+</head><body>
+<main>
+<header><div class="brand"><svg aria-hidden="true" class="brandlogo" viewBox="0 0 48 48"><rect x="1" y="1" width="46" height="46" rx="10" fill="#b2c6ff"/><path d="m9 19 15-9 15 9-15 9z M9 25l15 9 15-9 M9 31l15 9 15-9" stroke="#1b2b4c" stroke-width="3" fill="none" stroke-linejoin="round"/></svg><div class="wordmark">しまWS大会<small>会場ダッシュボード</small></div></div><div class="topmeta"><span>ピラミッド形式</span><span class="roundtag">第 <b>03</b> ラウンド</span></div></header>
+<div class="layout">
+<section class="feature"><div><div class="phase">大会進行</div><h1 id="heroTitle">マッチング</h1><div class="statebox"><i></i><span id="stateName"></span></div><p id="caption"></p></div><div id="art" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 320" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+<defs>
+ <linearGradient id="ac-back" x1="0" y1="1" x2=".9" y2="0" gradientUnits="objectBoundingBox"><stop stop-color="#15192e"/><stop offset=".45" stop-color="#283758"/><stop offset="1" stop-color="#394363"/></linearGradient>
+ <linearGradient id="ac-face" x1="0%" y1="0%" x2="92%" y2="100%"><stop stop-color="#404f82"/><stop offset=".27" stop-color="#202d50"/><stop offset=".7" stop-color="#141b32"/><stop offset="1" stop-color="#30385c"/></linearGradient>
+ <linearGradient id="ac-foil" x1="0%" y1="100%" x2="90%" y2="0%"><stop stop-color="#718cc5"/><stop offset=".26" stop-color="#b4caff"/><stop offset=".53" stop-color="#f4ecff"/><stop offset=".72" stop-color="#ada4db"/><stop offset="1" stop-color="#edf6ff"/></linearGradient>
+ <radialGradient id="ac-halo"><stop stop-color="#759cff" stop-opacity=".24"/><stop offset=".65" stop-color="#647bd5" stop-opacity=".08"/><stop offset="1" stop-color="#646ccc" stop-opacity="0"/></radialGradient>
+ <pattern id="ac-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(28)"><path d="M0 0V5" stroke="#a3bfff" stroke-width=".6" opacity=".24"/></pattern>
+ <path id="ac-spark" d="M0 -5Q.6 -1 4 0Q.6 .8 0 5Q-.7 .8 -4 0Q-.7 -1 0 -5Z" fill="#c3d4f7"/>
+ <g id="ac-corner" fill="none" stroke="url(#ac-foil)" stroke-width=".9">
+   <path d="M-62 -71v-23q0-5 5-5h24m-27 23v-18q0-3 3-3h20M-58-92l11 10 9-5 8 4m-15-13 7 6 6-3 7 4"/>
+   <path d="m-57-89 7 3 3 8-6-4Z" fill="#9eacd4" stroke="none"/><circle cx="-27" cy="-94" r="1.4"/><circle cx="-58" cy="-71" r="1.3"/>
+ </g>
+ <g id="ac-side"><rect x="-64" y="-96" width="128" height="192" rx="8" fill="#101525" stroke="#738bb5" stroke-width="2.1"/>
+ <rect x="-61" y="-93" width="122" height="186" rx="6" fill="url(#ac-back)" stroke="#9ba8c5" stroke-width=".7"/>
+ <rect x="-57" y="-89" width="114" height="178" rx="3" fill="url(#ac-hatch)" stroke="#617392"/>
+ <g fill="none" stroke="#acbfe5" opacity=".85"><path d="M0-84 53-2 0 84 -53 2Z"/><path d="M0-77 48-2 0 77 -48 2Z" stroke-width=".45"/><ellipse rx="43" ry="65" stroke-width=".7"/><circle r="35" stroke-width="1.2"/><circle r="32" stroke-width=".55"/><ellipse rx="17" ry="30" transform="rotate(42)"/><ellipse rx="17" ry="30" transform="rotate(-42)"/></g>
+ <path d="M0-19 4-4 19 0 4 4 0 19 -4 4 -19 0 -4-4Z" fill="url(#ac-foil)" opacity=".84"/>
+ <use href="#ac-spark" transform="translate(0 -69) scale(0.8)"/><use href="#ac-spark" transform="translate(-43 -73) scale(0.6)"/><use href="#ac-spark" transform="translate(44 -78) scale(0.7)"/><use href="#ac-spark" transform="translate(0 68) scale(0.8)"/><use href="#ac-spark" transform="translate(-44 73) scale(0.7)"/><use href="#ac-spark" transform="translate(45 78) scale(0.7)"/></g>
+</defs>
+<ellipse cx="220" cy="155" rx="196" ry="150" fill="url(#ac-halo)"/>
+<g fill="none" stroke="#92acd8"><ellipse cx="219" cy="167" rx="200" ry="43" transform="rotate(-15 219 167)" opacity=".21" stroke-width=".75"/><ellipse cx="219" cy="160" rx="175" ry="74" transform="rotate(23 219 160)" stroke-dasharray="2 8" opacity=".24" stroke-width=".8"/><path d="M27 169l33-26 22 5m265-74 16-13 30 4" stroke-width=".7" opacity=".38"/></g>
+<g opacity=".72"><use href="#ac-spark" transform="translate(28 169) scale(0.78)"/><use href="#ac-spark" transform="translate(60 143) scale(0.75)"/><use href="#ac-spark" transform="translate(81 148) scale(0.5)"/><use href="#ac-spark" transform="translate(347 74) scale(0.5)"/><use href="#ac-spark" transform="translate(363 61) scale(0.75)"/><use href="#ac-spark" transform="translate(393 65) scale(0.78)"/><use href="#ac-spark" transform="translate(370 211) scale(1.15)"/><use href="#ac-spark" transform="translate(69 229) scale(1)"/><use href="#ac-spark" transform="translate(95 53) scale(0.88)"/><use href="#ac-spark" transform="translate(312 34) scale(0.68)"/><use href="#ac-spark" transform="translate(404 125) scale(0.52)"/><use href="#ac-spark" transform="translate(39 188) scale(0.6)"/><use href="#ac-spark" transform="translate(165 282) scale(0.57)"/><use href="#ac-spark" transform="translate(274 278) scale(0.57)"/></g>
+<g class="art-fan">
+<use href="#ac-side" transform="translate(146 171) rotate(-29)"/>
+<use href="#ac-side" transform="translate(291 163) rotate(23)"/>
+<g transform="translate(218 151) rotate(-7)">
+<rect x="-72" y="-105" width="150" height="216" rx="9" fill="#060b15" opacity=".42"/>
+<rect x="-71" y="-108" width="142" height="216" rx="8" fill="url(#ac-face)" stroke="url(#ac-foil)" stroke-width="2.3"/>
+<rect x="-67" y="-104" width="134" height="208" rx="6" fill="url(#ac-hatch)" stroke="#7c91bf" stroke-width=".7"/>
+<path d="M-55-95h110l5 5v180l-5 5H-55l-5-5V-90Z" fill="#1a2441" fill-opacity=".79" stroke="#738abe" stroke-width=".65"/>
+<use href="#ac-corner"/><use href="#ac-corner" transform="scale(-1 1)"/><use href="#ac-corner" transform="scale(1 -1)"/><use href="#ac-corner" transform="scale(-1 -1)"/>
+<g stroke="url(#ac-foil)" fill="none">
+ <path d="M-49 0 0-85 49 0 0 85Z" opacity=".75" stroke-width=".8"/><path d="M-47 0 0-78 47 0 0 78Z" opacity=".58" stroke-width=".6"/>
+ <ellipse rx="52" ry="69" stroke-width=".8"/><ellipse rx="54" ry="71" stroke-width=".4"/><circle r="51" stroke-width="1"/><circle r="48" stroke-width=".65"/>
+ <circle r="35" stroke-width=".65"/><circle r="31" stroke-width=".5" stroke-dasharray="1 3"/>
+ <g opacity=".83" stroke-width=".75"><path d="M0,-37L0,-50"/><path d="M4.83,-36.68L5.87,-44.62"/><path d="M9.58,-35.74L11.65,-43.47"/><path d="M14.16,-34.18L19.13,-46.19"/><path d="M18.5,-32.04L22.5,-38.97"/><path d="M22.52,-29.35L27.39,-35.7"/><path d="M26.16,-26.16L35.36,-35.36"/><path d="M29.35,-22.52L35.7,-27.39"/><path d="M32.04,-18.5L38.97,-22.5"/><path d="M34.18,-14.16L46.19,-19.13"/><path d="M35.74,-9.58L43.47,-11.65"/><path d="M36.68,-4.83L44.62,-5.87"/><path d="M37,0L50,0"/><path d="M36.68,4.83L44.62,5.87"/><path d="M35.74,9.58L43.47,11.65"/><path d="M34.18,14.16L46.19,19.13"/><path d="M32.04,18.5L38.97,22.5"/><path d="M29.35,22.52L35.7,27.39"/><path d="M26.16,26.16L35.36,35.36"/><path d="M22.52,29.35L27.39,35.7"/><path d="M18.5,32.04L22.5,38.97"/><path d="M14.16,34.18L19.13,46.19"/><path d="M9.58,35.74L11.65,43.47"/><path d="M4.83,36.68L5.87,44.62"/><path d="M0,37L0,50"/><path d="M-4.83,36.68L-5.87,44.62"/><path d="M-9.58,35.74L-11.65,43.47"/><path d="M-14.16,34.18L-19.13,46.19"/><path d="M-18.5,32.04L-22.5,38.97"/><path d="M-22.52,29.35L-27.39,35.7"/><path d="M-26.16,26.16L-35.36,35.36"/><path d="M-29.35,22.52L-35.7,27.39"/><path d="M-32.04,18.5L-38.97,22.5"/><path d="M-34.18,14.16L-46.19,19.13"/><path d="M-35.74,9.58L-43.47,11.65"/><path d="M-36.68,4.83L-44.62,5.87"/><path d="M-37,0L-50,0"/><path d="M-36.68,-4.83L-44.62,-5.87"/><path d="M-35.74,-9.58L-43.47,-11.65"/><path d="M-34.18,-14.16L-46.19,-19.13"/><path d="M-32.04,-18.5L-38.97,-22.5"/><path d="M-29.35,-22.52L-35.7,-27.39"/><path d="M-26.16,-26.16L-35.36,-35.36"/><path d="M-22.52,-29.35L-27.39,-35.7"/><path d="M-18.5,-32.04L-22.5,-38.97"/><path d="M-14.16,-34.18L-19.13,-46.19"/><path d="M-9.58,-35.74L-11.65,-43.47"/><path d="M-4.83,-36.68L-5.87,-44.62"/></g>
+ <ellipse rx="57" ry="17" transform="rotate(-31)" opacity=".62" stroke-width=".8"/>
+ <g stroke-width=".8" opacity=".72"><path d="M0 -53.3v3.3" transform="rotate(0)"/><path d="M0 -53.3v1.3" transform="rotate(6)"/><path d="M0 -53.3v1.3" transform="rotate(12)"/><path d="M0 -53.3v1.3" transform="rotate(18)"/><path d="M0 -53.3v1.3" transform="rotate(24)"/><path d="M0 -53.3v3.3" transform="rotate(30)"/><path d="M0 -53.3v1.3" transform="rotate(36)"/><path d="M0 -53.3v1.3" transform="rotate(42)"/><path d="M0 -53.3v1.3" transform="rotate(48)"/><path d="M0 -53.3v1.3" transform="rotate(54)"/><path d="M0 -53.3v3.3" transform="rotate(60)"/><path d="M0 -53.3v1.3" transform="rotate(66)"/><path d="M0 -53.3v1.3" transform="rotate(72)"/><path d="M0 -53.3v1.3" transform="rotate(78)"/><path d="M0 -53.3v1.3" transform="rotate(84)"/><path d="M0 -53.3v3.3" transform="rotate(90)"/><path d="M0 -53.3v1.3" transform="rotate(96)"/><path d="M0 -53.3v1.3" transform="rotate(102)"/><path d="M0 -53.3v1.3" transform="rotate(108)"/><path d="M0 -53.3v1.3" transform="rotate(114)"/><path d="M0 -53.3v3.3" transform="rotate(120)"/><path d="M0 -53.3v1.3" transform="rotate(126)"/><path d="M0 -53.3v1.3" transform="rotate(132)"/><path d="M0 -53.3v1.3" transform="rotate(138)"/><path d="M0 -53.3v1.3" transform="rotate(144)"/><path d="M0 -53.3v3.3" transform="rotate(150)"/><path d="M0 -53.3v1.3" transform="rotate(156)"/><path d="M0 -53.3v1.3" transform="rotate(162)"/><path d="M0 -53.3v1.3" transform="rotate(168)"/><path d="M0 -53.3v1.3" transform="rotate(174)"/><path d="M0 -53.3v3.3" transform="rotate(180)"/><path d="M0 -53.3v1.3" transform="rotate(186)"/><path d="M0 -53.3v1.3" transform="rotate(192)"/><path d="M0 -53.3v1.3" transform="rotate(198)"/><path d="M0 -53.3v1.3" transform="rotate(204)"/><path d="M0 -53.3v3.3" transform="rotate(210)"/><path d="M0 -53.3v1.3" transform="rotate(216)"/><path d="M0 -53.3v1.3" transform="rotate(222)"/><path d="M0 -53.3v1.3" transform="rotate(228)"/><path d="M0 -53.3v1.3" transform="rotate(234)"/><path d="M0 -53.3v3.3" transform="rotate(240)"/><path d="M0 -53.3v1.3" transform="rotate(246)"/><path d="M0 -53.3v1.3" transform="rotate(252)"/><path d="M0 -53.3v1.3" transform="rotate(258)"/><path d="M0 -53.3v1.3" transform="rotate(264)"/><path d="M0 -53.3v3.3" transform="rotate(270)"/><path d="M0 -53.3v1.3" transform="rotate(276)"/><path d="M0 -53.3v1.3" transform="rotate(282)"/><path d="M0 -53.3v1.3" transform="rotate(288)"/><path d="M0 -53.3v1.3" transform="rotate(294)"/><path d="M0 -53.3v3.3" transform="rotate(300)"/><path d="M0 -53.3v1.3" transform="rotate(306)"/><path d="M0 -53.3v1.3" transform="rotate(312)"/><path d="M0 -53.3v1.3" transform="rotate(318)"/><path d="M0 -53.3v1.3" transform="rotate(324)"/><path d="M0 -53.3v3.3" transform="rotate(330)"/><path d="M0 -53.3v1.3" transform="rotate(336)"/><path d="M0 -53.3v1.3" transform="rotate(342)"/><path d="M0 -53.3v1.3" transform="rotate(348)"/><path d="M0 -53.3v1.3" transform="rotate(354)"/></g>
+</g>
+<g opacity=".86"><use href="#ac-spark" transform="translate(-33 -61) scale(0.55)"/><use href="#ac-spark" transform="translate(32 61) scale(0.55)"/><use href="#ac-spark" transform="translate(-41 33) scale(0.55)"/><use href="#ac-spark" transform="translate(42 -34) scale(0.55)"/><use href="#ac-spark" transform="translate(0 82) scale(0.9)"/><use href="#ac-spark" transform="translate(0 -82) scale(0.9)"/></g>
+<g transform="rotate(0)"><path d="M0 0 0 -46 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -46 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(45)"><path d="M0 0 0 -28 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -28 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(90)"><path d="M0 0 0 -46 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -46 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(135)"><path d="M0 0 0 -28 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -28 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(180)"><path d="M0 0 0 -46 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -46 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(225)"><path d="M0 0 0 -28 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -28 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(270)"><path d="M0 0 0 -46 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -46 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><g transform="rotate(315)"><path d="M0 0 0 -28 7 -9Z" fill="url(#ac-foil)"/><path d="M0 0 0 -28 -7 -9Z" fill="#718cd1" stroke="#c0d4ff" stroke-width=".45"/></g><path d="M0-7.5 5.8 0 0 7.5 -5.8 0Z" fill="#e5eaff"/><path d="M0-4.5 3.5 0 0 4.5 -3.5 0Z" fill="#6174ab"/>
+<path d="M-13-96h9l4-3 4 3h9m-26 192h9l4 3 4-3h9" fill="none" stroke="url(#ac-foil)" stroke-width=".8"/>
+</g></g></svg>
+</div><div class="clockface"><span>ラウンド残り時間</span><b id="roundClock">35:00</b></div><div class="statusblock"><div class="statrow">抽選対象<div><strong id="count"></strong><small>人</small></div></div><div class="outrow">途中棄権・対象外<span id="withdrawn"></span></div></div></section>
+<section class="right"><div class="righthead"><div><h2 id="boardTitle"></h2><p id="boardMeta"></p></div><div class="counter"><span id="meterLabel">抽選卓数</span><b id="progress"></b></div></div><div id="roster"></div><div class="legend"><span class="hint">勝 - 負 - 分　／　デッキを選んで詳細</span><span><b class="mark used">✓</b>使用済み</span><span><b class="mark open">●</b>使用可</span><span><b class="mark secret">？</b>未公開</span></div></section>
+</div>
+<footer><div class="flow" id="steps"><span><b>01</b> 抽選</span><i></i><span><b>02</b> 下書き</span><i></i><span><b>03</b> 公開</span><i></i><span><b>04</b> ラウンド</span></div><div class="footnote"><span>主催者操作</span><div id="actions"></div></div></footer>
+</main><dialog id="detail"></dialog>
+<script>
+const select = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const size = params.get("players") === "16" ? 16 : 8;
+const pad = number => String(number).padStart(2, "0");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+const labels = {used:"使用済み", open:"使用可", secret:"未公開"};
+const marks = {used:"✓", open:"●", secret:"?"};
+// 確定済みの対戦で公開されたデッキだけをサンプルに含める。
+const publicTitles = [
+  "ゆるキャン△","グランブルーファンタジー","アズールレーン","キルラキル",
+  "日常","アイドルマスター シャイニーカラーズ","五等分の花嫁","東方Project",
+  "怪獣８号","ログ・ホライズン","リコリス・リコイル","幻日のヨハネ -SUNSHINE in the MIRROR-",
+  "ギルティクラウン","ぷよぷよ","PIXAR","痛いのは嫌なので防御力に極振りしたいと思います。"
+];
+const aliases = [
+  "泡沫ポスト","薄明ラムネ","月面の紙芝居屋さん","霧笛パルス",
+  "凪びん","六角砂時計","浮雲の手紙製作所","深海しおり",
+  "夜光カヌー","紺碧の折紙飛行隊","宵まど","白雨フィルム",
+  "雪片ビスケ","鉱石リボン","瑠璃色の天文郵便局","潮音ランプ"
+];
+const historyCodes = ["WW","LD","WL","DL","LW","WD","LL","DW"];
+const entrants = aliases.slice(0, size).map((name, index) => {
+  const results = [...historyCodes[index % 8]];
+  const record = ["W","L","D"].map(code => results.filter(result => result === code).length);
+  const decks = results.map((result, turn) => ({
+    state: result === "W" ? "used" : "open",
+    title: publicTitles[(index + turn * 5) % publicTitles.length]
+  }));
+  decks.push({state:"secret"}, {state:"secret"});
+  return {id:index + 1, name, record, decks, withdrawn:index === size - 1};
+});
+const eligible = entrants.filter(person => !person.withdrawn);
+const tableCount = Math.ceil(eligible.length / 2);
+document.body.dataset.players = size;
+select("withdrawn").textContent = entrants[size - 1].name;
+select("count").textContent = eligible.length;
+
+const states = {
+  before:["抽選待機中","参加者を確認して抽選を開始します。","参加者一覧","登録順"],
+  drawing:["組み合わせ抽選中","卓番号順に対戦カードが開きます。","対戦カード","開封中"],
+  drafted:["マッチング下書き","組み合わせを確認して公開します。","対戦カード","主催者確認中"],
+  published:["組み合わせ公開","指定の対戦卓へ移動してください。","対戦カード","公開済み"],
+  round:["ラウンド進行中","各卓で対戦を開始してください。","対戦卓","ラウンド残り"]
+};
+const initial = Object.hasOwn(states, params.get("state")) ? params.get("state") : "before";
+let state, pairs = [], revealed = 0, revealTimer = 0, clock = 0;
+
+function deckButton(person) {
+  const icons = person.decks.map(deck =>
+    `<span class="mark ${deck.state}" aria-hidden="true" title="${labels[deck.state]}">${marks[deck.state]}</span>`
+  ).join("");
+  return `<button type="button" class="decks" data-person="${person.id}" aria-label="${person.name}のデッキ4枠と成績の詳細">${icons}</button>`;
+}
+function personLine(person) {
+  return `<div class="person"><strong class="pname" title="${person.name}">${person.name}</strong><span class="record" aria-label="${person.record[0]}勝${person.record[1]}負${person.record[2]}分">${person.record.join(" - ")}</span></div>`;
+}
+function titleLine(person) {
+  if (size === 16) return "";
+  const titles = person.decks.filter(deck => deck.title).map(deck => deck.title).join(" ／ ");
+  return `<button type="button" class="decktitle" data-person="${person.id}" title="${titles}" aria-label="${person.name}の公開済みデッキの詳細">${titles}</button>`;
+}
+function entry(person) {
+  return `<article class="entry${person.withdrawn ? " withdrawn" : ""}"><span class="pid">${pad(person.id)}</span>${personLine(person)}${deckButton(person)}${titleLine(person)}</article>`;
+}
+function seat(person) {
+  return `<div class="seat">${personLine(person)}${deckButton(person)}${titleLine(person)}</div>`;
+}
+function newPairs(order) {
+  const result = [];
+  for (let i = 0; i < order.length; i += 2) result.push(order.slice(i, i + 2));
+  return result;
+}
+function pairKey(list) {
+  return list.map(pair => pair.map(person => person.id).sort((a,b) => a-b).join(",")).sort().join("/");
+}
+function drawOrder() {
+  const order = [...eligible];
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  // 卓順・席順だけ動いた再抽選は避ける。
+  if (pairs.length && pairKey(newPairs(order)) === pairKey(pairs)) {
+    [order[0], order[2]] = [order[2], order[0]];
+  }
+  return newPairs(order);
+}
+function table(index, sealed = false) {
+  const pair = pairs[index];
+  const bye = pair.length === 1;
+  const status = sealed ? "開封待ち" : bye ? "不戦勝" : ({drawing:"開封",drafted:"下書き",published:"公開済み",round:"対戦中"})[state];
+  const head = `<header class="thead"><strong class="tn">第 ${pad(index + 1)} 卓</strong><span class="status">${status}</span></header>`;
+  if (sealed) return `<article class="table sealed">${head}<div class="backface" aria-hidden="true"><span>✦</span></div></article>`;
+  const note = ["published","round"].includes(state) ? "本人の了解待ち" : "公開後、本人が了解";
+  const body = pair.map(seat).join("") + (bye ? `<div class="seat bye-note"><div class="person"><strong class="pname">対戦相手なし</strong><span class="record">${note}</span></div></div>` : "");
+  return `<article class="table${bye ? " bye" : ""}${state === "drawing" ? " revealing" : ""}">${head}${body}</article>`;
+}
+function action(key, text, primary = false, disabled = false) {
+  return `<button type="button" data-action="${key}" class="${primary ? "primary" : "secondary"}"${disabled ? " disabled" : ""}>${text}</button>`;
+}
+function renderActions() {
+  const actions = {
+    before:action("draw","抽選",true),
+    drawing:action("busy","抽選中",false,true),
+    drafted:action("draw","再抽選") + action("publish","決定（公開）",true),
+    published:action("start","ラウンド START",true),
+    round:""
+  };
+  select("actions").innerHTML = actions[state];
+}
+function updateProgress() {
+  select("progress").textContent = `${pad(revealed)} / ${pad(tableCount)}`;
+}
+function runClock() {
+  const end = Date.now() + 35 * 60 * 1000;
+  function tick() {
+    const seconds = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    select("progress").textContent = pad(Math.floor(seconds / 60)) + ":" + pad(seconds % 60);
+    select("roundClock").textContent = select("progress").textContent; if (seconds === 0) clearInterval(clock);
+  }
+  tick();
+  clock = setInterval(tick, 200);
+}
+function show(next) {
+  clearTimeout(revealTimer);
+  clearInterval(clock);
+  state = next;
+  document.body.dataset.state = state;
+  const copy = states[state];
+  ["stateName","caption","boardTitle","boardMeta"].forEach((id, index) => select(id).textContent = copy[index]);
+  revealed = ["before","drawing"].includes(state) ? 0 : tableCount;
+  select("roster").innerHTML = state === "before" ? entrants.map(entry).join("") : pairs.map((_,i) => table(i, state === "drawing")).join("");
+  renderActions();
+  select("meterLabel").textContent = state === "round" ? "残り時間" : "開封した卓"; select("heroTitle").textContent = state === "round" ? "対戦進行" : "マッチング"; if (state === "round") runClock(); else updateProgress();
+  const url = new URL(location.href);
+  url.searchParams.set("state", state);
+  try { history.replaceState(null,"",url); } catch (_) { /* file: 上でURL書換が制限されても操作できる */ }
+}
+function draw() {
+  pairs = drawOrder();
+  if (reduced.matches) { show("drafted"); return; }
+  show("drawing");
+  function reveal() {
+    const element = select("roster").children[revealed];
+    element.outerHTML = table(revealed);
+    revealed++;
+    updateProgress();
+    revealTimer = setTimeout(revealed === tableCount ? () => show("drafted") : reveal, revealed === tableCount ? 510 : 420);
+  }
+  revealTimer = setTimeout(reveal, 270);
+}
+reduced.addEventListener("change", () => {
+  if (state === "drawing" && reduced.matches) show("drafted");
+});
+select("actions").addEventListener("click", event => {
+  const key = event.target.closest("button")?.dataset.action;
+  if (key === "draw" && ["before","drafted"].includes(state)) draw();
+  if (key === "publish" && state === "drafted") show("published");
+  if (key === "start" && state === "published") show("round");
+});
+const detail = select("detail");
+select("roster").addEventListener("click", event => {
+  const source = event.target.closest("[data-person]");
+  if (!source) return;
+  const person = entrants[Number(source.dataset.person) - 1];
+  const rows = person.decks.map((deck, index) => `<li class="${deck.state}"><span>${pad(index + 1)}　${labels[deck.state]}</span><strong>${deck.title || "タイトル非表示"}</strong></li>`).join("");
+  detail.innerHTML = `<h2 id="detailName">${person.name}</h2><p>${person.withdrawn ? "途中棄権　" : ""}${person.record[0]}勝　${person.record[1]}負　${person.record[2]}分</p><ol class="detaildecks">${rows}</ol><button type="button" autofocus>閉じる</button>`;
+  detail.setAttribute("aria-labelledby","detailName");
+  detail.querySelector("button").onclick = () => detail.close();
+  detail.showModal();
+});
+detail.addEventListener("click", event => {
+  if (event.target !== detail) return;
+  const rect = detail.getBoundingClientRect();
+  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) detail.close();
+});
+// URL直行の確定状態は撮影・比較用に同じ組み合わせにそろえる。
+pairs = newPairs(eligible);
+if (initial === "drawing") draw(); else show(initial);
+
+</script>
+</body></html>
